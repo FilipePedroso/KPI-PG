@@ -211,11 +211,17 @@
       .cards-row {
         grid-template-columns: repeat(3, 1fr);
       }
+      .cards-row-3 {
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
     }
 
     @media (max-width: 768px) {
       .cards-row {
         grid-template-columns: repeat(2, 1fr);
+      }
+      .cards-row-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
       }
 
       .header-top {
@@ -243,6 +249,9 @@
     @media (max-width: 480px) {
       .cards-row {
         grid-template-columns: 1fr;
+      }
+      .cards-row-3 {
+        grid-template-columns: 1fr !important;
       }
     }
 
