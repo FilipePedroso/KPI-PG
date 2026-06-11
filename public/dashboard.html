@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Comercial — P&G</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #F5F7FA;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      color: #1a1a2e;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #003DA5 0%, #0057CC 60%, #1976D2 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      padding: 18px 28px 14px;
+    }
+
+    .pg-logo {
+      width: 40px; height: 40px;
+      background: #fff;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: #003DA5;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+      margin-right: 14px;
+    }
+
+    .header-title-group h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.2px;
+    }
+
+    .header-title-group p {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* ── FILTROS CHIP ── */
+    .filters-bar {
+      padding: 10px 28px 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      padding: 5px 13px 5px 11px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      position: relative;
+      user-select: none;
+    }
+
+    .filter-chip:hover {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    .filter-chip .chip-icon {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1;
+    }
+
+    .filter-chip .chip-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.92);
+      white-space: nowrap;
+    }
+
+    .filter-chip .chip-arrow {
+      font-size: 10px;
+      color: rgba(255,255,255,0.55);
+      margin-left: 1px;
+    }
+
+    .filter-chip select {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* ── SEÇÃO ── */
+    .section-container {
+      padding: 20px 28px 28px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .section-header {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .section-toggle-arrow {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .section-toggle-arrow svg {
+      width: 12px;
+      height: 12px;
+      fill: none;
+      stroke: #6B7A99;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .section-header.collapsed .section-toggle-arrow {
+      transform: rotate(-90deg);
+    }
+
+    .cards-row {
+      display: grid;
+      max-height: 2000px;
+      opacity: 1;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.25s ease,
+                  margin-bottom 0.3s ease;
+    }
+
+    .cards-row.hidden {
+      max-height: 0;
+      opacity: 0;
+      margin-bottom: -8px;
+    }
+
+
+    .section-pill {
+      background: #003DA5;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: #D8DCE8;
+    }
+
+    /* ── CARDS ── */
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .cards-row-3 {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    @media (max-width: 1024px) {
+      .cards-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .cards-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .header-top {
+        padding: 14px 16px 10px;
+      }
+
+      .header-title-group h1 {
+        font-size: 13px;
+      }
+
+      .filters-bar {
+        padding: 8px 16px 12px;
+        gap: 5px;
+      }
+
+      .section-container {
+        padding: 16px 16px 20px;
+      }
+
+      .kpi-value {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .cards-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #E4E8F0;
+      padding: 16px 14px 14px;
+      position: relative;
+      transition: box-shadow 0.2s, transform 0.15s;
+    }
+
+
+    .info-icon {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid #CBD5E1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #94A3B8;
+      font-size: 9px;
+      font-weight: 700;
+      font-style: italic;
+      font-family: Georgia, serif;
+      line-height: 1;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .info-icon:hover {
+      border-color: #003DA5;
+      color: #003DA5;
+      background: #EEF2FF;
+    }
+
+    .info-tooltip {
+      display: none;
+      position: fixed;
+      width: 220px;
+      background: #fff;
+      border: 1px solid #E4E8F0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+      padding: 12px 14px;
+      z-index: 9999;
+      text-align: left;
+      pointer-events: none;
+    }
+
+    .info-tooltip.visible {
+      display: block;
+    }
+
+
+
+    .info-tooltip-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6B7A99;
+      margin-bottom: 6px;
+    }
+
+    .info-tooltip-title:not(:first-child) {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #F1F5F9;
+    }
+
+    .info-tooltip-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #334155;
+      padding: 2px 0;
+    }
+
+    .info-tooltip-item .tip-check {
+      font-size: 10px;
+      color: #059669;
+      flex-shrink: 0;
+      font-style: normal;
+    }
+
+    .info-tooltip-item .tip-x {
+      font-size: 10px;
+      color: #DC2626;
+      flex-shrink: 0;
+      font-style: normal;
+    }
+
+
+    .kpi-card:hover {
+      box-shadow: 0 4px 16px rgba(0,61,165,0.10);
+      transform: translateY(-1px);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    /* Faturamento */
+    .fat-total::before      { background: #003DA5; }
+    .fat-numerica::before   { background: #0EA5E9; }
+    .fat-ponderada::before  { background: #7C3AED; }
+    .fat-alimentar::before  { background: #059669; }
+    .fat-farma::before      { background: #D97706; }
+
+    .fat-total .progress-fill      { background: #003DA5; }
+    .fat-numerica .progress-fill   { background: #0EA5E9; }
+    .fat-ponderada .progress-fill  { background: #7C3AED; }
+    .fat-alimentar .progress-fill  { background: #059669; }
+    .fat-farma .progress-fill      { background: #D97706; }
+
+    /* Positivação — mesmas cores, prefixo pos- */
+    .pos-total::before      { background: #003DA5; }
+    .pos-numerica::before   { background: #0EA5E9; }
+    .pos-ponderada::before  { background: #7C3AED; }
+    .pos-alimentar::before  { background: #059669; }
+    .pos-farma::before      { background: #D97706; }
+
+    .pos-total .progress-fill      { background: #003DA5; }
+    .pos-numerica .progress-fill   { background: #0EA5E9; }
+    .pos-ponderada .progress-fill  { background: #7C3AED; }
+    .pos-alimentar .progress-fill  { background: #059669; }
+    .pos-farma .progress-fill      { background: #D97706; }
+
+    .card-title {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #6B7A99;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.3;
+      margin-bottom: 10px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0F1733;
+      line-height: 1;
+      margin-bottom: 2px;
+      letter-spacing: -0.5px;
+    }
+
+    .kpi-meta {
+      font-size: 10.5px;
+      color: #94A3B8;
+      margin-bottom: 2px;
+    }
+
+    .kpi-meta + .bar-header,
+    .kpi-meta:last-of-type {
+      margin-bottom: 10px;
+    }
+
+    .kpi-meta span {
+      font-weight: 600;
+      color: #64748B;
+    }
+
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .bar-label {
+      font-size: 10px;
+      color: #94A3B8;
+      font-weight: 500;
+    }
+
+    .bar-pct {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0F1733;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: #EEF2F8;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 9px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .progress-track-pot {
+      height: 6px;
+      background: #F1F5F9;
+      border-radius: 99px;
+      overflow: visible;
+      margin-bottom: 9px;
+      position: relative;
+    }
+
+    .progress-track-pot .meta-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 12px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 2px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .tags-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 3px 7px;
+      border-radius: 99px;
+      line-height: 1;
+    }
+
+    .tag.below   { background: #FEE2E2; color: #991B1B; }
+    .tag.above   { background: #D1FAE5; color: #065F46; }
+    .tag.neutral { background: #F1F5F9; color: #475569; }
+    .tag.warn    { background: #FEF3C7; color: #92400E; }
+
+
+    /* ── TOOLTIP SYSTEM ── */
+    #floating-tooltip {
+      display: none;
+      position: fixed;
+      width: 270px;
+      background: #fff;
+      border: 1px solid #E4E8F0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+      padding: 12px 14px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    #floating-tooltip.show { display: block; }
+
+    .tip-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6B7A99;
+      margin-bottom: 6px;
+    }
+
+    .tip-title + .tip-title,
+    .tip-title:not(:first-child) {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #F1F5F9;
+    }
+
+    .tip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #334155;
+      padding: 2px 0;
+      white-space: nowrap;
+    }
+
+    .tip-ok  { color: #059669; font-weight: 700; }
+    .tip-no  { color: #DC2626; font-weight: 700; }
+
+    /* ── SELEÇÃO DE CARDS ── */
+    .kpi-card.selected {
+      outline: 2px solid #003DA5;
+      outline-offset: 2px;
+      z-index: 10;
+      position: relative;
+    }
+
+    body.has-selection .kpi-card:not(.selected) {
+      filter: blur(1.5px);
+      opacity: 0.45;
+      transition: filter 0.2s, opacity 0.2s;
+    }
+
+    body.has-selection .kpi-card.selected {
+      filter: none;
+      opacity: 1;
+      box-shadow: 0 8px 28px rgba(0,61,165,0.18);
+      transform: translateY(-2px);
+    }
+
+    /* ── SEPARADOR DE SEÇÕES ── */
+    .section-gap {
+      height: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="pg-logo">P&G</div>
+      <div class="header-title-group">
+        <h1>Dashboard Comercial — Procter &amp; Gamble</h1>
+        <p>Indicadores de Performance · Atualizado em 25 mai 2026 às 08:30</p>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+
+      <div class="filter-chip">
+        <i class="ti ti-building-store chip-icon" aria-hidden="true"></i>
+        <span class="chip-label">Distribuidor</span>
+        <span class="chip-arrow">▾</span>
+        <select>
+          <option>Todos os Distribuidores</option>
+          <option>Distribuidora Alpha</option>
+          <option>Distribuidora Beta</option>
+          <option>Distribuidora Gamma</option>
+        </select>
+      </div>
+
+      <div class="filter-chip">
+        <i class="ti ti-user chip-icon" aria-hidden="true"></i>
+        <span class="chip-label">Gerente</span>
+        <span class="chip-arrow">▾</span>
+        <select>
+          <option>Todos os Gerentes</option>
+          <option>Carlos Mendes</option>
+          <option>Fernanda Lima</option>
+          <option>Ricardo Souza</option>
+        </select>
+      </div>
+
+      <div class="filter-chip">
+        <i class="ti ti-user-check chip-icon" aria-hidden="true"></i>
+        <span class="chip-label">Supervisor</span>
+        <span class="chip-arrow">▾</span>
+        <select>
+          <option>Todos os Supervisores</option>
+          <option>Ana Beatriz</option>
+          <option>Marcos Vieira</option>
+          <option>Juliana Costa</option>
+        </select>
+      </div>
+
+      <div class="filter-chip">
+        <i class="ti ti-user-circle chip-icon" aria-hidden="true"></i>
+        <span class="chip-label">Vendedor</span>
+        <span class="chip-arrow">▾</span>
+        <select>
+          <option>Todos os Vendedores</option>
+          <option>João Pedro</option>
+          <option>Mariana Alves</option>
+          <option>Diego Rocha</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO: FATURAMENTO ── -->
+  <div class="section-container">
+    <div class="section-header">
+      <div class="section-pill">Faturamento</div><div class="section-toggle-arrow"><svg viewBox="0 0 12 12"><polyline points="2,4 6,8 10,4"/></svg></div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="cards-row" id="section-faturamento">
+
+      <div class="kpi-card fat-total">
+        <div class="card-title">Total</div>
+        <div class="kpi-value">R$ 28,5M</div>
+        <div class="kpi-meta">Meta: <span>R$ 34,2M</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">R$ 5,7M</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">83,3%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:83.3%"></div></div>
+      </div>
+
+      <div class="kpi-card fat-numerica">
+        <div class="card-title">Escolha Certa</div>
+        <div class="kpi-value">R$ 9,2M</div>
+        <div class="kpi-meta">Meta: <span>R$ 10,5M</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">R$ 1,3M</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">87,6%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:87.6%"></div></div>
+      </div>
+
+      <div class="kpi-card fat-ponderada">
+        <div class="card-title">Store Platform</div>
+        <div class="kpi-value">R$ 6,8M</div>
+        <div class="kpi-meta">Meta: <span>R$ 7,0M</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#059669;font-weight:700;">R$ 0,2M</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">97,1%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:97.1%"></div></div>
+      </div>
+
+      <div class="kpi-card fat-alimentar">
+        <div class="card-title">Alimentar</div>
+        <div class="kpi-value">R$ 7,4M</div>
+        <div class="kpi-meta">Meta: <span>R$ 9,8M</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">R$ 2,4M</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">75,5%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:75.5%"></div></div>
+      </div>
+
+      <div class="kpi-card fat-farma">
+        <div class="card-title">Farma</div>
+        <div class="kpi-value">R$ 5,1M</div>
+        <div class="kpi-meta">Meta: <span>R$ 6,9M</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">R$ 1,8M</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">73,9%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:73.9%"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <!-- ── SEÇÃO: POSITIVAÇÃO ── -->
+  <div class="section-container" style="padding-top: 0;">
+    <div class="section-header">
+      <div class="section-pill">Positivação</div><div class="section-toggle-arrow"><svg viewBox="0 0 12 12"><polyline points="2,4 6,8 10,4"/></svg></div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="cards-row cards-row-3" id="section-positivacao">
+
+      <div class="kpi-card pos-total">
+        <div class="card-title">Positivação Total</div>
+        <div class="kpi-value">1.842</div>
+        <div class="kpi-meta">Meta: <span>2.200 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">358 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">83,7%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:83.7%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">4.077 PDVs · 45%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:45%;opacity:0.45;"></div><div class="meta-marker" style="left:54.0%;"></div></div>
+      </div>
+
+      <div class="kpi-card pos-alimentar">
+        <div class="card-title">Positivação Alimentar</div>
+        <div class="kpi-value">431</div>
+        <div class="kpi-meta">Meta: <span>580 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">149 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">74,3%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:74.3%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">980 PDVs · 44%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:59.2%;"></div></div>
+      </div>
+
+      <div class="kpi-card pos-farma">
+        <div class="card-title">Positivação Farma</div>
+        <div class="kpi-value">310</div>
+        <div class="kpi-meta">Meta: <span>430 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">120 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">72,1%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:72.1%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">710 PDVs · 44%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:60.6%;"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <!-- ── SEÇÃO: POSITIVAÇÃO RANKING ── -->
+  <div class="section-container" style="padding-top: 0;">
+    <div class="section-header">
+      <div class="section-pill">Positivação Ranking</div><div class="section-toggle-arrow"><svg viewBox="0 0 12 12"><polyline points="2,4 6,8 10,4"/></svg></div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="cards-row" id="section-positivacao-ranking">
+
+      <div class="kpi-card fat-total">
+        <div class="info-icon" data-tooltip-id="tip-hfs">i</div>
+        <div class="card-title">Positivação HFS</div>
+        <div class="kpi-value">1.104</div>
+        <div class="kpi-meta">Meta: <span>1.300 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">196 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">84,9%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:84.9%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">3.200 PDVs · 35%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:35%;opacity:0.45;"></div><div class="meta-marker" style="left:40.6%;"></div></div>
+      </div>
+
+      <div class="kpi-card fat-farma">
+        <div class="info-icon" data-tooltip-id="tip-farma">i</div>
+        <div class="card-title">Positivação Farma</div>
+        <div class="kpi-value">310</div>
+        <div class="kpi-meta">Meta: <span>430 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">120 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">72,1%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:72.1%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">710 PDVs · 44%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:60.6%;"></div></div>
+      </div>
+
+      <div class="kpi-card fat-ponderada">
+        <div class="info-icon" data-tooltip-id="tip-always">i</div>
+        <div class="card-title">Positivação Always Noturno</div>
+        <div class="kpi-value">278</div>
+        <div class="kpi-meta">Meta: <span>350 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">72 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">79,4%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:79.4%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">520 PDVs · 53%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:53%;opacity:0.45;"></div><div class="meta-marker" style="left:67.3%;"></div></div>
+      </div>
+
+      <div class="kpi-card fat-numerica">
+        <div class="info-icon">i</div>
+        <div class="card-title">Positivação Oral-B 3D-White</div>
+        <div class="kpi-value">341</div>
+        <div class="kpi-meta">Meta: <span>380 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">39 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">89,7%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:89.7%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">680 PDVs · 50%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:50%;opacity:0.45;"></div><div class="meta-marker" style="left:55.9%;"></div></div>
+      </div>
+
+      <div class="kpi-card fat-alimentar">
+        <div class="info-icon">i</div>
+        <div class="card-title">Positivação Indicator/Iconic</div>
+        <div class="kpi-value">397</div>
+        <div class="kpi-meta">Meta: <span>420 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">23 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">94,5%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:94.5%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">590 PDVs · 67%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:67%;opacity:0.45;"></div><div class="meta-marker" style="left:71.2%;"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <!-- ── SEÇÃO: ESCOLHA CERTA ── -->
+  <div class="section-container" style="padding-top: 0;">
+    <div class="section-header">
+      <div class="section-pill">Escolha Certa</div><div class="section-toggle-arrow"><svg viewBox="0 0 12 12"><polyline points="2,4 6,8 10,4"/></svg></div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="cards-row" id="section-escolha-certa">
+
+      <div class="kpi-card fat-total">
+        <div class="card-title">Positivação Escolha Certa</div>
+        <div class="kpi-value">4.298</div>
+        <div class="kpi-meta">Meta: <span>5.200 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">902 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">82,7%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:82.7%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">6.500 PDVs · 66%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:66%;opacity:0.45;"></div><div class="meta-marker" style="left:80%;"></div></div>
+      </div>
+
+      <div class="kpi-card fat-numerica">
+        <div class="card-title">Positivação Chaves ≥2</div>
+        <div class="kpi-value">1.047</div>
+        <div class="kpi-meta">Meta: <span>1.250 PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">203 PDVs</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">83,8%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:83.8%"></div></div>
+        <div class="bar-header" style="margin-top:6px;">
+          <span class="bar-label">Potencial</span>
+          <span class="bar-pct" style="color:#64748B;font-weight:600;">2.800 PDVs · 37%</span>
+        </div>
+        <div class="progress-track-pot"><div class="progress-fill" style="width:37%;opacity:0.45;"></div><div class="meta-marker" style="left:44.6%;"></div></div>
+      </div>
+
+      <div class="kpi-card fat-ponderada">
+        <div class="card-title">Platinum Points</div>
+        <div class="kpi-value">28.640</div>
+        <div class="kpi-meta">Meta: <span>32.000 pts</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">3.360 pts</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">89,5%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:89.5%"></div></div>
+      </div>
+
+      <div class="kpi-card fat-alimentar">
+        <div class="card-title">Golden Points Alimentar</div>
+        <div class="kpi-value">14.320</div>
+        <div class="kpi-meta">Meta: <span>16.500 pts</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">2.180 pts</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">86,8%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:86.8%"></div></div>
+      </div>
+
+      <div class="kpi-card fat-farma">
+        <div class="card-title">Golden Points Farma</div>
+        <div class="kpi-value">9.870</div>
+        <div class="kpi-meta">Meta: <span>12.000 pts</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">2.130 pts</span></div>
+        <div class="bar-header">
+          <span class="bar-label">Atingimento</span>
+          <span class="bar-pct">82,3%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:82.3%"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+
+
+<!-- TOOLTIP TEMPLATES -->
+<div id="floating-tooltip"></div>
+
+<template id="tip-hfs">
+  <div class="tip-title">Clusters Válidos</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR 3G</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR GG</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR G</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR M</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR P</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR PP</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR 3P</div>
+  <div class="tip-title">Plataformas Válidas</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> Escolha Certa</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> Store Platform</div>
+  <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
+</template>
+
+<template id="tip-farma">
+  <div class="tip-title">Clusters Válidos</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE 3G</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE GG</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE G</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE M</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE P</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE PP</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE 3P</div>
+  <div class="tip-title">Plataformas Válidas</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> Escolha Certa</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> Store Platform</div>
+  <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
+</template>
+
+<script>
+  // Section toggle
+  document.querySelectorAll('.section-header').forEach(header => {
+    header.addEventListener('click', () => {
+      header.classList.toggle('collapsed');
+      const row = header.nextElementSibling;
+      if (row && row.classList.contains('cards-row')) {
+        row.classList.toggle('hidden');
+      }
+    });
+  });
+
+
+  // Tooltip system — document-level for reliability
+  const ftip = document.getElementById('floating-tooltip');
+
+  function showTip(icon) {
+    const tplId = icon.getAttribute('data-tooltip-id');
+    if (!tplId) return;
+    const tpl = document.getElementById(tplId);
+    if (!tpl) return;
+    ftip.innerHTML = '';
+    ftip.appendChild(tpl.content.cloneNode(true));
+    ftip.classList.add('show');
+    const r = icon.getBoundingClientRect();
+    let left = r.right - 230;
+    let top  = r.bottom + 8;
+    if (left < 8) left = 8;
+    if (top + 300 > window.innerHeight) top = r.top - 300;
+    ftip.style.left = left + 'px';
+    ftip.style.top  = top  + 'px';
+  }
+
+  document.addEventListener('mouseover', (e) => {
+    const icon = e.target.closest('.info-icon[data-tooltip-id]');
+    if (icon) {
+      showTip(icon);
+    } else if (!e.target.closest('#floating-tooltip')) {
+      ftip.classList.remove('show');
+    }
+  });
+
+  // Card selection
+  document.querySelectorAll('.kpi-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.info-icon')) return;
+      card.classList.toggle('selected');
+      const anySelected = document.querySelector('.kpi-card.selected');
+      document.body.classList.toggle('has-selection', !!anySelected);
+    });
+  });
+</script>
+
+<template id="tip-always">
+  <div class="tip-title">Clusters Válidos</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP 3G</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP GG</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP G</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP M</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP P</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP PP</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP 3P</div>
+  <div class="tip-row"><span class="tip-no">✕</span> Farma Rede</div>
+  <div class="tip-title">Plataformas Válidas</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> Escolha Certa</div>
+  <div class="tip-row"><span class="tip-ok">✓</span> Store Platform</div>
+  <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
+</template>
+
+</body>
+</html>
