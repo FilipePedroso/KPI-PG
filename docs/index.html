@@ -641,16 +641,16 @@
 
     <div class="cards-row" id="section-faturamento">
 
-      <div class="kpi-card fat-total">
+      <div class="kpi-card fat-total" id="card-fat-total">
         <div class="card-title">Total</div>
-        <div class="kpi-value">R$ 28,5M</div>
-        <div class="kpi-meta">Meta: <span>R$ 34,2M</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">R$ 5,7M</span></div>
+        <div class="kpi-value" data-bind="valor">R$ —</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">R$ —</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">R$ —</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">83,3%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:83.3%"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
       <div class="kpi-card fat-numerica">
