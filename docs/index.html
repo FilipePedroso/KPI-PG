@@ -1107,7 +1107,7 @@
 
     let meta = 0;
     metas.forEach(m=>{
-      if (!eligibleRv.has(m.rv)) return;
+      if (!eligibleRv.has(String(m.rv))) return;
       if (filters.uf && m.uf !== filters.uf) return;
       meta += m.obj;
     });

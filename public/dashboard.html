@@ -1056,10 +1056,10 @@
   } catch(e) { console.error('Falha ao carregar data.json', e); return; }
 
   const comercial = data.comercial; // {rv: {uf,rv,sv,cv}}
-  const rvEntries = Object.entries(comercial).map(([k,v])=>({rv:Number(k), ...v}));
+  const rvEntries = Object.entries(comercial).map(([k,v])=>({rv:String(k), ...v}));
   const metas = data.metas;     // [{rv,uf,obj}]
   const vendas = data.vendas;   // [{rv,v}]
-  const vendasByRv = new Map(vendas.map(x=>[x.rv, x.v]));
+  const vendasByRv = new Map(vendas.map(x=>[String(x.rv), x.v]));
 
   // Populate filters
   const uniq = (arr)=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
@@ -1107,7 +1107,7 @@
 
     let meta = 0;
     metas.forEach(m=>{
-      if (!eligibleRv.has(m.rv)) return;
+      if (!eligibleRv.has(String(m.rv))) return;
       if (filters.uf && m.uf !== filters.uf) return;
       meta += m.obj;
     });
