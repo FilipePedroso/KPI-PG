@@ -597,11 +597,8 @@
         <i class="ti ti-building-store chip-icon" aria-hidden="true"></i>
         <span class="chip-label">Distribuidor</span>
         <span class="chip-arrow">▾</span>
-        <select>
-          <option>Todos os Distribuidores</option>
-          <option>Distribuidora Alpha</option>
-          <option>Distribuidora Beta</option>
-          <option>Distribuidora Gamma</option>
+        <select id="flt-uf" data-filter="uf">
+          <option value="">Todos os Distribuidores</option>
         </select>
       </div>
 
@@ -609,11 +606,8 @@
         <i class="ti ti-user chip-icon" aria-hidden="true"></i>
         <span class="chip-label">Gerente</span>
         <span class="chip-arrow">▾</span>
-        <select>
-          <option>Todos os Gerentes</option>
-          <option>Carlos Mendes</option>
-          <option>Fernanda Lima</option>
-          <option>Ricardo Souza</option>
+        <select id="flt-cv" data-filter="cv">
+          <option value="">Todos os Gerentes</option>
         </select>
       </div>
 
@@ -621,11 +615,8 @@
         <i class="ti ti-user-check chip-icon" aria-hidden="true"></i>
         <span class="chip-label">Supervisor</span>
         <span class="chip-arrow">▾</span>
-        <select>
-          <option>Todos os Supervisores</option>
-          <option>Ana Beatriz</option>
-          <option>Marcos Vieira</option>
-          <option>Juliana Costa</option>
+        <select id="flt-sv" data-filter="sv">
+          <option value="">Todos os Supervisores</option>
         </select>
       </div>
 
@@ -633,11 +624,8 @@
         <i class="ti ti-user-circle chip-icon" aria-hidden="true"></i>
         <span class="chip-label">Vendedor</span>
         <span class="chip-arrow">▾</span>
-        <select>
-          <option>Todos os Vendedores</option>
-          <option>João Pedro</option>
-          <option>Mariana Alves</option>
-          <option>Diego Rocha</option>
+        <select id="flt-rv" data-filter="rv">
+          <option value="">Todos os Vendedores</option>
         </select>
       </div>
 
@@ -653,16 +641,16 @@
 
     <div class="cards-row" id="section-faturamento">
 
-      <div class="kpi-card fat-total">
+      <div class="kpi-card fat-total" id="card-fat-total">
         <div class="card-title">Total</div>
-        <div class="kpi-value">R$ 28,5M</div>
-        <div class="kpi-meta">Meta: <span>R$ 34,2M</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">R$ 5,7M</span></div>
+        <div class="kpi-value" data-bind="valor">R$ —</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">R$ —</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">R$ —</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">83,3%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:83.3%"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
       <div class="kpi-card fat-numerica">
@@ -1056,6 +1044,89 @@
       document.body.classList.toggle('has-selection', !!anySelected);
     });
   });
+</script>
+
+<script>
+/* ====== Data loading & filtering (KPI Ranking P&G) ====== */
+(async function(){
+  let data;
+  try {
+    const res = await fetch('./data.json', {cache:'no-store'});
+    data = await res.json();
+  } catch(e) { console.error('Falha ao carregar data.json', e); return; }
+
+  const comercial = data.comercial; // {rvCode: {uf, rv (concat name), sv, cv}}
+  const rvEntries = Object.entries(comercial).map(([k,v])=>({uf:v.uf, cv:v.cv, sv:v.sv, rvName:v.rv, rv:String(k)}));
+  const metas = data.metas;     // [{rv,uf,obj}]
+  const vendas = data.vendas;   // [{rv,v}]
+  const vendasByRv = new Map(vendas.map(x=>[String(x.rv), x.v]));
+
+  // Populate filters
+  const uniq = (arr)=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
+  const fill = (id, vals) => {
+    const sel = document.getElementById(id);
+    vals.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+  };
+  fill('flt-uf', uniq(rvEntries.map(r=>r.uf)));
+  fill('flt-cv', uniq(rvEntries.map(r=>r.cv)));
+  fill('flt-sv', uniq(rvEntries.map(r=>r.sv)));
+  fill('flt-rv', uniq(rvEntries.map(r=>r.rvName)));
+
+  const filters = {uf:'',cv:'',sv:'',rv:''};
+  document.querySelectorAll('select[data-filter]').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      filters[sel.dataset.filter] = sel.value;
+      recompute();
+    });
+  });
+
+  function fmtMoney(v){
+    const abs = Math.abs(v);
+    let s;
+    if (abs >= 1e9) s = (v/1e9).toFixed(2).replace('.',',')+'B';
+    else if (abs >= 1e6) s = (v/1e6).toFixed(2).replace('.',',')+'M';
+    else if (abs >= 1e3) s = (v/1e3).toFixed(1).replace('.',',')+'K';
+    else s = v.toFixed(0);
+    return 'R$ '+s;
+  }
+  function fmtPct(v){ return (v*100).toFixed(1).replace('.',',')+'%'; }
+
+  function recompute(){
+    // eligible RVs from d_comercial after dim filters
+    const eligibleRv = new Set();
+    rvEntries.forEach(r=>{
+      if (filters.uf && r.uf !== filters.uf) return;
+      if (filters.cv && r.cv !== filters.cv) return;
+      if (filters.sv && r.sv !== filters.sv) return;
+      if (filters.rv && r.rvName !== filters.rv) return;
+      eligibleRv.add(r.rv);
+    });
+
+    let total = 0;
+    eligibleRv.forEach(rv=>{ if (vendasByRv.has(rv)) total += vendasByRv.get(rv); });
+
+    let meta = 0;
+    metas.forEach(m=>{
+      if (!eligibleRv.has(String(m.rv))) return;
+      if (filters.uf && m.uf !== filters.uf) return;
+      meta += m.obj;
+    });
+
+    const gap = meta - total;
+    const pct = meta > 0 ? total/meta : 0;
+
+    const card = document.getElementById('card-fat-total');
+    card.querySelector('[data-bind=valor]').textContent = fmtMoney(total);
+    card.querySelector('[data-bind=meta]').textContent  = fmtMoney(meta);
+    const gapEl = card.querySelector('[data-bind=gap]');
+    gapEl.textContent = fmtMoney(Math.abs(gap));
+    gapEl.style.color = gap > 0 ? '#DC2626' : '#059669';
+    card.querySelector('[data-bind=pct]').textContent   = fmtPct(pct);
+    card.querySelector('[data-bind=bar]').style.width   = Math.min(100, Math.max(0, pct*100)).toFixed(1)+'%';
+  }
+
+  recompute();
+})();
 </script>
 
 <template id="tip-always">
