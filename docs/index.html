@@ -1046,6 +1046,89 @@
   });
 </script>
 
+<script>
+/* ====== Data loading & filtering (KPI Ranking P&G) ====== */
+(async function(){
+  let data;
+  try {
+    const res = await fetch('./data.json', {cache:'no-store'});
+    data = await res.json();
+  } catch(e) { console.error('Falha ao carregar data.json', e); return; }
+
+  const comercial = data.comercial; // {rv: {uf,rv,sv,cv}}
+  const rvEntries = Object.entries(comercial).map(([k,v])=>({rv:Number(k), ...v}));
+  const metas = data.metas;     // [{rv,uf,obj}]
+  const vendas = data.vendas;   // [{rv,v}]
+  const vendasByRv = new Map(vendas.map(x=>[x.rv, x.v]));
+
+  // Populate filters
+  const uniq = (arr)=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
+  const fill = (id, vals) => {
+    const sel = document.getElementById(id);
+    vals.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+  };
+  fill('flt-uf', uniq(rvEntries.map(r=>r.uf)));
+  fill('flt-cv', uniq(rvEntries.map(r=>r.cv)));
+  fill('flt-sv', uniq(rvEntries.map(r=>r.sv)));
+  fill('flt-rv', uniq(rvEntries.map(r=>r.rv)));
+
+  const filters = {uf:'',cv:'',sv:'',rv:''};
+  document.querySelectorAll('select[data-filter]').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      filters[sel.dataset.filter] = sel.value;
+      recompute();
+    });
+  });
+
+  function fmtMoney(v){
+    const abs = Math.abs(v);
+    let s;
+    if (abs >= 1e9) s = (v/1e9).toFixed(2).replace('.',',')+'B';
+    else if (abs >= 1e6) s = (v/1e6).toFixed(2).replace('.',',')+'M';
+    else if (abs >= 1e3) s = (v/1e3).toFixed(1).replace('.',',')+'K';
+    else s = v.toFixed(0);
+    return 'R$ '+s;
+  }
+  function fmtPct(v){ return (v*100).toFixed(1).replace('.',',')+'%'; }
+
+  function recompute(){
+    // eligible RVs from d_comercial after dim filters
+    const eligibleRv = new Set();
+    rvEntries.forEach(r=>{
+      if (filters.uf && r.uf !== filters.uf) return;
+      if (filters.cv && r.cv !== filters.cv) return;
+      if (filters.sv && r.sv !== filters.sv) return;
+      if (filters.rv && r.rv !== filters.rv) return;
+      eligibleRv.add(r.rv);
+    });
+
+    let total = 0;
+    eligibleRv.forEach(rv=>{ if (vendasByRv.has(rv)) total += vendasByRv.get(rv); });
+
+    let meta = 0;
+    metas.forEach(m=>{
+      if (!eligibleRv.has(m.rv)) return;
+      if (filters.uf && m.uf !== filters.uf) return;
+      meta += m.obj;
+    });
+
+    const gap = meta - total;
+    const pct = meta > 0 ? total/meta : 0;
+
+    const card = document.getElementById('card-fat-total');
+    card.querySelector('[data-bind=valor]').textContent = fmtMoney(total);
+    card.querySelector('[data-bind=meta]').textContent  = fmtMoney(meta);
+    const gapEl = card.querySelector('[data-bind=gap]');
+    gapEl.textContent = fmtMoney(Math.abs(gap));
+    gapEl.style.color = gap > 0 ? '#DC2626' : '#059669';
+    card.querySelector('[data-bind=pct]').textContent   = fmtPct(pct);
+    card.querySelector('[data-bind=bar]').style.width   = Math.min(100, Math.max(0, pct*100)).toFixed(1)+'%';
+  }
+
+  recompute();
+})();
+</script>
+
 <template id="tip-always">
   <div class="tip-title">Clusters Válidos</div>
   <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP 3G</div>
