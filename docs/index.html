@@ -1056,7 +1056,7 @@
   } catch(e) { console.error('Falha ao carregar data.json', e); return; }
 
   const comercial = data.comercial; // {rv: {uf,rv,sv,cv}}
-  const rvEntries = Object.entries(comercial).map(([k,v])=>({rv:String(k), ...v}));
+  const rvEntries = Object.entries(comercial).map(([k,v])=>({...v, rv:String(k)}));
   const metas = data.metas;     // [{rv,uf,obj}]
   const vendas = data.vendas;   // [{rv,v}]
   const vendasByRv = new Map(vendas.map(x=>[String(x.rv), x.v]));
