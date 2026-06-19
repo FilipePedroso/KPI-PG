@@ -1055,8 +1055,8 @@
     data = await res.json();
   } catch(e) { console.error('Falha ao carregar data.json', e); return; }
 
-  const comercial = data.comercial; // {rv: {uf,rv,sv,cv}}
-  const rvEntries = Object.entries(comercial).map(([k,v])=>({...v, rv:String(k)}));
+  const comercial = data.comercial; // {rvCode: {uf, rv (concat name), sv, cv}}
+  const rvEntries = Object.entries(comercial).map(([k,v])=>({uf:v.uf, cv:v.cv, sv:v.sv, rvName:v.rv, rv:String(k)}));
   const metas = data.metas;     // [{rv,uf,obj}]
   const vendas = data.vendas;   // [{rv,v}]
   const vendasByRv = new Map(vendas.map(x=>[String(x.rv), x.v]));
@@ -1070,7 +1070,7 @@
   fill('flt-uf', uniq(rvEntries.map(r=>r.uf)));
   fill('flt-cv', uniq(rvEntries.map(r=>r.cv)));
   fill('flt-sv', uniq(rvEntries.map(r=>r.sv)));
-  fill('flt-rv', uniq(rvEntries.map(r=>r.rv)));
+  fill('flt-rv', uniq(rvEntries.map(r=>r.rvName)));
 
   const filters = {uf:'',cv:'',sv:'',rv:''};
   document.querySelectorAll('select[data-filter]').forEach(sel=>{
@@ -1098,7 +1098,7 @@
       if (filters.uf && r.uf !== filters.uf) return;
       if (filters.cv && r.cv !== filters.cv) return;
       if (filters.sv && r.sv !== filters.sv) return;
-      if (filters.rv && r.rv !== filters.rv) return;
+      if (filters.rv && r.rvName !== filters.rv) return;
       eligibleRv.add(r.rv);
     });
 
