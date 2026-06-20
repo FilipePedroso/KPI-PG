@@ -587,7 +587,7 @@
       <div class="pg-logo">P&G</div>
       <div class="header-title-group">
         <h1>Dashboard Comercial — Procter &amp; Gamble</h1>
-        <p>Indicadores de Performance · Atualizado em 25 mai 2026 às 08:30</p>
+        <p>Indicadores de Performance · <span id="last-update">Atualizado em —</span></p>
       </div>
     </div>
 
@@ -1054,6 +1054,17 @@
     const res = await fetch('./data.json', {cache:'no-store'});
     data = await res.json();
   } catch(e) { console.error('Falha ao carregar data.json', e); return; }
+
+  // Atualiza data/hora no header
+  if (data.generated_at) {
+    try {
+      const d = new Date(data.generated_at);
+      const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      const txt = `Atualizado em ${String(d.getDate()).padStart(2,'0')} ${meses[d.getMonth()]} ${d.getFullYear()} às ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      const el = document.getElementById('last-update');
+      if (el) el.textContent = txt;
+    } catch(e) {}
+  }
 
   // comercial: [{rv,uf,rvName,sv,cv}] - composite key rv+uf
   const rvEntries = data.comercial.map(r=>({uf:r.uf, cv:r.cv, sv:r.sv, rvName:r.rvName, rv:String(r.rv)}));
