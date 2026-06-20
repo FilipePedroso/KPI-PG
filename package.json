@@ -4,6 +4,8 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "build:data": "python3 scripts/build_data.py || python scripts/build_data.py || echo '⚠️  Skipping data build (Python/openpyxl not available)'",
+    "prebuild": "bun run build:data",
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
