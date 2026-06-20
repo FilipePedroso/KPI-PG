@@ -1055,11 +1055,11 @@
     data = await res.json();
   } catch(e) { console.error('Falha ao carregar data.json', e); return; }
 
-  const comercial = data.comercial; // {rvCode: {uf, rv (concat name), sv, cv}}
-  const rvEntries = Object.entries(comercial).map(([k,v])=>({uf:v.uf, cv:v.cv, sv:v.sv, rvName:v.rv, rv:String(k)}));
+  // comercial: [{rv,uf,rvName,sv,cv}] - composite key rv+uf
+  const rvEntries = data.comercial.map(r=>({uf:r.uf, cv:r.cv, sv:r.sv, rvName:r.rvName, rv:String(r.rv)}));
   const metas = data.metas;     // [{rv,uf,total,ec,sp,ali,far}]
-  const vendas = data.vendas;   // [{rv,v}]
-  const vendasByRv = new Map(vendas.map(x=>[String(x.rv), x.v]));
+  const vendas = data.vendas;   // [{rv,uf,v,ec,sp,ali,far}]
+  const ck = (rv,uf) => String(rv)+'|'+String(uf);
 
   // Populate filters
   const uniq = (arr)=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
@@ -1092,32 +1092,32 @@
   function fmtPct(v){ return (v*100).toFixed(1).replace('.',',')+'%'; }
 
   function recompute(){
-    const eligibleRv = new Set();
+    const eligibleKeys = new Set();
     rvEntries.forEach(r=>{
       if (filters.uf && r.uf !== filters.uf) return;
       if (filters.cv && r.cv !== filters.cv) return;
       if (filters.sv && r.sv !== filters.sv) return;
       if (filters.rv && r.rvName !== filters.rv) return;
-      eligibleRv.add(r.rv);
+      eligibleKeys.add(ck(r.rv, r.uf));
     });
 
     const sums = {v:0, ec:0, sp:0, ali:0, far:0};
     vendas.forEach(x=>{
-      if (!eligibleRv.has(String(x.rv))) return;
+      if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
       sums.ali += x.ali||0; sums.far += x.far||0;
     });
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0};
     metas.forEach(m=>{
-      if (!eligibleRv.has(String(m.rv))) return;
-      if (filters.uf && m.uf !== filters.uf) return;
+      if (!eligibleKeys.has(ck(m.rv, m.uf))) return;
       metaSums.total += m.total||0;
       metaSums.ec    += m.ec||0;
       metaSums.sp    += m.sp||0;
       metaSums.ali   += m.ali||0;
       metaSums.far   += m.far||0;
     });
+
 
     function paint(cardId, total, metaVal){
       const card = document.getElementById(cardId);
