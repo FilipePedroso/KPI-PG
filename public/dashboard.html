@@ -1057,7 +1057,7 @@
 
   const comercial = data.comercial; // {rvCode: {uf, rv (concat name), sv, cv}}
   const rvEntries = Object.entries(comercial).map(([k,v])=>({uf:v.uf, cv:v.cv, sv:v.sv, rvName:v.rv, rv:String(k)}));
-  const metas = data.metas;     // [{rv,uf,obj}]
+  const metas = data.metas;     // [{rv,uf,total,ec,sp,ali,far}]
   const vendas = data.vendas;   // [{rv,v}]
   const vendasByRv = new Map(vendas.map(x=>[String(x.rv), x.v]));
 
@@ -1108,11 +1108,15 @@
       sums.ali += x.ali||0; sums.far += x.far||0;
     });
 
-    let meta = 0;
+    const metaSums = {total:0, ec:0, sp:0, ali:0, far:0};
     metas.forEach(m=>{
       if (!eligibleRv.has(String(m.rv))) return;
       if (filters.uf && m.uf !== filters.uf) return;
-      meta += m.obj;
+      metaSums.total += m.total||0;
+      metaSums.ec    += m.ec||0;
+      metaSums.sp    += m.sp||0;
+      metaSums.ali   += m.ali||0;
+      metaSums.far   += m.far||0;
     });
 
     function paint(cardId, total, metaVal){
@@ -1128,11 +1132,11 @@
       card.querySelector('[data-bind=pct]').textContent   = fmtPct(pct);
       card.querySelector('[data-bind=bar]').style.width   = Math.min(100, Math.max(0, pct*100)).toFixed(1)+'%';
     }
-    paint('card-fat-total', sums.v,   meta);
-    paint('card-fat-ec',    sums.ec,  meta);
-    paint('card-fat-sp',    sums.sp,  meta);
-    paint('card-fat-ali',   sums.ali, meta);
-    paint('card-fat-far',   sums.far, meta);
+    paint('card-fat-total', sums.v,   metaSums.total);
+    paint('card-fat-ec',    sums.ec,  metaSums.ec);
+    paint('card-fat-sp',    sums.sp,  metaSums.sp);
+    paint('card-fat-ali',   sums.ali, metaSums.ali);
+    paint('card-fat-far',   sums.far, metaSums.far);
   }
 
   recompute();
