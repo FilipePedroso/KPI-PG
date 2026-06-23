@@ -93,6 +93,7 @@
       user-select: none;
       font: inherit;
       color: inherit;
+      flex-shrink: 0;
     }
     .filter-chip.active {
       background: rgba(255,255,255,0.22);
@@ -106,16 +107,18 @@
       font-size: 13px;
       color: rgba(255,255,255,0.7);
       line-height: 1;
+      flex-shrink: 0;
     }
     .filter-chip .chip-label {
       font-size: 12px;
       font-weight: 600;
       color: rgba(255,255,255,0.95);
       white-space: nowrap;
-      max-width: 180px;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
-      display: inline-block;
+      display: block;
+      flex: 1 1 auto;
     }
 
     .filter-chip .chip-arrow {
@@ -123,6 +126,7 @@
       color: rgba(255,255,255,0.6);
       margin-left: 1px;
       transition: transform 0.15s;
+      flex-shrink: 0;
     }
     .filter-chip.open .chip-arrow { transform: rotate(180deg); }
 
@@ -1408,6 +1412,7 @@
       setTimeout(()=>search.focus(), 0);
     });
     updateChipLabel(chip);
+    chip.style.width = `${Math.ceil(chip.getBoundingClientRect().width)}px`;
   });
 
   document.getElementById('clear-filters').addEventListener('click', ()=>{
