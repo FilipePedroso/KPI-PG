@@ -121,9 +121,8 @@
 
     /* Dropdown popover */
     .filter-pop {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
+      position: fixed;
+      top: 0; left: 0;
       min-width: 220px;
       max-width: 280px;
       background: #FFFFFF;
@@ -1228,6 +1227,9 @@
       if (chip.classList.contains('open')) return;
       closeAllPops(chip);
       chip.classList.add('open');
+      const rect = chip.getBoundingClientRect();
+      pop.style.left = rect.left + 'px';
+      pop.style.top = (rect.bottom + 6) + 'px';
       search.value = '';
       renderPop(chip, '');
       setTimeout(()=>search.focus(), 0);
