@@ -735,6 +735,103 @@
       height: 4px;
     }
 
+    /* ── TEAM VIEW (dentro do card expandido) ── */
+    .kpi-card.expanded.team-view { padding-top: 56px; }
+    .team-view-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: calc(85vh - 80px);
+    }
+    .team-view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .team-view-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: 0.2px;
+    }
+    .team-dropdown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #003DA5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .team-dropdown:hover { background: #002a73; }
+    .team-dropdown .td-arrow { font-size: 10px; opacity: 0.85; }
+    .team-dropdown-pop {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(15,23,42,0.18);
+      padding: 6px;
+      z-index: 10;
+      color: #0F172A;
+    }
+    .team-dropdown.open .team-dropdown-pop { display: block; }
+    .team-dropdown-pop .td-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      cursor: pointer;
+    }
+    .team-dropdown-pop .td-item:hover { background: #F1F5F9; }
+    .team-dropdown-pop .td-item.selected { color: #003DA5; font-weight: 700; background: #EEF4FF; }
+    .team-table-wrap {
+      overflow-y: auto;
+      border: 1px solid #E4E8F0;
+      border-radius: 10px;
+    }
+    .team-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .team-table thead th {
+      position: sticky;
+      top: 0;
+      background: #F8FAFC;
+      color: #475569;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      text-align: left;
+      padding: 9px 12px;
+      border-bottom: 1px solid #E4E8F0;
+    }
+    .team-table tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #F1F5F9;
+      color: #1a1a2e;
+    }
+    .team-table tbody tr:last-child td { border-bottom: none; }
+    .team-table tbody td.val { text-align: right; font-weight: 600; font-feature-settings: 'tnum'; }
+    .team-table tbody tr:hover { background: #F8FAFC; }
+
   </style>
 </head>
 <body>
