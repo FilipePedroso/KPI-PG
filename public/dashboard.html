@@ -1170,16 +1170,104 @@
     }
   });
 
-  // Card selection
-  document.querySelectorAll('.kpi-card').forEach(card => {
-    card.style.cursor = 'pointer';
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('.info-icon')) return;
-      card.classList.toggle('selected');
-      const anySelected = document.querySelector('.kpi-card.selected');
-      document.body.classList.toggle('has-selection', !!anySelected);
+  // Card expand/collapse with FLIP animation
+  (function(){
+    const backdrop = document.createElement('div');
+    backdrop.className = 'card-backdrop';
+    document.body.appendChild(backdrop);
+
+    let expandedCard = null;
+    let placeholder = null;
+
+    function collapseCard(){
+      if (!expandedCard) return;
+      const card = expandedCard;
+      const actions = card.querySelector('.card-actions');
+      if (actions) actions.remove();
+
+      const first = card.getBoundingClientRect();
+      card.classList.remove('expanded');
+      card.style.cssText = '';
+      if (placeholder) { placeholder.replaceWith(card); placeholder = null; }
+      const last = card.getBoundingClientRect();
+
+      const dx = first.left - last.left;
+      const dy = first.top  - last.top;
+      const sx = first.width  / last.width;
+      const sy = first.height / last.height;
+
+      card.style.transition = 'none';
+      card.style.transformOrigin = 'top left';
+      card.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+        card.style.transform = '';
+      });
+      setTimeout(() => { card.style.cssText = ''; }, 320);
+
+      backdrop.classList.remove('show');
+      expandedCard = null;
+    }
+
+    function expandCard(card){
+      if (expandedCard) collapseCard();
+
+      const first = card.getBoundingClientRect();
+      placeholder = document.createElement('div');
+      placeholder.style.width  = first.width  + 'px';
+      placeholder.style.height = first.height + 'px';
+      card.after(placeholder);
+
+      const targetW = Math.min(first.width * 2, window.innerWidth - 60);
+      card.classList.add('expanded');
+      card.style.width = targetW + 'px';
+      card.style.left  = ((window.innerWidth - targetW) / 2) + 'px';
+      card.style.top   = '50%';
+      card.style.transform = 'translateY(-50%)';
+
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+      actions.innerHTML =
+        '<button type="button" class="btn-action">' +
+          '<span class="list-icon"><span></span><span></span><span></span></span>' +
+          'Performance por equipe' +
+        '</button>' +
+        '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
+      card.appendChild(actions);
+      actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
+      actions.querySelector('.btn-action').addEventListener('click', (e)=>{ e.stopPropagation(); });
+
+      const last = card.getBoundingClientRect();
+      const dx = first.left - last.left;
+      const dy = first.top  - last.top;
+      const sx = first.width  / last.width;
+      const sy = first.height / last.height;
+
+      card.style.transition = 'none';
+      card.style.transformOrigin = 'top left';
+      card.style.transform = `translateY(-50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 0.32s cubic-bezier(0.4,0,0.2,1), box-shadow 0.32s ease';
+        card.style.transform = 'translateY(-50%)';
+      });
+
+      backdrop.classList.add('show');
+      expandedCard = card;
+    }
+
+    document.querySelectorAll('.kpi-card').forEach(card => {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.info-icon')) return;
+        if (e.target.closest('.card-actions')) return;
+        if (card.classList.contains('expanded')) return;
+        expandCard(card);
+      });
     });
-  });
+    backdrop.addEventListener('click', collapseCard);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') collapseCard(); });
+  })();
+
 </script>
 
 <script>
