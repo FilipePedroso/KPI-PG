@@ -1563,18 +1563,6 @@
       teamState = null;
     }
 
-    // Hook collapseCard to also clear teamState
-    const _origCollapse = collapseCard;
-    window.__collapseCard = function(){
-      if (teamState) {
-        document.removeEventListener('click', closeTeamDD);
-        teamState = null;
-      }
-      _origCollapse();
-    };
-    // override binding
-    backdrop.removeEventListener('click', collapseCard);
-    backdrop.addEventListener('click', () => window.__collapseCard());
   })();
 
 </script>
