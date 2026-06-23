@@ -1505,6 +1505,13 @@
       if (!window.dashboardAPI) return;
       const startH = card.getBoundingClientRect().height;
       const originalHTML = card.innerHTML;
+      // capture bar color from existing progress-fill so bars match the card theme
+      let barColor = '#003DA5';
+      const pf = card.querySelector('.progress-fill');
+      if (pf) {
+        const c = getComputedStyle(pf).backgroundColor;
+        if (c && c !== 'rgba(0, 0, 0, 0)') barColor = c;
+      }
       teamState = { card, originalHTML, field: 'cv' };
 
       // Build team view
@@ -1530,6 +1537,7 @@
       card.classList.add('team-view');
 
       const tableWrap = wrap.querySelector('#team-table-wrap');
+      tableWrap.dataset.barColor = barColor;
       renderTeamTable(tableWrap, teamState.field);
 
       // Dropdown logic
