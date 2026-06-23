@@ -1468,7 +1468,7 @@
         const pct = meta > 0 ? real / meta : 0;
         rows.push({ name, real, meta, gap, pct });
       });
-      return rows.sort((a, b) => b.real - a.real);
+      return rows.sort((a, b) => b.pct - a.pct);
     }
 
     function renderTeamTable(wrap, field){
