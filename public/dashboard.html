@@ -1249,6 +1249,25 @@
     return true;
   }
 
+  function fmtMoney(v){
+    const abs = Math.abs(v);
+    let s;
+    if (abs >= 1e9) s = (v/1e9).toFixed(2).replace('.',',')+'B';
+    else if (abs >= 1e6) s = (v/1e6).toFixed(2).replace('.',',')+'M';
+    else if (abs >= 1e3) s = (v/1e3).toFixed(1).replace('.',',')+'K';
+    else s = v.toFixed(0);
+    return 'R$ '+s;
+  }
+  function fmtPct(v){ return (v*100).toFixed(1).replace('.',',')+'%'; }
+
+  function recompute(){
+    const eligibleKeys = new Set();
+    rvEntries.forEach(r=>{
+      if (!passes(r)) return;
+      eligibleKeys.add(ck(r.rv, r.uf));
+    });
+
+
     const sums = {v:0, ec:0, sp:0, ali:0, far:0};
     vendas.forEach(x=>{
       if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
