@@ -1138,45 +1138,116 @@
   const vendas = data.vendas;   // [{rv,uf,v,ec,sp,ali,far}]
   const ck = (rv,uf) => String(rv)+'|'+String(uf);
 
-  // Populate filters
+  // ── Filtros: dropdown customizado (clique = único; Ctrl/Cmd = múltiplo) ──
   const uniq = (arr)=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
-  const fill = (id, vals) => {
-    const sel = document.getElementById(id);
-    vals.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+  const filterValues = {
+    uf: uniq(rvEntries.map(r=>r.uf)),
+    cv: uniq(rvEntries.map(r=>r.cv)),
+    sv: uniq(rvEntries.map(r=>r.sv)),
+    rv: uniq(rvEntries.map(r=>r.rvName)),
   };
-  fill('flt-uf', uniq(rvEntries.map(r=>r.uf)));
-  fill('flt-cv', uniq(rvEntries.map(r=>r.cv)));
-  fill('flt-sv', uniq(rvEntries.map(r=>r.sv)));
-  fill('flt-rv', uniq(rvEntries.map(r=>r.rvName)));
+  // Cada filtro guarda um Set de valores selecionados (vazio = todos)
+  const filters = { uf:new Set(), cv:new Set(), sv:new Set(), rv:new Set() };
 
-  const filters = {uf:'',cv:'',sv:'',rv:''};
-  document.querySelectorAll('select[data-filter]').forEach(sel=>{
-    sel.addEventListener('change', ()=>{
-      filters[sel.dataset.filter] = sel.value;
+  function updateChipLabel(chip){
+    const key = chip.dataset.filter;
+    const def = chip.dataset.defaultLabel;
+    const sel = filters[key];
+    const lbl = chip.querySelector('.chip-label');
+    if (sel.size === 0) lbl.textContent = def;
+    else if (sel.size === 1) lbl.textContent = [...sel][0];
+    else lbl.textContent = `${sel.size} selecionados`;
+  }
+
+  function renderPop(chip, search=''){
+    const key = chip.dataset.filter;
+    const pop = chip.querySelector('.filter-pop');
+    const list = pop.querySelector('.fp-list');
+    const q = search.trim().toLowerCase();
+    const all = filterValues[key];
+    const filtered = q ? all.filter(v=>String(v).toLowerCase().includes(q)) : all;
+    list.innerHTML = '';
+    // "Todos"
+    const allItem = document.createElement('div');
+    allItem.className = 'fp-item all' + (filters[key].size===0 ? ' selected' : '');
+    allItem.innerHTML = '<span class="fp-radio"></span><span>Todos</span>';
+    allItem.addEventListener('click', ()=>{
+      filters[key].clear();
+      updateChipLabel(chip);
+      renderPop(chip, pop.querySelector('.fp-search').value);
       recompute();
     });
+    list.appendChild(allItem);
+    if (filtered.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'fp-empty';
+      empty.textContent = 'Nenhum resultado';
+      list.appendChild(empty);
+      return;
+    }
+    filtered.forEach(v=>{
+      const it = document.createElement('div');
+      const isSel = filters[key].has(v);
+      it.className = 'fp-item' + (isSel ? ' selected' : '');
+      it.innerHTML = `<span class="fp-radio"></span><span>${v}</span>`;
+      it.addEventListener('click', (e)=>{
+        const multi = e.ctrlKey || e.metaKey;
+        if (multi) {
+          if (filters[key].has(v)) filters[key].delete(v);
+          else filters[key].add(v);
+        } else {
+          // Seleção única: substitui
+          filters[key].clear();
+          filters[key].add(v);
+        }
+        updateChipLabel(chip);
+        renderPop(chip, pop.querySelector('.fp-search').value);
+        recompute();
+      });
+      list.appendChild(it);
+    });
+  }
+
+  function closeAllPops(except){
+    document.querySelectorAll('.filter-chip.open').forEach(c=>{
+      if (c !== except) c.classList.remove('open');
+    });
+  }
+
+  document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>{
+    // monta o popover uma única vez
+    const pop = document.createElement('div');
+    pop.className = 'filter-pop';
+    pop.innerHTML = '<input type="text" class="fp-search" placeholder="Buscar..." /><div class="fp-list"></div>';
+    chip.appendChild(pop);
+    pop.addEventListener('click', e=>e.stopPropagation());
+    const search = pop.querySelector('.fp-search');
+    search.addEventListener('input', ()=>renderPop(chip, search.value));
+
+    chip.addEventListener('click', (e)=>{
+      if (chip.classList.contains('open')) return;
+      closeAllPops(chip);
+      chip.classList.add('open');
+      search.value = '';
+      renderPop(chip, '');
+      setTimeout(()=>search.focus(), 0);
+    });
+    updateChipLabel(chip);
   });
 
-  function fmtMoney(v){
-    const abs = Math.abs(v);
-    let s;
-    if (abs >= 1e9) s = (v/1e9).toFixed(2).replace('.',',')+'B';
-    else if (abs >= 1e6) s = (v/1e6).toFixed(2).replace('.',',')+'M';
-    else if (abs >= 1e3) s = (v/1e3).toFixed(1).replace('.',',')+'K';
-    else s = v.toFixed(0);
-    return 'R$ '+s;
-  }
-  function fmtPct(v){ return (v*100).toFixed(1).replace('.',',')+'%'; }
+  document.addEventListener('click', (e)=>{
+    if (!e.target.closest('.filter-chip')) closeAllPops(null);
+  });
 
-  function recompute(){
-    const eligibleKeys = new Set();
-    rvEntries.forEach(r=>{
-      if (filters.uf && r.uf !== filters.uf) return;
-      if (filters.cv && r.cv !== filters.cv) return;
-      if (filters.sv && r.sv !== filters.sv) return;
-      if (filters.rv && r.rvName !== filters.rv) return;
-      eligibleKeys.add(ck(r.rv, r.uf));
-    });
+  function fmt(){} // (mantém escopo abaixo)
+
+  function passes(r){
+    if (filters.uf.size && !filters.uf.has(r.uf)) return false;
+    if (filters.cv.size && !filters.cv.has(r.cv)) return false;
+    if (filters.sv.size && !filters.sv.has(r.sv)) return false;
+    if (filters.rv.size && !filters.rv.has(r.rvName)) return false;
+    return true;
+  }
 
     const sums = {v:0, ec:0, sp:0, ali:0, far:0};
     vendas.forEach(x=>{
