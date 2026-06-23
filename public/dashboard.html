@@ -1227,6 +1227,9 @@
       if (chip.classList.contains('open')) return;
       closeAllPops(chip);
       chip.classList.add('open');
+      const rect = chip.getBoundingClientRect();
+      pop.style.left = rect.left + 'px';
+      pop.style.top = (rect.bottom + 6) + 'px';
       search.value = '';
       renderPop(chip, '');
       setTimeout(()=>search.focus(), 0);
