@@ -1270,6 +1270,12 @@
     updateChipLabel(chip);
   });
 
+  document.getElementById('clear-filters').addEventListener('click', ()=>{
+    Object.values(filters).forEach(s => s.clear());
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>updateChipLabel(chip));
+    recompute();
+  });
+
   document.addEventListener('click', (e)=>{
     if (!e.target.closest('.filter-chip')) closeAllPops(null);
   });
