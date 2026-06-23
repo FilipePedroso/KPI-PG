@@ -735,6 +735,103 @@
       height: 4px;
     }
 
+    /* ── TEAM VIEW (dentro do card expandido) ── */
+    .kpi-card.expanded.team-view { padding-top: 56px; }
+    .team-view-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: calc(85vh - 80px);
+    }
+    .team-view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .team-view-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: 0.2px;
+    }
+    .team-dropdown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #003DA5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .team-dropdown:hover { background: #002a73; }
+    .team-dropdown .td-arrow { font-size: 10px; opacity: 0.85; }
+    .team-dropdown-pop {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(15,23,42,0.18);
+      padding: 6px;
+      z-index: 10;
+      color: #0F172A;
+    }
+    .team-dropdown.open .team-dropdown-pop { display: block; }
+    .team-dropdown-pop .td-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      cursor: pointer;
+    }
+    .team-dropdown-pop .td-item:hover { background: #F1F5F9; }
+    .team-dropdown-pop .td-item.selected { color: #003DA5; font-weight: 700; background: #EEF4FF; }
+    .team-table-wrap {
+      overflow-y: auto;
+      border: 1px solid #E4E8F0;
+      border-radius: 10px;
+    }
+    .team-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .team-table thead th {
+      position: sticky;
+      top: 0;
+      background: #F8FAFC;
+      color: #475569;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      text-align: left;
+      padding: 9px 12px;
+      border-bottom: 1px solid #E4E8F0;
+    }
+    .team-table tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #F1F5F9;
+      color: #1a1a2e;
+    }
+    .team-table tbody tr:last-child td { border-bottom: none; }
+    .team-table tbody td.val { text-align: right; font-weight: 600; font-feature-settings: 'tnum'; }
+    .team-table tbody tr:hover { background: #F8FAFC; }
+
   </style>
 </head>
 <body>
@@ -1198,6 +1295,13 @@
     function collapseCard(){
       if (!expandedCard) return;
       const card = expandedCard;
+      // If team-view is open, restore original innerHTML first so collapse animates correctly
+      if (typeof teamState !== 'undefined' && teamState && teamState.card === card) {
+        card.classList.remove('team-view');
+        card.innerHTML = teamState.originalHTML;
+        document.removeEventListener('click', closeTeamDD);
+        teamState = null;
+      }
       const actions = card.querySelector('.card-actions');
       if (actions) actions.remove();
 
@@ -1251,7 +1355,10 @@
         '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
       card.appendChild(actions);
       actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
-      actions.querySelector('.btn-action').addEventListener('click', (e)=>{ e.stopPropagation(); });
+      actions.querySelector('.btn-action').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if (card.id === 'card-fat-total') openTeamView(card, actions);
+      });
 
       const last = card.getBoundingClientRect();
       const dx = first.left - last.left;
@@ -1280,8 +1387,182 @@
         expandCard(card);
       });
     });
-    backdrop.addEventListener('click', collapseCard);
+    backdrop.addEventListener('click', () => { collapseCard(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') collapseCard(); });
+
+    // ── Team-view feature (somente card Total de Faturamento) ──
+    const FIELDS = [
+      { key: 'cv', label: 'Gerente' },
+      { key: 'sv', label: 'Supervisor' },
+      { key: 'rv', label: 'Vendedor' },
+    ];
+    let teamState = null; // { card, originalHTML, originalActions, field }
+
+    function buildTeamRows(field){
+      const api = window.dashboardAPI;
+      if (!api) return [];
+      const groupMap = new Map(); // name -> Set of ck
+      api.rvEntries.forEach(r => {
+        if (!api.passes(r)) return;
+        const name = field === 'rv' ? r.rvName : r[field];
+        if (!name) return;
+        if (!groupMap.has(name)) groupMap.set(name, new Set());
+        groupMap.get(name).add(api.ck(r.rv, r.uf));
+      });
+      const totals = new Map();
+      api.vendas.forEach(x => {
+        const k = api.ck(x.rv, x.uf);
+        groupMap.forEach((keys, name) => {
+          if (keys.has(k)) totals.set(name, (totals.get(name) || 0) + (x.v || 0));
+        });
+      });
+      return [...totals.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, v]) => ({ name, v }));
+    }
+
+    function renderTeamTable(wrap, field){
+      const fieldDef = FIELDS.find(f => f.key === field);
+      const rows = buildTeamRows(field);
+      const api = window.dashboardAPI;
+      const body = rows.map(r =>
+        `<tr><td>${r.name}</td><td class="val">${api ? api.fmtMoney(r.v) : r.v}</td></tr>`
+      ).join('') || `<tr><td colspan="2" style="text-align:center;color:#94A3B8;padding:18px;">Sem dados</td></tr>`;
+      wrap.innerHTML =
+        `<table class="team-table">
+          <thead><tr><th>${fieldDef.label}</th><th style="text-align:right;">Total</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+    }
+
+    function openTeamView(card, actions){
+      if (!window.dashboardAPI) return;
+      const startH = card.getBoundingClientRect().height;
+      const originalHTML = card.innerHTML;
+      teamState = { card, originalHTML, field: 'cv' };
+
+      // Build team view
+      card.innerHTML = '';
+      const newActions = document.createElement('div');
+      newActions.className = 'card-actions';
+      newActions.innerHTML =
+        '<div class="team-dropdown" id="team-dd">' +
+          '<span class="td-label">Gerente</span><span class="td-arrow">▾</span>' +
+          '<div class="team-dropdown-pop">' +
+            FIELDS.map(f => `<div class="td-item" data-field="${f.key}">${f.label}</div>`).join('') +
+          '</div>' +
+        '</div>' +
+        '<button type="button" class="btn-close" id="team-back" aria-label="Voltar">&times;</button>';
+      card.appendChild(newActions);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'team-view-wrap';
+      wrap.innerHTML =
+        '<div class="team-view-header"><div class="team-view-title">Faturamento Total por Equipe</div></div>' +
+        '<div class="team-table-wrap" id="team-table-wrap"></div>';
+      card.appendChild(wrap);
+      card.classList.add('team-view');
+
+      const tableWrap = wrap.querySelector('#team-table-wrap');
+      renderTeamTable(tableWrap, teamState.field);
+
+      // Dropdown logic
+      const dd = newActions.querySelector('#team-dd');
+      const ddLabel = dd.querySelector('.td-label');
+      dd.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dd.classList.toggle('open');
+        // mark selected
+        dd.querySelectorAll('.td-item').forEach(it => {
+          it.classList.toggle('selected', it.dataset.field === teamState.field);
+        });
+      });
+      dd.querySelectorAll('.td-item').forEach(it => {
+        it.addEventListener('click', (e) => {
+          e.stopPropagation();
+          teamState.field = it.dataset.field;
+          ddLabel.textContent = FIELDS.find(f => f.key === teamState.field).label;
+          dd.classList.remove('open');
+          renderTeamTable(tableWrap, teamState.field);
+        });
+      });
+      document.addEventListener('click', closeTeamDD);
+
+      // Back button restores original card
+      newActions.querySelector('#team-back').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTeamView();
+      });
+
+      // Smooth height expand
+      card.style.height = startH + 'px';
+      card.style.overflow = 'hidden';
+      // measure target height
+      card.style.transition = 'none';
+      const prevH = card.style.height;
+      card.style.height = 'auto';
+      const targetH = card.getBoundingClientRect().height;
+      card.style.height = prevH;
+      // animate
+      requestAnimationFrame(() => {
+        card.style.transition = 'height 0.32s cubic-bezier(0.4,0,0.2,1), transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+        card.style.height = targetH + 'px';
+        // keep vertically centered
+        card.style.top = '50%';
+        card.style.transform = 'translateY(-50%)';
+      });
+      setTimeout(() => {
+        if (teamState && teamState.card === card) {
+          card.style.height = '';
+          card.style.overflow = '';
+        }
+      }, 360);
+    }
+
+    function closeTeamDD(e){
+      if (!teamState) return;
+      const dd = teamState.card.querySelector('#team-dd');
+      if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+    }
+
+    function closeTeamView(){
+      if (!teamState) return;
+      const { card, originalHTML } = teamState;
+      const startH = card.getBoundingClientRect().height;
+      document.removeEventListener('click', closeTeamDD);
+      card.classList.remove('team-view');
+      card.innerHTML = originalHTML;
+
+      // rebind actions on restored content
+      const actions = card.querySelector('.card-actions');
+      if (actions) {
+        actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
+        const btn = actions.querySelector('.btn-action');
+        if (btn) btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          if (card.id === 'card-fat-total') openTeamView(card, actions);
+        });
+      }
+
+      // measure natural height and animate back
+      card.style.transition = 'none';
+      card.style.height = 'auto';
+      card.style.overflow = 'hidden';
+      const targetH = card.getBoundingClientRect().height;
+      card.style.height = startH + 'px';
+      requestAnimationFrame(() => {
+        card.style.transition = 'height 0.3s cubic-bezier(0.4,0,0.2,1)';
+        card.style.height = targetH + 'px';
+      });
+      setTimeout(() => {
+        card.style.height = '';
+        card.style.overflow = '';
+        card.style.transition = '';
+      }, 340);
+
+      teamState = null;
+    }
+
   })();
 
 </script>
@@ -1494,6 +1775,7 @@
     paint('card-fat-far',   sums.far, metaSums.far);
   }
 
+  window.dashboardAPI = { rvEntries, vendas, metas, passes, ck, fmtMoney };
   recompute();
 })();
 </script>
