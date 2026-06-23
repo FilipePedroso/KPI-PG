@@ -1195,9 +1195,13 @@
           if (filters[key].has(v)) filters[key].delete(v);
           else filters[key].add(v);
         } else {
-          // Seleção única: substitui
-          filters[key].clear();
-          filters[key].add(v);
+          // Seleção única: toggle (desseleciona se já era o único selecionado)
+          if (filters[key].has(v) && filters[key].size === 1) {
+            filters[key].clear();
+          } else {
+            filters[key].clear();
+            filters[key].add(v);
+          }
         }
         updateChipLabel(chip);
         renderPop(chip, pop.querySelector('.fp-search').value);
