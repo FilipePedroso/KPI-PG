@@ -1348,7 +1348,10 @@
         '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
       card.appendChild(actions);
       actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
-      actions.querySelector('.btn-action').addEventListener('click', (e)=>{ e.stopPropagation(); });
+      actions.querySelector('.btn-action').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if (card.id === 'card-fat-total') openTeamView(card, actions);
+      });
 
       const last = card.getBoundingClientRect();
       const dx = first.left - last.left;
