@@ -832,12 +832,40 @@
     .team-table tbody td.val { text-align: right; font-weight: 600; font-feature-settings: 'tnum'; }
     .team-table tbody tr:hover { background: #F8FAFC; }
 
+    /* Team bars (progress list) */
+    .team-bars { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 6px; }
+    .team-bar-item {
+      background: #FFFFFF; border: 1px solid #E4E8F0; border-radius: 10px;
+      padding: 10px 12px; box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .team-bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .team-bar-name {
+      font-size: 13px; font-weight: 700; color: #0F172A;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;
+    }
+    .team-bar-pct { font-size: 12px; font-weight: 700; color: #1a1a2e; font-feature-settings: 'tnum'; }
+    .team-bar-meta {
+      margin-top: 4px; font-size: 11px; color: #475569;
+      display: flex; flex-wrap: wrap; gap: 4px 12px;
+    }
+    .team-bar-meta span { white-space: nowrap; }
+    .team-bar-meta b { font-weight: 600; color: #1a1a2e; font-feature-settings: 'tnum'; }
+    .team-bar-meta .gap-val { color: #DC2626; font-weight: 700; }
+    .team-bar-track {
+      margin-top: 8px; height: 8px; border-radius: 999px; background: #E4E8F0; overflow: hidden;
+    }
+    .team-bar-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 0.4s ease; }
+    .team-bars-empty { text-align: center; color: #94A3B8; padding: 18px; font-size: 12px; }
+
     @media (max-width: 640px) {
       .team-view-title { font-size: 11px; }
       .team-dropdown { font-size: 11px; padding: 6px 10px; }
       .team-table { font-size: 11px; }
       .team-table thead th { font-size: 10px; padding: 7px 8px; }
       .team-table tbody td { padding: 7px 8px; }
+      .team-bar-name { font-size: 12px; }
+      .team-bar-pct { font-size: 11px; }
+      .team-bar-meta { font-size: 10px; gap: 2px 10px; }
     }
 
   </style>
