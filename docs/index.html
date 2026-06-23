@@ -119,6 +119,30 @@
     }
     .filter-chip.open .chip-arrow { transform: rotate(180deg); }
 
+    .clear-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      padding: 6px 14px 6px 10px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      font: inherit;
+      color: rgba(255,255,255,0.95);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .clear-btn:hover {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.35);
+    }
+    .clear-btn i {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+    }
+
     /* Dropdown popover */
     .filter-pop {
       position: fixed;
@@ -694,6 +718,11 @@
         <span class="chip-arrow">▾</span>
       </div>
 
+      <button class="clear-btn" id="clear-filters" title="Limpar filtros">
+        <i class="ti ti-x" aria-hidden="true"></i>
+        <span>Limpar</span>
+      </button>
+
     </div>
   </div>
 
@@ -1239,6 +1268,12 @@
       setTimeout(()=>search.focus(), 0);
     });
     updateChipLabel(chip);
+  });
+
+  document.getElementById('clear-filters').addEventListener('click', ()=>{
+    Object.values(filters).forEach(s => s.clear());
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>updateChipLabel(chip));
+    recompute();
   });
 
   document.addEventListener('click', (e)=>{
