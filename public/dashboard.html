@@ -1295,6 +1295,13 @@
     function collapseCard(){
       if (!expandedCard) return;
       const card = expandedCard;
+      // If team-view is open, restore original innerHTML first so collapse animates correctly
+      if (typeof teamState !== 'undefined' && teamState && teamState.card === card) {
+        card.classList.remove('team-view');
+        card.innerHTML = teamState.originalHTML;
+        document.removeEventListener('click', closeTeamDD);
+        teamState = null;
+      }
       const actions = card.querySelector('.card-actions');
       if (actions) actions.remove();
 
