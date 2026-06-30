@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Comercial — P&G</title>
+  <script>
+    // Evita que o navegador restaure a posição de rolagem anterior
+    // (causa de a página aparecer "rolada para baixo" ao recarregar).
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    window.addEventListener('load', () => window.scrollTo(0, 0));
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
   <style>
