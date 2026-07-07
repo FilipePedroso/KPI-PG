@@ -1616,6 +1616,12 @@
         closeTeamView();
       });
 
+      // Export CSV
+      newActions.querySelector('#team-export').addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportTeamCSV(teamState.field);
+      });
+
       // Smooth height expand
       card.style.height = startH + 'px';
       card.style.overflow = 'hidden';
