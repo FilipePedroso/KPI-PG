@@ -1532,8 +1532,9 @@
       }, 360);
     }
 
-
+    function openTeamView(card, actions){
       if (!window.dashboardAPI) return;
+
       const startH = card.getBoundingClientRect().height;
       const originalHTML = card.innerHTML;
       // capture bar color from existing progress-fill so bars match the card theme
