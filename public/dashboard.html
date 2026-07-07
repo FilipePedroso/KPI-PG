@@ -1668,10 +1668,20 @@
         closeTeamView();
       });
 
-      // Export CSV
-      newActions.querySelector('#team-export').addEventListener('click', (e) => {
+      // Export dropdown (CSV / PDF)
+      const exportMenu = newActions.querySelector('#team-export');
+      exportMenu.querySelector('.btn-icon').addEventListener('click', (e) => {
         e.stopPropagation();
-        exportTeamCSV(teamState.field);
+        exportMenu.classList.toggle('open');
+      });
+      exportMenu.querySelectorAll('.em-item').forEach(it => {
+        it.addEventListener('click', (e) => {
+          e.stopPropagation();
+          exportMenu.classList.remove('open');
+          const fmt = it.dataset.fmt;
+          if (fmt === 'csv') exportTeamCSV(teamState.field);
+          else if (fmt === 'pdf') exportTeamPDF(teamState.field);
+        });
       });
 
       // Smooth height expand
