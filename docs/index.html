@@ -743,6 +743,19 @@
     }
     .card-actions .btn-icon:hover { background: #E2E8F0; }
     .card-actions .btn-icon svg { width: 16px; height: 16px; display: block; }
+    .export-menu { position: relative; display: inline-block; }
+    .export-menu-pop {
+      display: none; position: absolute; top: calc(100% + 6px); right: 0;
+      background: #fff; border: 1px solid #E2E8F0; border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(15,23,42,0.12);
+      min-width: 120px; z-index: 20; overflow: hidden;
+    }
+    .export-menu.open .export-menu-pop { display: block; }
+    .export-menu-pop .em-item {
+      padding: 8px 12px; font-size: 12px; font-weight: 600;
+      color: #0F172A; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    }
+    .export-menu-pop .em-item:hover { background: #F1F5F9; }
 
     /* ── SEPARADOR DE SEÇÕES ── */
     .section-gap {
@@ -1291,6 +1304,9 @@
   <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
 </template>
 
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
 <script>
   // Section toggle
   document.querySelectorAll('.section-header').forEach(header => {
@@ -1542,6 +1558,38 @@
       URL.revokeObjectURL(url);
     }
 
+    function exportTeamPDF(field){
+      const rows = buildTeamRows(field);
+      if (!rows.length) return;
+      const api = window.dashboardAPI;
+      const fmt = api ? api.fmtMoney : (v)=>String(v);
+      const fieldLabel = ({cv:'Gerente', sv:'Supervisor', rv:'Vendedor'})[field] || 'Nome';
+      const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (!jsPDFCtor) { alert('Falha ao carregar gerador de PDF'); return; }
+      const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const title = 'Faturamento Total por ' + fieldLabel;
+      doc.setFontSize(14); doc.setTextColor(15, 23, 42);
+      doc.text(title, 40, 40);
+      doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 40, 56);
+      const body = rows.map(r => [
+        r.name, fmt(r.meta), fmt(r.real), fmt(r.gap),
+        (r.pct * 100).toFixed(1).replace('.', ',') + '%'
+      ]);
+      doc.autoTable({
+        head: [[fieldLabel, 'Meta', 'Realizado', 'Gap', '%']],
+        body, startY: 72,
+        styles: { fontSize: 9, cellPadding: 6 },
+        headStyles: { fillColor: [0, 61, 165], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [241, 245, 249] },
+        columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'} },
+      });
+      const ts = new Date().toISOString().slice(0,10);
+      doc.save('faturamento-total-por-' + fieldLabel.toLowerCase() + '-' + ts + '.pdf');
+    }
+
+
+
 
 
     function animateTeamRender(card, wrap, field){
@@ -1595,13 +1643,19 @@
             FIELDS.map(f => `<div class="td-item" data-field="${f.key}">${f.label}</div>`).join('') +
           '</div>' +
         '</div>' +
-        '<button type="button" class="btn-icon" id="team-export" aria-label="Extrair CSV" title="Extrair CSV">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
-            '<polyline points="7 10 12 15 17 10"/>' +
-            '<line x1="12" y1="15" x2="12" y2="3"/>' +
-          '</svg>' +
-        '</button>' +
+        '<div class="export-menu" id="team-export">' +
+          '<button type="button" class="btn-icon" aria-label="Extrair" title="Extrair">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+              '<polyline points="7 10 12 15 17 10"/>' +
+              '<line x1="12" y1="15" x2="12" y2="3"/>' +
+            '</svg>' +
+          '</button>' +
+          '<div class="export-menu-pop">' +
+            '<div class="em-item" data-fmt="csv">CSV</div>' +
+            '<div class="em-item" data-fmt="pdf">PDF</div>' +
+          '</div>' +
+        '</div>' +
         '<button type="button" class="btn-close" id="team-back" aria-label="Voltar">&times;</button>';
       card.appendChild(newActions);
 
@@ -1646,10 +1700,20 @@
         closeTeamView();
       });
 
-      // Export CSV
-      newActions.querySelector('#team-export').addEventListener('click', (e) => {
+      // Export dropdown (CSV / PDF)
+      const exportMenu = newActions.querySelector('#team-export');
+      exportMenu.querySelector('.btn-icon').addEventListener('click', (e) => {
         e.stopPropagation();
-        exportTeamCSV(teamState.field);
+        exportMenu.classList.toggle('open');
+      });
+      exportMenu.querySelectorAll('.em-item').forEach(it => {
+        it.addEventListener('click', (e) => {
+          e.stopPropagation();
+          exportMenu.classList.remove('open');
+          const fmt = it.dataset.fmt;
+          if (fmt === 'csv') exportTeamCSV(teamState.field);
+          else if (fmt === 'pdf') exportTeamPDF(teamState.field);
+        });
       });
 
       // Smooth height expand
@@ -1681,6 +1745,8 @@
       if (!teamState) return;
       const dd = teamState.card.querySelector('#team-dd');
       if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+      const em = teamState.card.querySelector('#team-export');
+      if (em && !em.contains(e.target)) em.classList.remove('open');
     }
 
     function closeTeamView(){
