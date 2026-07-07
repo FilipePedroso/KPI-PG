@@ -1506,8 +1506,33 @@
       }).join('') + '</div>';
     }
 
+    function animateTeamRender(card, wrap, field){
+      const startH = card.getBoundingClientRect().height;
+      card.style.transition = 'none';
+      card.style.height = 'auto';
+      card.style.overflow = 'hidden';
+      renderTeamTable(wrap, field);
+      const targetH = card.getBoundingClientRect().height;
+      card.style.height = startH + 'px';
+      // fade transition on bars
+      const bars = wrap.querySelector('.team-bars');
+      if (bars) { bars.style.opacity = '0'; bars.style.transition = 'opacity 0.25s ease'; }
+      requestAnimationFrame(() => {
+        card.style.transition = 'height 0.32s cubic-bezier(0.4,0,0.2,1), transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+        card.style.height = targetH + 'px';
+        card.style.top = '50%';
+        card.style.transform = 'translateY(-50%)';
+        if (bars) requestAnimationFrame(() => { bars.style.opacity = '1'; });
+      });
+      setTimeout(() => {
+        card.style.height = '';
+        card.style.overflow = '';
+        card.style.transition = '';
+        if (bars) { bars.style.transition = ''; bars.style.opacity = ''; }
+      }, 360);
+    }
 
-    function openTeamView(card, actions){
+
       if (!window.dashboardAPI) return;
       const startH = card.getBoundingClientRect().height;
       const originalHTML = card.innerHTML;
