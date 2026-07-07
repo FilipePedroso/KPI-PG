@@ -1563,9 +1563,10 @@
           teamState.field = it.dataset.field;
           ddLabel.textContent = FIELDS.find(f => f.key === teamState.field).label;
           dd.classList.remove('open');
-          renderTeamTable(tableWrap, teamState.field);
+          animateTeamRender(card, tableWrap, teamState.field);
         });
       });
+
       document.addEventListener('click', closeTeamDD);
 
       // Back button restores original card
