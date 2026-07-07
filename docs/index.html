@@ -12,9 +12,869 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      background: #F5F7FA;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      color: #1a1a2e;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #003DA5 0%, #0057CC 60%, #1976D2 100%);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 28px 14px;
+    }
+    .header-title-group { text-align: center; }
+
+
+    .pg-logo {
+      width: 40px; height: 40px;
+      background: #fff;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: #003DA5;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+      margin-right: 14px;
+    }
+
+    .header-title-group h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.2px;
+    }
+
+    .header-title-group p {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* ── FILTROS CHIP ── */
+    .filters-bar {
+      padding: 10px 28px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      padding: 6px 14px 6px 12px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      position: relative;
+      user-select: none;
+      font: inherit;
+      color: inherit;
+      flex-shrink: 0;
+    }
+    .filter-chip.active {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.4);
+    }
+    .filter-chip:hover {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.35);
+    }
+    .filter-chip .chip-icon {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .filter-chip .chip-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.95);
+      white-space: nowrap;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      flex: 1 1 auto;
+    }
+
+    .filter-chip .chip-arrow {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      margin-left: 1px;
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+    .filter-chip.open .chip-arrow { transform: rotate(180deg); }
+
+    .clear-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      padding: 6px 14px 6px 10px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      font: inherit;
+      color: rgba(255,255,255,0.95);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .clear-btn:hover {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.35);
+    }
+    .clear-btn i {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* Dropdown popover */
+    .filter-pop {
+      position: fixed;
+      top: 0; left: 0;
+      min-width: 220px;
+      max-width: 280px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      box-shadow: 0 12px 32px rgba(15,23,42,0.18);
+      padding: 8px;
+      z-index: 50;
+      display: none;
+      color: #0F172A;
+    }
+    .filter-chip.open .filter-pop { display: block; }
+    .filter-pop .fp-search {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+      outline: none;
+      margin-bottom: 6px;
+    }
+    .filter-pop .fp-search:focus { border-color: #94A3B8; }
+    .filter-pop .fp-list {
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+    .filter-pop .fp-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      letter-spacing: 0.2px;
+    }
+    .filter-pop .fp-item:hover { background: #F1F5F9; }
+    .filter-pop .fp-item.all {
+      color: #64748B;
+      font-weight: 600;
+      border-bottom: 1px solid #E2E8F0;
+      border-radius: 0;
+      margin-bottom: 4px;
+    }
+    .filter-pop .fp-radio {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid #CBD5E1;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      background: #fff;
+    }
+    .filter-pop .fp-item.selected .fp-radio {
+      border-color: #2563EB;
+      background: #2563EB;
+    }
+    .filter-pop .fp-item.selected .fp-radio::after {
+      content: "";
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #fff;
+    }
+    .filter-pop .fp-item.selected { color: #0F172A; }
+    .filter-pop .fp-empty {
+      padding: 12px;
+      text-align: center;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    /* ── SEÇÃO ── */
+    .section-container {
+      padding: 20px 28px 28px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .section-header {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .section-toggle-arrow {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .section-toggle-arrow svg {
+      width: 12px;
+      height: 12px;
+      fill: none;
+      stroke: #6B7A99;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .section-header.collapsed .section-toggle-arrow {
+      transform: rotate(-90deg);
+    }
+
+    .cards-row {
+      display: grid;
+      max-height: 2000px;
+      opacity: 1;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.25s ease,
+                  margin-bottom 0.3s ease;
+    }
+
+    .cards-row.hidden {
+      max-height: 0;
+      opacity: 0;
+      margin-bottom: -8px;
+    }
+
+
+    .section-pill {
+      background: #003DA5;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: #D8DCE8;
+    }
+
+    /* ── CARDS ── */
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .cards-row-3 {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    @media (max-width: 1024px) {
+      .cards-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .cards-row-3 {
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .cards-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .cards-row-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+
+      .header-top {
+        padding: 14px 16px 10px;
+      }
+
+      .header-title-group h1 {
+        font-size: 13px;
+      }
+
+      .filters-bar {
+        padding: 8px 16px 12px;
+        gap: 5px;
+      }
+
+      .section-container {
+        padding: 16px 16px 20px;
+      }
+
+      .kpi-value {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .cards-row {
+        grid-template-columns: 1fr;
+      }
+      .cards-row-3 {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #E4E8F0;
+      padding: 16px 14px 14px;
+      position: relative;
+      transition: box-shadow 0.2s, transform 0.15s;
+      overflow: hidden;
+    }
+
+
+    .info-icon {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid #CBD5E1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #94A3B8;
+      font-size: 9px;
+      font-weight: 700;
+      font-style: italic;
+      font-family: Georgia, serif;
+      line-height: 1;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .info-icon:hover {
+      border-color: #003DA5;
+      color: #003DA5;
+      background: #EEF2FF;
+    }
+
+    .info-tooltip {
+      display: none;
+      position: fixed;
+      width: 220px;
+      background: #fff;
+      border: 1px solid #E4E8F0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+      padding: 12px 14px;
+      z-index: 9999;
+      text-align: left;
+      pointer-events: none;
+    }
+
+    .info-tooltip.visible {
+      display: block;
+    }
+
+
+
+    .info-tooltip-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6B7A99;
+      margin-bottom: 6px;
+    }
+
+    .info-tooltip-title:not(:first-child) {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #F1F5F9;
+    }
+
+    .info-tooltip-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #334155;
+      padding: 2px 0;
+    }
+
+    .info-tooltip-item .tip-check {
+      font-size: 10px;
+      color: #059669;
+      flex-shrink: 0;
+      font-style: normal;
+    }
+
+    .info-tooltip-item .tip-x {
+      font-size: 10px;
+      color: #DC2626;
+      flex-shrink: 0;
+      font-style: normal;
+    }
+
+
+    .kpi-card:hover {
+      box-shadow: 0 4px 16px rgba(0,61,165,0.10);
+      transform: translateY(-1px);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    /* Faturamento */
+    .fat-total::before      { background: #003DA5; }
+    .fat-numerica::before   { background: #0EA5E9; }
+    .fat-ponderada::before  { background: #7C3AED; }
+    .fat-alimentar::before  { background: #059669; }
+    .fat-farma::before      { background: #D97706; }
+
+    .fat-total .progress-fill      { background: #003DA5; }
+    .fat-numerica .progress-fill   { background: #0EA5E9; }
+    .fat-ponderada .progress-fill  { background: #7C3AED; }
+    .fat-alimentar .progress-fill  { background: #059669; }
+    .fat-farma .progress-fill      { background: #D97706; }
+
+    /* Positivação — mesmas cores, prefixo pos- */
+    .pos-total::before      { background: #003DA5; }
+    .pos-numerica::before   { background: #0EA5E9; }
+    .pos-ponderada::before  { background: #7C3AED; }
+    .pos-alimentar::before  { background: #059669; }
+    .pos-farma::before      { background: #D97706; }
+
+    .pos-total .progress-fill      { background: #003DA5; }
+    .pos-numerica .progress-fill   { background: #0EA5E9; }
+    .pos-ponderada .progress-fill  { background: #7C3AED; }
+    .pos-alimentar .progress-fill  { background: #059669; }
+    .pos-farma .progress-fill      { background: #D97706; }
+
+    .card-title {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #6B7A99;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.3;
+      margin-bottom: 10px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0F1733;
+      line-height: 1;
+      margin-bottom: 2px;
+      letter-spacing: -0.5px;
+    }
+
+    .kpi-meta {
+      font-size: 10.5px;
+      color: #94A3B8;
+      margin-bottom: 2px;
+    }
+
+    .kpi-meta + .bar-header,
+    .kpi-meta:last-of-type {
+      margin-bottom: 10px;
+    }
+
+    .kpi-meta span {
+      font-weight: 600;
+      color: #64748B;
+    }
+
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .bar-label {
+      font-size: 10px;
+      color: #94A3B8;
+      font-weight: 500;
+    }
+
+    .bar-pct {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0F1733;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: #EEF2F8;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 9px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .progress-track-pot {
+      height: 6px;
+      background: #F1F5F9;
+      border-radius: 99px;
+      overflow: visible;
+      margin-bottom: 9px;
+      position: relative;
+    }
+
+    .progress-track-pot .meta-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 12px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 2px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .tags-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 3px 7px;
+      border-radius: 99px;
+      line-height: 1;
+    }
+
+    .tag.below   { background: #FEE2E2; color: #991B1B; }
+    .tag.above   { background: #D1FAE5; color: #065F46; }
+    .tag.neutral { background: #F1F5F9; color: #475569; }
+    .tag.warn    { background: #FEF3C7; color: #92400E; }
+
+
+    /* ── TOOLTIP SYSTEM ── */
+    #floating-tooltip {
+      display: none;
+      position: fixed;
+      width: 270px;
+      background: #fff;
+      border: 1px solid #E4E8F0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+      padding: 12px 14px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    #floating-tooltip.show { display: block; }
+
+    .tip-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6B7A99;
+      margin-bottom: 6px;
+    }
+
+    .tip-title + .tip-title,
+    .tip-title:not(:first-child) {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #F1F5F9;
+    }
+
+    .tip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #334155;
+      padding: 2px 0;
+      white-space: nowrap;
+    }
+
+    .tip-ok  { color: #059669; font-weight: 700; }
+    .tip-no  { color: #DC2626; font-weight: 700; }
+
+    /* ── EXPANSÃO DE CARDS (FLIP) ── */
+    .kpi-card.expanded {
+      position: fixed;
+      z-index: 1200;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+      padding-top: 56px;
+      max-width: 470px;
+    }
+    .card-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      z-index: 1100;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .card-backdrop.show { display: block; opacity: 1; }
+    .card-actions {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      z-index: 2;
+    }
+    .card-actions .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #003DA5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .card-actions .btn-action:hover { background: #002a73; }
+    .card-actions .btn-close {
+      width: 30px;
+      height: 30px;
+      background: #F1F5F9;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0F172A;
+    }
+    .card-actions .btn-close:hover { background: #E2E8F0; }
+    .card-actions .list-icon { display: flex; flex-direction: column; gap: 2.5px; }
+    .card-actions .list-icon span {
+      display: block; width: 13px; height: 1.8px; background: #fff; border-radius: 2px;
+    }
+
+    /* ── SEPARADOR DE SEÇÕES ── */
+    .section-gap {
+      height: 4px;
+    }
+
+    /* ── TEAM VIEW (dentro do card expandido) ── */
+    .kpi-card.expanded.team-view { padding-top: 56px; }
+    .team-view-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: calc(85vh - 80px);
+    }
+    .team-view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .team-view-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: 0.2px;
+    }
+    .team-dropdown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #003DA5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .team-dropdown:hover { background: #002a73; }
+    .team-dropdown .td-arrow { font-size: 10px; opacity: 0.85; }
+    .team-dropdown-pop {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(15,23,42,0.18);
+      padding: 6px;
+      z-index: 10;
+      color: #0F172A;
+    }
+    .team-dropdown.open .team-dropdown-pop { display: block; }
+    .team-dropdown-pop .td-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      cursor: pointer;
+    }
+    .team-dropdown-pop .td-item:hover { background: #F1F5F9; }
+    .team-dropdown-pop .td-item.selected { color: #003DA5; font-weight: 700; background: #EEF4FF; }
+    .team-table-wrap {
+      overflow-y: auto;
+      border: 1px solid #E4E8F0;
+      border-radius: 10px;
+    }
+    .team-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .team-table thead th {
+      position: sticky;
+      top: 0;
+      background: #F8FAFC;
+      color: #475569;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      text-align: left;
+      padding: 9px 12px;
+      border-bottom: 1px solid #E4E8F0;
+    }
+    .team-table tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #F1F5F9;
+      color: #1a1a2e;
+    }
+    .team-table tbody tr:last-child td { border-bottom: none; }
+    .team-table tbody td.val { text-align: right; font-weight: 600; font-feature-settings: 'tnum'; }
+    .team-table tbody tr:hover { background: #F8FAFC; }
+
+    /* Team bars (progress list) */
+    .team-bars { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 6px; }
+    .team-bar-item {
+      background: #FFFFFF; border: 1px solid #E4E8F0; border-radius: 10px;
+      padding: 10px 12px; box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .team-bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .team-bar-name {
+      font-size: 13px; font-weight: 700; color: #0F172A;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;
+    }
+    .team-bar-pct { font-size: 12px; font-weight: 700; color: #1a1a2e; font-feature-settings: 'tnum'; }
+    .team-bar-meta {
+      margin-top: 4px; font-size: 11px; color: #475569;
+      display: flex; flex-wrap: wrap; gap: 4px 12px;
+    }
+    .team-bar-meta span { white-space: nowrap; }
+    .team-bar-meta b { font-weight: 600; color: #1a1a2e; font-feature-settings: 'tnum'; }
+    .team-bar-meta .gap-val { color: #DC2626; font-weight: 700; }
+    .team-bar-track {
+      margin-top: 8px; height: 8px; border-radius: 999px; background: #E4E8F0; overflow: hidden;
+    }
+    .team-bar-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 0.4s ease; }
+    .team-bars-empty { text-align: center; color: #94A3B8; padding: 18px; font-size: 12px; }
+
+    @media (max-width: 640px) {
+      .team-view-title { font-size: 11px; }
+      .team-dropdown { font-size: 11px; padding: 6px 10px; }
+      .team-table { font-size: 11px; }
+      .team-table thead th { font-size: 10px; padding: 7px 8px; }
+      .team-table tbody td { padding: 7px 8px; }
+      .team-bar-name { font-size: 12px; }
+      .team-bar-pct { font-size: 11px; }
+      .team-bar-meta { font-size: 10px; gap: 2px 10px; }
+    }
+
+  </style>
 </head>
 <body>
 
@@ -422,6 +1282,609 @@
   <div class="tip-row"><span class="tip-ok">✓</span> Store Platform</div>
   <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
 </template>
+
+<script>
+  // Section toggle
+  document.querySelectorAll('.section-header').forEach(header => {
+    header.addEventListener('click', () => {
+      header.classList.toggle('collapsed');
+      const row = header.nextElementSibling;
+      if (row && row.classList.contains('cards-row')) {
+        row.classList.toggle('hidden');
+      }
+    });
+  });
+
+
+  // Tooltip system — document-level for reliability
+  const ftip = document.getElementById('floating-tooltip');
+
+  function showTip(icon) {
+    const tplId = icon.getAttribute('data-tooltip-id');
+    if (!tplId) return;
+    const tpl = document.getElementById(tplId);
+    if (!tpl) return;
+    ftip.innerHTML = '';
+    ftip.appendChild(tpl.content.cloneNode(true));
+    ftip.classList.add('show');
+    const r = icon.getBoundingClientRect();
+    let left = r.right - 230;
+    let top  = r.bottom + 8;
+    if (left < 8) left = 8;
+    if (top + 300 > window.innerHeight) top = r.top - 300;
+    ftip.style.left = left + 'px';
+    ftip.style.top  = top  + 'px';
+  }
+
+  document.addEventListener('mouseover', (e) => {
+    const icon = e.target.closest('.info-icon[data-tooltip-id]');
+    if (icon) {
+      showTip(icon);
+    } else if (!e.target.closest('#floating-tooltip')) {
+      ftip.classList.remove('show');
+    }
+  });
+
+  // Card expand/collapse with FLIP animation
+  (function(){
+    const backdrop = document.createElement('div');
+    backdrop.className = 'card-backdrop';
+    document.body.appendChild(backdrop);
+
+    let expandedCard = null;
+    let placeholder = null;
+
+    function collapseCard(){
+      if (!expandedCard) return;
+      const card = expandedCard;
+      // If team-view is open, restore original innerHTML first so collapse animates correctly
+      if (typeof teamState !== 'undefined' && teamState && teamState.card === card) {
+        card.classList.remove('team-view');
+        card.innerHTML = teamState.originalHTML;
+        document.removeEventListener('click', closeTeamDD);
+        teamState = null;
+      }
+      const actions = card.querySelector('.card-actions');
+      if (actions) actions.remove();
+
+      const first = card.getBoundingClientRect();
+      card.classList.remove('expanded');
+      card.style.cssText = '';
+      if (placeholder) { placeholder.replaceWith(card); placeholder = null; }
+      const last = card.getBoundingClientRect();
+
+      const dx = first.left - last.left;
+      const dy = first.top  - last.top;
+      const sx = first.width  / last.width;
+      const sy = first.height / last.height;
+
+      card.style.transition = 'none';
+      card.style.transformOrigin = 'top left';
+      card.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+        card.style.transform = '';
+      });
+      setTimeout(() => { card.style.cssText = ''; }, 320);
+
+      backdrop.classList.remove('show');
+      expandedCard = null;
+    }
+
+    function expandCard(card){
+      if (expandedCard) collapseCard();
+
+      const first = card.getBoundingClientRect();
+      placeholder = document.createElement('div');
+      placeholder.style.width  = first.width  + 'px';
+      placeholder.style.height = first.height + 'px';
+      card.after(placeholder);
+
+      const targetW = Math.min(first.width * 2, 470, window.innerWidth - 60);
+      card.classList.add('expanded');
+      card.style.width = targetW + 'px';
+      card.style.left  = ((window.innerWidth - targetW) / 2) + 'px';
+      card.style.top   = '50%';
+      card.style.transform = 'translateY(-50%)';
+
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+      actions.innerHTML =
+        '<button type="button" class="btn-action">' +
+          '<span class="list-icon"><span></span><span></span><span></span></span>' +
+          'Equipe' +
+        '</button>' +
+        '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
+      card.appendChild(actions);
+      actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
+      actions.querySelector('.btn-action').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if (card.id === 'card-fat-total') openTeamView(card, actions);
+      });
+
+      const last = card.getBoundingClientRect();
+      const dx = first.left - last.left;
+      const dy = first.top  - last.top;
+      const sx = first.width  / last.width;
+      const sy = first.height / last.height;
+
+      card.style.transition = 'none';
+      card.style.transformOrigin = 'top left';
+      card.style.transform = `translateY(-50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 0.32s cubic-bezier(0.4,0,0.2,1), box-shadow 0.32s ease';
+        card.style.transform = 'translateY(-50%)';
+      });
+
+      backdrop.classList.add('show');
+      expandedCard = card;
+    }
+
+    document.querySelectorAll('.kpi-card').forEach(card => {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.info-icon')) return;
+        if (e.target.closest('.card-actions')) return;
+        if (card.classList.contains('expanded')) return;
+        expandCard(card);
+      });
+    });
+    backdrop.addEventListener('click', () => { collapseCard(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') collapseCard(); });
+
+    // ── Team-view feature (somente card Total de Faturamento) ──
+    const FIELDS = [
+      { key: 'cv', label: 'Gerente' },
+      { key: 'sv', label: 'Supervisor' },
+      { key: 'rv', label: 'Vendedor' },
+    ];
+    let teamState = null; // { card, originalHTML, originalActions, field }
+
+    function buildTeamRows(field){
+      const api = window.dashboardAPI;
+      if (!api) return [];
+      // name -> Set of ck (rv|uf) keys for that person
+      const groupMap = new Map();
+      api.rvEntries.forEach(r => {
+        if (!api.passes(r)) return;
+        const name = field === 'rv' ? r.rvName : r[field];
+        if (!name) return;
+        if (!groupMap.has(name)) groupMap.set(name, new Set());
+        groupMap.get(name).add(api.ck(r.rv, r.uf));
+      });
+      const realMap = new Map();
+      api.vendas.forEach(x => {
+        const k = api.ck(x.rv, x.uf);
+        groupMap.forEach((keys, name) => {
+          if (keys.has(k)) realMap.set(name, (realMap.get(name) || 0) + (x.v || 0));
+        });
+      });
+      const metaMap = new Map();
+      api.metas.forEach(m => {
+        const k = api.ck(m.rv, m.uf);
+        groupMap.forEach((keys, name) => {
+          if (keys.has(k)) metaMap.set(name, (metaMap.get(name) || 0) + (m.total || 0));
+        });
+      });
+      const rows = [];
+      groupMap.forEach((_, name) => {
+        const real = realMap.get(name) || 0;
+        const meta = metaMap.get(name) || 0;
+        const gap = meta - real;
+        const pct = meta > 0 ? real / meta : 0;
+        rows.push({ name, real, meta, gap, pct });
+      });
+      return rows.sort((a, b) => b.pct - a.pct);
+    }
+
+    function renderTeamTable(wrap, field){
+      const rows = buildTeamRows(field);
+      const api = window.dashboardAPI;
+      const barColor = wrap.dataset.barColor || '#003DA5';
+      if (!rows.length) {
+        wrap.innerHTML = '<div class="team-bars-empty">Sem dados</div>';
+        return;
+      }
+      const fmt = api ? api.fmtMoney : (v)=>v;
+      wrap.innerHTML = '<div class="team-bars">' + rows.map(r => {
+        const pctTxt = (r.pct * 100).toFixed(1).replace('.', ',') + '%';
+        const w = Math.min(100, Math.max(0, r.pct * 100)).toFixed(1);
+        return (
+          '<div class="team-bar-item">' +
+            '<div class="team-bar-head">' +
+              '<div class="team-bar-name">' + r.name + '</div>' +
+              '<div class="team-bar-pct">' + pctTxt + '</div>' +
+            '</div>' +
+            '<div class="team-bar-meta">' +
+              '<span>Meta: <b>' + fmt(r.meta) + '</b></span>' +
+              '<span>Gap: <b class="gap-val">' + fmt(Math.abs(r.gap)) + '</b></span>' +
+              '<span>Realizado: <b>' + fmt(r.real) + '</b></span>' +
+            '</div>' +
+            '<div class="team-bar-track"><div class="team-bar-fill" style="width:' + w + '%;background:' + barColor + ';"></div></div>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+    }
+
+    function animateTeamRender(card, wrap, field){
+      const startH = card.getBoundingClientRect().height;
+      card.style.transition = 'none';
+      card.style.height = 'auto';
+      card.style.overflow = 'hidden';
+      renderTeamTable(wrap, field);
+      const targetH = card.getBoundingClientRect().height;
+      card.style.height = startH + 'px';
+      // fade transition on bars
+      const bars = wrap.querySelector('.team-bars');
+      if (bars) { bars.style.opacity = '0'; bars.style.transition = 'opacity 0.25s ease'; }
+      requestAnimationFrame(() => {
+        card.style.transition = 'height 0.32s cubic-bezier(0.4,0,0.2,1), transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+        card.style.height = targetH + 'px';
+        card.style.top = '50%';
+        card.style.transform = 'translateY(-50%)';
+        if (bars) requestAnimationFrame(() => { bars.style.opacity = '1'; });
+      });
+      setTimeout(() => {
+        card.style.height = '';
+        card.style.overflow = '';
+        card.style.transition = '';
+        if (bars) { bars.style.transition = ''; bars.style.opacity = ''; }
+      }, 360);
+    }
+
+
+      if (!window.dashboardAPI) return;
+      const startH = card.getBoundingClientRect().height;
+      const originalHTML = card.innerHTML;
+      // capture bar color from existing progress-fill so bars match the card theme
+      let barColor = '#003DA5';
+      const pf = card.querySelector('.progress-fill');
+      if (pf) {
+        const c = getComputedStyle(pf).backgroundColor;
+        if (c && c !== 'rgba(0, 0, 0, 0)') barColor = c;
+      }
+      teamState = { card, originalHTML, field: 'cv' };
+
+      // Build team view
+      card.innerHTML = '';
+      const newActions = document.createElement('div');
+      newActions.className = 'card-actions';
+      newActions.innerHTML =
+        '<div class="team-dropdown" id="team-dd">' +
+          '<span class="td-label">Gerente</span><span class="td-arrow">▾</span>' +
+          '<div class="team-dropdown-pop">' +
+            FIELDS.map(f => `<div class="td-item" data-field="${f.key}">${f.label}</div>`).join('') +
+          '</div>' +
+        '</div>' +
+        '<button type="button" class="btn-close" id="team-back" aria-label="Voltar">&times;</button>';
+      card.appendChild(newActions);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'team-view-wrap';
+      wrap.innerHTML =
+        '<div class="team-view-header"><div class="team-view-title">Faturamento Total por Equipe</div></div>' +
+        '<div class="team-table-wrap" id="team-table-wrap"></div>';
+      card.appendChild(wrap);
+      card.classList.add('team-view');
+
+      const tableWrap = wrap.querySelector('#team-table-wrap');
+      tableWrap.dataset.barColor = barColor;
+      renderTeamTable(tableWrap, teamState.field);
+
+      // Dropdown logic
+      const dd = newActions.querySelector('#team-dd');
+      const ddLabel = dd.querySelector('.td-label');
+      dd.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dd.classList.toggle('open');
+        // mark selected
+        dd.querySelectorAll('.td-item').forEach(it => {
+          it.classList.toggle('selected', it.dataset.field === teamState.field);
+        });
+      });
+      dd.querySelectorAll('.td-item').forEach(it => {
+        it.addEventListener('click', (e) => {
+          e.stopPropagation();
+          teamState.field = it.dataset.field;
+          ddLabel.textContent = FIELDS.find(f => f.key === teamState.field).label;
+          dd.classList.remove('open');
+          animateTeamRender(card, tableWrap, teamState.field);
+        });
+      });
+
+      document.addEventListener('click', closeTeamDD);
+
+      // Back button restores original card
+      newActions.querySelector('#team-back').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTeamView();
+      });
+
+      // Smooth height expand
+      card.style.height = startH + 'px';
+      card.style.overflow = 'hidden';
+      // measure target height
+      card.style.transition = 'none';
+      const prevH = card.style.height;
+      card.style.height = 'auto';
+      const targetH = card.getBoundingClientRect().height;
+      card.style.height = prevH;
+      // animate
+      requestAnimationFrame(() => {
+        card.style.transition = 'height 0.32s cubic-bezier(0.4,0,0.2,1), transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+        card.style.height = targetH + 'px';
+        // keep vertically centered
+        card.style.top = '50%';
+        card.style.transform = 'translateY(-50%)';
+      });
+      setTimeout(() => {
+        if (teamState && teamState.card === card) {
+          card.style.height = '';
+          card.style.overflow = '';
+        }
+      }, 360);
+    }
+
+    function closeTeamDD(e){
+      if (!teamState) return;
+      const dd = teamState.card.querySelector('#team-dd');
+      if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+    }
+
+    function closeTeamView(){
+      if (!teamState) return;
+      const { card, originalHTML } = teamState;
+      const startH = card.getBoundingClientRect().height;
+      document.removeEventListener('click', closeTeamDD);
+      card.classList.remove('team-view');
+      card.innerHTML = originalHTML;
+
+      // rebind actions on restored content
+      const actions = card.querySelector('.card-actions');
+      if (actions) {
+        actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
+        const btn = actions.querySelector('.btn-action');
+        if (btn) btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          if (card.id === 'card-fat-total') openTeamView(card, actions);
+        });
+      }
+
+      // measure natural height and animate back
+      card.style.transition = 'none';
+      card.style.height = 'auto';
+      card.style.overflow = 'hidden';
+      const targetH = card.getBoundingClientRect().height;
+      card.style.height = startH + 'px';
+      requestAnimationFrame(() => {
+        card.style.transition = 'height 0.3s cubic-bezier(0.4,0,0.2,1)';
+        card.style.height = targetH + 'px';
+      });
+      setTimeout(() => {
+        card.style.height = '';
+        card.style.overflow = '';
+        card.style.transition = '';
+      }, 340);
+
+      teamState = null;
+    }
+
+  })();
+
+</script>
+
+<script>
+/* ====== Data loading & filtering (KPI Ranking P&G) ====== */
+(async function(){
+  let data;
+  try {
+    const res = await fetch('./data.json', {cache:'no-store'});
+    data = await res.json();
+  } catch(e) { console.error('Falha ao carregar data.json', e); return; }
+
+  // Atualiza data/hora no header
+  if (data.generated_at) {
+    try {
+      const d = new Date(data.generated_at);
+      const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      const txt = `Atualizado em ${String(d.getDate()).padStart(2,'0')} ${meses[d.getMonth()]} ${d.getFullYear()} às ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      const el = document.getElementById('last-update');
+      if (el) el.textContent = txt;
+    } catch(e) {}
+  }
+
+  // comercial: [{rv,uf,rvName,sv,cv}] - composite key rv+uf
+  const rvEntries = data.comercial.map(r=>({uf:r.uf, cv:r.cv, sv:r.sv, rvName:r.rvName, rv:String(r.rv)}));
+  const metas = data.metas;     // [{rv,uf,total,ec,sp,ali,far}]
+  const vendas = data.vendas;   // [{rv,uf,v,ec,sp,ali,far}]
+  const ck = (rv,uf) => String(rv)+'|'+String(uf);
+
+  // ── Filtros: dropdown customizado (clique = único; Ctrl/Cmd = múltiplo) ──
+  const uniq = (arr)=>[...new Set(arr.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
+  const filterValues = {
+    uf: uniq(rvEntries.map(r=>r.uf)),
+    cv: uniq(rvEntries.map(r=>r.cv)),
+    sv: uniq(rvEntries.map(r=>r.sv)),
+    rv: uniq(rvEntries.map(r=>r.rvName)),
+  };
+  // Cada filtro guarda um Set de valores selecionados (vazio = todos)
+  const filters = { uf:new Set(), cv:new Set(), sv:new Set(), rv:new Set() };
+
+  function updateChipLabel(chip){
+    const key = chip.dataset.filter;
+    const def = chip.dataset.defaultLabel;
+    const sel = filters[key];
+    const lbl = chip.querySelector('.chip-label');
+    if (sel.size === 0) lbl.textContent = def;
+    else if (sel.size === 1) lbl.textContent = [...sel][0];
+    else lbl.textContent = `${sel.size} selecionados`;
+  }
+
+  function renderPop(chip, search=''){
+    const key = chip.dataset.filter;
+    const pop = chip.querySelector('.filter-pop');
+    const list = pop.querySelector('.fp-list');
+    const q = search.trim().toLowerCase();
+    const all = filterValues[key];
+    const filtered = q ? all.filter(v=>String(v).toLowerCase().includes(q)) : all;
+    list.innerHTML = '';
+    // "Todos"
+    const allItem = document.createElement('div');
+    allItem.className = 'fp-item all' + (filters[key].size===0 ? ' selected' : '');
+    allItem.innerHTML = '<span class="fp-radio"></span><span>Todos</span>';
+    allItem.addEventListener('click', ()=>{
+      filters[key].clear();
+      updateChipLabel(chip);
+      renderPop(chip, pop.querySelector('.fp-search').value);
+      recompute();
+    });
+    list.appendChild(allItem);
+    if (filtered.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'fp-empty';
+      empty.textContent = 'Nenhum resultado';
+      list.appendChild(empty);
+      return;
+    }
+    filtered.forEach(v=>{
+      const it = document.createElement('div');
+      const isSel = filters[key].has(v);
+      it.className = 'fp-item' + (isSel ? ' selected' : '');
+      it.innerHTML = `<span class="fp-radio"></span><span>${v}</span>`;
+      it.addEventListener('click', (e)=>{
+        const multi = e.ctrlKey || e.metaKey;
+        if (multi) {
+          if (filters[key].has(v)) filters[key].delete(v);
+          else filters[key].add(v);
+        } else {
+          // Seleção única: toggle (desseleciona se já era o único selecionado)
+          if (filters[key].has(v) && filters[key].size === 1) {
+            filters[key].clear();
+          } else {
+            filters[key].clear();
+            filters[key].add(v);
+          }
+        }
+        updateChipLabel(chip);
+        renderPop(chip, pop.querySelector('.fp-search').value);
+        recompute();
+      });
+      list.appendChild(it);
+    });
+  }
+
+  function closeAllPops(except){
+    document.querySelectorAll('.filter-chip.open').forEach(c=>{
+      if (c !== except) c.classList.remove('open');
+    });
+  }
+
+  document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>{
+    // monta o popover uma única vez
+    const pop = document.createElement('div');
+    pop.className = 'filter-pop';
+    pop.innerHTML = '<input type="text" class="fp-search" placeholder="Buscar..." /><div class="fp-list"></div>';
+    chip.appendChild(pop);
+    pop.addEventListener('click', e=>e.stopPropagation());
+    const search = pop.querySelector('.fp-search');
+    search.addEventListener('input', ()=>renderPop(chip, search.value));
+
+    chip.addEventListener('click', (e)=>{
+      if (chip.classList.contains('open')) return;
+      closeAllPops(chip);
+      chip.classList.add('open');
+      const rect = chip.getBoundingClientRect();
+      pop.style.left = rect.left + 'px';
+      pop.style.top = (rect.bottom + 6) + 'px';
+      search.value = '';
+      renderPop(chip, '');
+      setTimeout(()=>search.focus(), 0);
+    });
+    updateChipLabel(chip);
+    chip.style.width = `${Math.ceil(chip.getBoundingClientRect().width)}px`;
+  });
+
+  document.getElementById('clear-filters').addEventListener('click', ()=>{
+    Object.values(filters).forEach(s => s.clear());
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>updateChipLabel(chip));
+    recompute();
+  });
+
+  document.addEventListener('click', (e)=>{
+    if (!e.target.closest('.filter-chip')) closeAllPops(null);
+  });
+
+  
+
+  function passes(r){
+    if (filters.uf.size && !filters.uf.has(r.uf)) return false;
+    if (filters.cv.size && !filters.cv.has(r.cv)) return false;
+    if (filters.sv.size && !filters.sv.has(r.sv)) return false;
+    if (filters.rv.size && !filters.rv.has(r.rvName)) return false;
+    return true;
+  }
+
+  function fmtMoney(v){
+    const abs = Math.abs(v);
+    let s;
+    if (abs >= 1e9) s = (v/1e9).toFixed(2).replace('.',',')+'B';
+    else if (abs >= 1e6) s = (v/1e6).toFixed(2).replace('.',',')+'M';
+    else if (abs >= 1e3) s = (v/1e3).toFixed(1).replace('.',',')+'K';
+    else s = v.toFixed(0);
+    return 'R$ '+s;
+  }
+  function fmtPct(v){ return (v*100).toFixed(1).replace('.',',')+'%'; }
+
+  function recompute(){
+    const eligibleKeys = new Set();
+    rvEntries.forEach(r=>{
+      if (!passes(r)) return;
+      eligibleKeys.add(ck(r.rv, r.uf));
+    });
+
+
+    const sums = {v:0, ec:0, sp:0, ali:0, far:0};
+    vendas.forEach(x=>{
+      if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
+      sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
+      sums.ali += x.ali||0; sums.far += x.far||0;
+    });
+
+    const metaSums = {total:0, ec:0, sp:0, ali:0, far:0};
+    metas.forEach(m=>{
+      if (!eligibleKeys.has(ck(m.rv, m.uf))) return;
+      metaSums.total += m.total||0;
+      metaSums.ec    += m.ec||0;
+      metaSums.sp    += m.sp||0;
+      metaSums.ali   += m.ali||0;
+      metaSums.far   += m.far||0;
+    });
+
+
+    function paint(cardId, total, metaVal){
+      const card = document.getElementById(cardId);
+      if (!card) return;
+      const gap = metaVal - total;
+      const pct = metaVal > 0 ? total/metaVal : 0;
+      card.querySelector('[data-bind=valor]').textContent = fmtMoney(total);
+      card.querySelector('[data-bind=meta]').textContent  = fmtMoney(metaVal);
+      const gapEl = card.querySelector('[data-bind=gap]');
+      gapEl.textContent = fmtMoney(Math.abs(gap));
+      gapEl.style.color = gap > 0 ? '#DC2626' : '#059669';
+      card.querySelector('[data-bind=pct]').textContent   = fmtPct(pct);
+      card.querySelector('[data-bind=bar]').style.width   = Math.min(100, Math.max(0, pct*100)).toFixed(1)+'%';
+    }
+    paint('card-fat-total', sums.v,   metaSums.total);
+    paint('card-fat-ec',    sums.ec,  metaSums.ec);
+    paint('card-fat-sp',    sums.sp,  metaSums.sp);
+    paint('card-fat-ali',   sums.ali, metaSums.ali);
+    paint('card-fat-far',   sums.far, metaSums.far);
+  }
+
+  window.dashboardAPI = { rvEntries, vendas, metas, passes, ck, fmtMoney };
+  recompute();
+})();
+</script>
 
 <template id="tip-always">
   <div class="tip-title">Clusters Válidos</div>
