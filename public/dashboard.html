@@ -1558,6 +1558,38 @@
       URL.revokeObjectURL(url);
     }
 
+    function exportTeamPDF(field){
+      const rows = buildTeamRows(field);
+      if (!rows.length) return;
+      const api = window.dashboardAPI;
+      const fmt = api ? api.fmtMoney : (v)=>String(v);
+      const fieldLabel = ({cv:'Gerente', sv:'Supervisor', rv:'Vendedor'})[field] || 'Nome';
+      const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (!jsPDFCtor) { alert('Falha ao carregar gerador de PDF'); return; }
+      const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const title = 'Faturamento Total por ' + fieldLabel;
+      doc.setFontSize(14); doc.setTextColor(15, 23, 42);
+      doc.text(title, 40, 40);
+      doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 40, 56);
+      const body = rows.map(r => [
+        r.name, fmt(r.meta), fmt(r.real), fmt(r.gap),
+        (r.pct * 100).toFixed(1).replace('.', ',') + '%'
+      ]);
+      doc.autoTable({
+        head: [[fieldLabel, 'Meta', 'Realizado', 'Gap', '%']],
+        body, startY: 72,
+        styles: { fontSize: 9, cellPadding: 6 },
+        headStyles: { fillColor: [0, 61, 165], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [241, 245, 249] },
+        columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'} },
+      });
+      const ts = new Date().toISOString().slice(0,10);
+      doc.save('faturamento-total-por-' + fieldLabel.toLowerCase() + '-' + ts + '.pdf');
+    }
+
+
+
 
 
     function animateTeamRender(card, wrap, field){
