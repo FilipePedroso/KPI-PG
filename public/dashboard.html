@@ -743,6 +743,19 @@
     }
     .card-actions .btn-icon:hover { background: #E2E8F0; }
     .card-actions .btn-icon svg { width: 16px; height: 16px; display: block; }
+    .export-menu { position: relative; display: inline-block; }
+    .export-menu-pop {
+      display: none; position: absolute; top: calc(100% + 6px); right: 0;
+      background: #fff; border: 1px solid #E2E8F0; border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(15,23,42,0.12);
+      min-width: 120px; z-index: 20; overflow: hidden;
+    }
+    .export-menu.open .export-menu-pop { display: block; }
+    .export-menu-pop .em-item {
+      padding: 8px 12px; font-size: 12px; font-weight: 600;
+      color: #0F172A; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    }
+    .export-menu-pop .em-item:hover { background: #F1F5F9; }
 
     /* ── SEPARADOR DE SEÇÕES ── */
     .section-gap {
