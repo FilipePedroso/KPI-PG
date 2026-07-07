@@ -735,6 +735,14 @@
     .card-actions .list-icon span {
       display: block; width: 13px; height: 1.8px; background: #fff; border-radius: 2px;
     }
+    .card-actions .btn-icon {
+      width: 30px; height: 30px;
+      background: #F1F5F9; border: none; border-radius: 8px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: #0F172A; padding: 0;
+    }
+    .card-actions .btn-icon:hover { background: #E2E8F0; }
+    .card-actions .btn-icon svg { width: 16px; height: 16px; display: block; }
 
     /* ── SEPARADOR DE SEÇÕES ── */
     .section-gap {
@@ -1506,6 +1514,36 @@
       }).join('') + '</div>';
     }
 
+    function exportTeamCSV(field){
+      const rows = buildTeamRows(field);
+      if (!rows.length) return;
+      const fieldLabel = ({cv:'Gerente', sv:'Supervisor', rv:'Vendedor'})[field] || 'Nome';
+      const header = [fieldLabel, 'Meta', 'Realizado', 'Gap', 'Percentual'];
+      const esc = (v) => {
+        const s = String(v);
+        return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      const numBR = (n) => (Math.round(n * 100) / 100).toString().replace('.', ',');
+      const lines = [header.join(';')];
+      rows.forEach(r => {
+        const pct = (r.pct * 100).toFixed(1).replace('.', ',') + '%';
+        lines.push([r.name, numBR(r.meta), numBR(r.real), numBR(r.gap), pct].map(esc).join(';'));
+      });
+      const csv = '\uFEFF' + lines.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ts = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = `faturamento-total-por-${fieldLabel.toLowerCase()}-${ts}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+
+
     function animateTeamRender(card, wrap, field){
       const startH = card.getBoundingClientRect().height;
       card.style.transition = 'none';
@@ -1557,6 +1595,13 @@
             FIELDS.map(f => `<div class="td-item" data-field="${f.key}">${f.label}</div>`).join('') +
           '</div>' +
         '</div>' +
+        '<button type="button" class="btn-icon" id="team-export" aria-label="Extrair CSV" title="Extrair CSV">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+            '<polyline points="7 10 12 15 17 10"/>' +
+            '<line x1="12" y1="15" x2="12" y2="3"/>' +
+          '</svg>' +
+        '</button>' +
         '<button type="button" class="btn-close" id="team-back" aria-label="Voltar">&times;</button>';
       card.appendChild(newActions);
 
@@ -1599,6 +1644,12 @@
       newActions.querySelector('#team-back').addEventListener('click', (e) => {
         e.stopPropagation();
         closeTeamView();
+      });
+
+      // Export CSV
+      newActions.querySelector('#team-export').addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportTeamCSV(teamState.field);
       });
 
       // Smooth height expand
