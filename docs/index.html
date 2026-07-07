@@ -1791,7 +1791,7 @@
     search.addEventListener('input', ()=>renderPop(chip, search.value));
 
     chip.addEventListener('click', (e)=>{
-      if (chip.classList.contains('open')) return;
+      if (chip.classList.contains('open')) { chip.classList.remove('open'); return; }
       closeAllPops(chip);
       chip.classList.add('open');
       const rect = chip.getBoundingClientRect();
