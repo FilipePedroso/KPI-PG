@@ -1989,6 +1989,24 @@
   }
   function fmtPct(v){ return (v*100).toFixed(1).replace('.',',')+'%'; }
 
+  // ── Animation helpers ──
+  const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+  function animateCount(el, from, to, duration, formatFn){
+    if (el.__rafId) cancelAnimationFrame(el.__rafId);
+    if (REDUCE_MOTION || duration <= 0) { el.textContent = formatFn(to); return; }
+    const start = performance.now();
+    function tick(now){
+      const t = Math.min((now - start) / duration, 1);
+      const v = from + (to - from) * easeOutCubic(t);
+      el.textContent = formatFn(v);
+      if (t < 1) el.__rafId = requestAnimationFrame(tick);
+      else el.__rafId = null;
+    }
+    el.__rafId = requestAnimationFrame(tick);
+  }
+  window.__animateCount = animateCount;
+
   function recompute(){
     const eligibleKeys = new Set();
     rvEntries.forEach(r=>{
