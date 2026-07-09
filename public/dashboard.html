@@ -1874,13 +1874,31 @@
     else lbl.textContent = `${sel.size} selecionados`;
   }
 
+  const FIELD_ACCESSOR = { uf:r=>r.uf, cv:r=>r.cv, sv:r=>r.sv, rv:r=>r.rvName };
+  function availableValues(key){
+    const acc = FIELD_ACCESSOR[key];
+    const set = new Set();
+    rvEntries.forEach(r=>{
+      for (const k of ['uf','cv','sv','rv']) {
+        if (k === key) continue;
+        if (filters[k].size && !filters[k].has(FIELD_ACCESSOR[k](r))) return;
+      }
+      const v = acc(r);
+      if (v) set.add(v);
+    });
+    return [...set].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
+  }
+
   function renderPop(chip, search=''){
     const key = chip.dataset.filter;
     const pop = chip.querySelector('.filter-pop');
     const list = pop.querySelector('.fp-list');
     const q = search.trim().toLowerCase();
-    const all = filterValues[key];
+    const all = availableValues(key);
+    // mantém selecionados que não estão mais disponíveis, exibindo-os no topo
+    filters[key].forEach(v=>{ if (!all.includes(v)) all.unshift(v); });
     const filtered = q ? all.filter(v=>String(v).toLowerCase().includes(q)) : all;
+
     list.innerHTML = '';
     // "Todos"
     const allItem = document.createElement('div');
