@@ -1379,6 +1379,52 @@
     });
   });
 
+  // ── Progress bar upgrade: add gray "total" bar behind + legend ──
+  // For hardcoded cards, split existing width into faturado (~55%) vs. accumulated (100%).
+  // For data-bound cards, paint() controls both widths.
+  (function upgradeProgressBars(){
+    const HARDCODED_FAT_FACTOR = 0.55; // example split for cards without live data
+    document.querySelectorAll('.progress-track').forEach(track => {
+      if (track.classList.contains('progress-track-pot')) return;
+      if (track.dataset.upgraded === '1') return;
+      const fill = track.querySelector('.progress-fill');
+      if (!fill) return;
+      track.dataset.upgraded = '1';
+      const totalBar = document.createElement('div');
+      totalBar.className = 'progress-fill-total';
+      const isDataBound = fill.getAttribute('data-bind') === 'bar';
+      if (isDataBound) {
+        totalBar.setAttribute('data-bind', 'bar-total');
+        totalBar.style.width = '0%';
+      } else {
+        // Static/example card: read the pre-set width as the accumulated total,
+        // and shrink the colored bar to the "faturado" example fraction.
+        const w = parseFloat((fill.style.width || '0').replace('%','')) || 0;
+        totalBar.style.width = w.toFixed(1) + '%';
+        fill.style.width = (w * HARDCODED_FAT_FACTOR).toFixed(1) + '%';
+      }
+      track.insertBefore(totalBar, fill);
+    });
+
+    // Add "Faturado / Não faturado" legend to each Atingimento bar header
+    document.querySelectorAll('.bar-header').forEach(bh => {
+      if (bh.dataset.hasLegend === '1') return;
+      const label = bh.querySelector('.bar-label');
+      if (!label || label.textContent.trim() !== 'Atingimento') return;
+      bh.dataset.hasLegend = '1';
+      const legend = document.createElement('span');
+      legend.className = 'bar-legend';
+      legend.innerHTML =
+        '<span class="lg-item"><i class="lg-dot lg-fat"></i>Faturado</span>' +
+        '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não faturado</span>';
+      const pct = bh.querySelector('.bar-pct');
+      if (pct) bh.insertBefore(legend, pct);
+      else bh.appendChild(legend);
+    });
+  })();
+
+
+
 
   // Tooltip system — document-level for reliability
   const ftip = document.getElementById('floating-tooltip');
