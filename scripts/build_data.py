@@ -76,8 +76,18 @@ def build(xlsx_path):
     rows = ws.iter_rows(values_only=True)
     header = [s(h) for h in next(rows)]
     idx = {h: i for i, h in enumerate(header)}
-    has_fat_flag = "vl_faturamento" in idx
+    # busca coluna vl_faturamento tolerante a maiúsculas/espaços
+    fat_key = None
+    for h in header:
+        if h.strip().lower().replace(" ", "_") == "vl_faturamento":
+            fat_key = h
+            break
+    has_fat_flag = fat_key is not None
+    print(f"[build_data] f_vendas_total headers: {header}", file=sys.stderr)
+    print(f"[build_data] vl_faturamento column: {fat_key!r} (found={has_fat_flag})", file=sys.stderr)
     vagg = {}
+    fat_rows = 0
+    total_rows = 0
     for r in rows:
         if not r:
             continue
@@ -88,7 +98,19 @@ def build(xlsx_path):
         val = n(r[idx["vl_financeiro"]])
         plat = s(r[idx["Plataforma"]])
         chan = s(r[idx["Store Channel"]])
-        is_fat = int(n(r[idx["vl_faturamento"]])) == 1 if has_fat_flag else False
+        # aceita qualquer valor não-zero (1, "1", 1.0, "Sim", etc.) como faturado
+        raw_fat = r[idx[fat_key]] if has_fat_flag else None
+        if has_fat_flag:
+            if isinstance(raw_fat, (int, float)):
+                is_fat = raw_fat != 0
+            else:
+                sv = s(raw_fat).lower()
+                is_fat = sv not in ("", "0", "0.0", "nao", "não", "no", "false")
+        else:
+            is_fat = False
+        total_rows += 1
+        if is_fat:
+            fat_rows += 1
         k = rv + "|" + uf
         b = vagg.setdefault(k, {
             "rv": rv, "uf": uf,
@@ -115,6 +137,7 @@ def build(xlsx_path):
             else:
                 b["vf_ali"] += val
     vendas = list(vagg.values())
+    print(f"[build_data] linhas processadas: {total_rows}, faturadas: {fat_rows}", file=sys.stderr)
 
 
     # ---------- d_metas_fin ----------
