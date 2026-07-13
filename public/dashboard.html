@@ -557,6 +557,7 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 5px;
+      gap: 8px;
     }
 
     .bar-label {
@@ -571,19 +572,55 @@
       color: #0F1733;
     }
 
+    .bar-legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+      margin-right: 6px;
+      font-size: 9.5px;
+      color: #64748B;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .bar-legend .lg-item { display: inline-flex; align-items: center; gap: 4px; }
+    .bar-legend .lg-dot  { width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: #9CA3AF; }
+    .bar-legend .lg-nfat { background: #9CA3AF; }
+    /* Faturado dot color follows the card's theme */
+    .fat-total .lg-fat,      .pos-total .lg-fat      { background: #003DA5; }
+    .fat-numerica .lg-fat,   .pos-numerica .lg-fat   { background: #0EA5E9; }
+    .fat-ponderada .lg-fat,  .pos-ponderada .lg-fat  { background: #7C3AED; }
+    .fat-alimentar .lg-fat,  .pos-alimentar .lg-fat  { background: #059669; }
+    .fat-farma .lg-fat,      .pos-farma .lg-fat      { background: #D97706; }
+
     .progress-track {
       height: 6px;
       background: #EEF2F8;
       border-radius: 99px;
       overflow: hidden;
       margin-bottom: 9px;
+      position: relative;
+    }
+
+    .progress-fill-total {
+      position: absolute;
+      left: 0; top: 0;
+      height: 100%;
+      width: 0%;
+      background: #9CA3AF;
+      border-radius: 99px;
+      transition: width 1.1s cubic-bezier(0.22, 0.9, 0.3, 1);
+      z-index: 1;
     }
 
     .progress-fill {
+      position: absolute;
+      left: 0; top: 0;
       height: 100%;
+      width: 0%;
       border-radius: 99px;
-      position: relative;
       overflow: hidden;
+      z-index: 2;
       transition: width 1.1s cubic-bezier(0.22, 0.9, 0.3, 1);
     }
     .progress-fill::after {
@@ -602,9 +639,10 @@
     }
     .team-bar-fill { transition: width 1.0s cubic-bezier(0.22, 0.9, 0.3, 1) !important; }
     @media (prefers-reduced-motion: reduce) {
-      .progress-fill, .team-bar-fill { transition: none !important; }
+      .progress-fill, .progress-fill-total, .team-bar-fill { transition: none !important; }
       .progress-fill.animate::after { animation: none !important; }
     }
+
 
     .progress-track-pot {
       height: 6px;
