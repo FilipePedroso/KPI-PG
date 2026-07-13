@@ -76,6 +76,7 @@ def build(xlsx_path):
     rows = ws.iter_rows(values_only=True)
     header = [s(h) for h in next(rows)]
     idx = {h: i for i, h in enumerate(header)}
+    has_fat_flag = "vl_faturamento" in idx
     vagg = {}
     for r in rows:
         if not r:
@@ -87,8 +88,13 @@ def build(xlsx_path):
         val = n(r[idx["vl_financeiro"]])
         plat = s(r[idx["Plataforma"]])
         chan = s(r[idx["Store Channel"]])
+        is_fat = int(n(r[idx["vl_faturamento"]])) == 1 if has_fat_flag else False
         k = rv + "|" + uf
-        b = vagg.setdefault(k, {"rv": rv, "uf": uf, "v": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0})
+        b = vagg.setdefault(k, {
+            "rv": rv, "uf": uf,
+            "v": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
+            "vf": 0.0, "vf_ec": 0.0, "vf_sp": 0.0, "vf_ali": 0.0, "vf_far": 0.0,
+        })
         b["v"] += val
         if plat == "Escolha Certa":
             b["ec"] += val
@@ -98,7 +104,18 @@ def build(xlsx_path):
             b["far"] += val
         else:
             b["ali"] += val
+        if is_fat:
+            b["vf"] += val
+            if plat == "Escolha Certa":
+                b["vf_ec"] += val
+            if plat == "Store Platform":
+                b["vf_sp"] += val
+            if chan in FARMA:
+                b["vf_far"] += val
+            else:
+                b["vf_ali"] += val
     vendas = list(vagg.values())
+
 
     # ---------- d_metas_fin ----------
     ws = wb["d_metas_fin"]
