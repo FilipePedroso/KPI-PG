@@ -1414,8 +1414,12 @@
       const label = bh.querySelector('.bar-label');
       if (!label || label.textContent.trim() !== 'Atingimento') return;
       bh.dataset.hasLegend = '1';
+      // "Atingimento" becomes the legend itself — the % on the right conveys the value
+      label.remove();
       const legend = document.createElement('span');
       legend.className = 'bar-legend';
+      legend.style.marginLeft = '0';
+      legend.style.marginRight = 'auto';
       legend.innerHTML =
         '<span class="lg-item"><i class="lg-dot lg-fat"></i>Faturado</span>' +
         '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não faturado</span>';
@@ -1423,6 +1427,7 @@
       if (pct) bh.insertBefore(legend, pct);
       else bh.appendChild(legend);
     });
+
   })();
 
 
