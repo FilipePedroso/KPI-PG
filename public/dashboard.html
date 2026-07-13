@@ -1409,7 +1409,7 @@
       track.insertBefore(totalBar, fill);
     });
 
-    // Add "Faturado / Não faturado" legend to each Atingimento bar header
+    // Add "Faturado / Não Fat." legend to each Atingimento bar header
     document.querySelectorAll('.bar-header').forEach(bh => {
       if (bh.dataset.hasLegend === '1') return;
       const label = bh.querySelector('.bar-label');
@@ -1420,7 +1420,7 @@
       legend.className = 'bar-legend';
       legend.innerHTML =
         '<span class="lg-item"><i class="lg-dot lg-fat"></i>Faturado</span>' +
-        '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não faturado</span>';
+        '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não Fat.</span>';
       const pct = bh.querySelector('.bar-pct');
       if (pct) bh.insertBefore(legend, pct);
       else bh.appendChild(legend);
