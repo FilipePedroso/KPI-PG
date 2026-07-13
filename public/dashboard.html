@@ -554,7 +554,7 @@
 
     .bar-header {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
       margin-bottom: 5px;
       gap: 8px;
@@ -570,13 +570,14 @@
       font-size: 11px;
       font-weight: 700;
       color: #0F1733;
+      margin-left: auto;
     }
 
     .bar-legend {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      margin-left: auto;
+      margin-left: 0;
       margin-right: 6px;
       font-size: 9px;
       color: #64748B;
@@ -1414,12 +1415,9 @@
       const label = bh.querySelector('.bar-label');
       if (!label || label.textContent.trim() !== 'Atingimento') return;
       bh.dataset.hasLegend = '1';
-      // "Atingimento" becomes the legend itself — the % on the right conveys the value
-      label.remove();
+      // Keep "Atingimento" on the left and place the legend before the percentage
       const legend = document.createElement('span');
       legend.className = 'bar-legend';
-      legend.style.marginLeft = '0';
-      legend.style.marginRight = 'auto';
       legend.innerHTML =
         '<span class="lg-item"><i class="lg-dot lg-fat"></i>Faturado</span>' +
         '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não faturado</span>';
