@@ -137,6 +137,7 @@ def build(xlsx_path):
             else:
                 b["vf_ali"] += val
     vendas = list(vagg.values())
+    print(f"[build_data] linhas processadas: {total_rows}, faturadas: {fat_rows}", file=sys.stderr)
 
 
     # ---------- d_metas_fin ----------
