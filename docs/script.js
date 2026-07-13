@@ -503,8 +503,19 @@
       setTimeout(()=>search.focus(), 0);
     });
     updateChipLabel(chip);
-    chip.style.width = `${Math.ceil(chip.getBoundingClientRect().width)}px`;
   });
+
+  function lockChipWidths(){
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>{
+      chip.style.width = '';
+      chip.style.width = Math.ceil(chip.getBoundingClientRect().width) + 'px';
+    });
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(lockChipWidths);
+  } else {
+    window.addEventListener('load', lockChipWidths);
+  }
 
   document.getElementById('clear-filters').addEventListener('click', ()=>{
     Object.values(filters).forEach(s => s.clear());
