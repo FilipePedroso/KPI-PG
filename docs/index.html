@@ -1973,8 +1973,22 @@
       setTimeout(()=>search.focus(), 0);
     });
     updateChipLabel(chip);
-    chip.style.width = `${Math.ceil(chip.getBoundingClientRect().width)}px`;
   });
+
+  // Lock chip widths only after web fonts are ready, otherwise the initial
+  // measurement uses a fallback font and chips render truncated on first load.
+  function lockChipWidths(){
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip=>{
+      chip.style.width = '';
+      const w = Math.ceil(chip.getBoundingClientRect().width);
+      chip.style.width = w + 'px';
+    });
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(lockChipWidths);
+  } else {
+    window.addEventListener('load', lockChipWidths);
+  }
 
   document.getElementById('clear-filters').addEventListener('click', ()=>{
     Object.values(filters).forEach(s => s.clear());
