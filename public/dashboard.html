@@ -2131,11 +2131,18 @@
     });
 
 
-    const sums = {v:0, ec:0, sp:0, ali:0, far:0};
+    const sums = {v:0, ec:0, sp:0, ali:0, far:0,
+                  vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0};
     vendas.forEach(x=>{
       if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
       sums.ali += x.ali||0; sums.far += x.far||0;
+      // faturado (vl_faturamento = 1) — optional fields, default 0
+      sums.vf     += x.vf     || 0;
+      sums.vf_ec  += x.vf_ec  || 0;
+      sums.vf_sp  += x.vf_sp  || 0;
+      sums.vf_ali += x.vf_ali || 0;
+      sums.vf_far += x.vf_far || 0;
     });
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0};
@@ -2149,15 +2156,17 @@
     });
 
 
-    function paint(cardId, total, metaVal, index){
+    function paint(cardId, total, fat, metaVal, index){
       const card = document.getElementById(cardId);
       if (!card) return;
       const gap = metaVal - total;
-      const pct = metaVal > 0 ? total/metaVal : 0;
+      const pct    = metaVal > 0 ? total / metaVal : 0;
+      const pctFat = metaVal > 0 ? fat   / metaVal : 0;
       const valorEl = card.querySelector('[data-bind=valor]');
       const gapEl   = card.querySelector('[data-bind=gap]');
       const pctEl   = card.querySelector('[data-bind=pct]');
       const barEl   = card.querySelector('[data-bind=bar]');
+      const barTotEl= card.querySelector('[data-bind=bar-total]');
       card.querySelector('[data-bind=meta]').textContent = fmtMoney(metaVal);
       gapEl.style.color = gap > 0 ? '#DC2626' : '#059669';
 
@@ -2168,13 +2177,18 @@
       gapEl.__value   = Math.abs(gap);
       pctEl.__value   = pct;
 
-      // reset bar to 0 to force width transition from 0
+      // reset bars to 0 to force width transition from 0
       barEl.classList.remove('animate');
       barEl.style.transition = 'none';
       barEl.style.width = '0%';
+      if (barTotEl) {
+        barTotEl.style.transition = 'none';
+        barTotEl.style.width = '0%';
+      }
       // force reflow
       void barEl.offsetWidth;
       barEl.style.transition = '';
+      if (barTotEl) barTotEl.style.transition = '';
 
       const delay = REDUCE_MOTION ? 0 : (index || 0) * 90;
       const DUR = 1100;
@@ -2184,16 +2198,18 @@
         animateCount(pctEl,   fromPct,   pct,            DUR, fmtPct);
         requestAnimationFrame(() => requestAnimationFrame(() => {
           barEl.classList.add('animate');
-          barEl.style.width = Math.min(100, Math.max(0, pct*100)).toFixed(1) + '%';
+          barEl.style.width    = Math.min(100, Math.max(0, pctFat*100)).toFixed(1) + '%';
+          if (barTotEl) barTotEl.style.width = Math.min(100, Math.max(0, pct*100)).toFixed(1) + '%';
         }));
       }, delay);
     }
-    paint('card-fat-total', sums.v,   metaSums.total, 0);
-    paint('card-fat-ec',    sums.ec,  metaSums.ec,    1);
-    paint('card-fat-sp',    sums.sp,  metaSums.sp,    2);
-    paint('card-fat-ali',   sums.ali, metaSums.ali,   3);
-    paint('card-fat-far',   sums.far, metaSums.far,   4);
+    paint('card-fat-total', sums.v,   sums.vf,     metaSums.total, 0);
+    paint('card-fat-ec',    sums.ec,  sums.vf_ec,  metaSums.ec,    1);
+    paint('card-fat-sp',    sums.sp,  sums.vf_sp,  metaSums.sp,    2);
+    paint('card-fat-ali',   sums.ali, sums.vf_ali, metaSums.ali,   3);
+    paint('card-fat-far',   sums.far, sums.vf_far, metaSums.far,   4);
   }
+
 
   window.dashboardAPI = { rvEntries, vendas, metas, passes, ck, fmtMoney };
   recompute();
