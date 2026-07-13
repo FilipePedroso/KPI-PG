@@ -575,16 +575,17 @@
     .bar-legend {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 7px;
       margin-left: auto;
       margin-right: 6px;
-      font-size: 9.5px;
+      font-size: 9px;
       color: #64748B;
       font-weight: 500;
       white-space: nowrap;
+      min-width: 0;
     }
-    .bar-legend .lg-item { display: inline-flex; align-items: center; gap: 4px; }
-    .bar-legend .lg-dot  { width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: #9CA3AF; }
+    .bar-legend .lg-item { display: inline-flex; align-items: center; gap: 3px; }
+    .bar-legend .lg-dot  { width: 5px; height: 5px; border-radius: 50%; display: inline-block; background: #9CA3AF; flex: 0 0 auto; }
     .bar-legend .lg-nfat { background: #9CA3AF; }
     /* Faturado dot color follows the card's theme */
     .fat-total .lg-fat,      .pos-total .lg-fat      { background: #003DA5; }
@@ -592,6 +593,7 @@
     .fat-ponderada .lg-fat,  .pos-ponderada .lg-fat  { background: #7C3AED; }
     .fat-alimentar .lg-fat,  .pos-alimentar .lg-fat  { background: #059669; }
     .fat-farma .lg-fat,      .pos-farma .lg-fat      { background: #D97706; }
+
 
     .progress-track {
       height: 6px;
