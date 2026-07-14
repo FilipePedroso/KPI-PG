@@ -1600,10 +1600,14 @@
         groupMap.get(name).add(api.ck(r.rv, r.uf));
       });
       const realMap = new Map();
+      const fatMap = new Map();
       api.vendas.forEach(x => {
         const k = api.ck(x.rv, x.uf);
         groupMap.forEach((keys, name) => {
-          if (keys.has(k)) realMap.set(name, (realMap.get(name) || 0) + (x.v || 0));
+          if (keys.has(k)) {
+            realMap.set(name, (realMap.get(name) || 0) + (x.v || 0));
+            fatMap.set(name, (fatMap.get(name) || 0) + (x.vf || 0));
+          }
         });
       });
       const metaMap = new Map();
@@ -1616,10 +1620,12 @@
       const rows = [];
       groupMap.forEach((_, name) => {
         const real = realMap.get(name) || 0;
+        const fat  = fatMap.get(name) || 0;
         const meta = metaMap.get(name) || 0;
         const gap = meta - real;
         const pct = meta > 0 ? real / meta : 0;
-        rows.push({ name, real, meta, gap, pct });
+        const pctFat = meta > 0 ? fat / meta : 0;
+        rows.push({ name, real, fat, meta, gap, pct, pctFat });
       });
       return rows.sort((a, b) => b.pct - a.pct);
     }
