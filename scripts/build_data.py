@@ -198,6 +198,48 @@ def build(xlsx_path):
                 b["far"] += val
             else:
                 b["ali"] += val
+    # inicializa campos de meta de positivação (preenchidos abaixo por d_metas)
+    for b in magg.values():
+        b["p_total"] = 0.0
+        b["p_ali"] = 0.0
+        b["p_far"] = 0.0
+
+    # ---------- d_metas (positivação) ----------
+    if "d_metas" in wb.sheetnames:
+        ws = wb["d_metas"]
+        rows = ws.iter_rows(values_only=True)
+        header = [s(h) for h in next(rows)]
+        # busca colunas tolerante a espaços/case
+        def find_col(name):
+            target = name.strip().lower()
+            for h in header:
+                if h.strip().lower() == target:
+                    return header.index(h)
+            return None
+        i_rv = find_col("RV")
+        i_uf = find_col("ds_uf")
+        i_tt = find_col("TT Positivação")
+        i_ali = find_col("OBJ PRODUTIVIDADE HFS")
+        i_far = find_col("OBJ PRODUTIVIDADE FARMA")
+        print(f"[build_data] d_metas cols: RV={i_rv} ds_uf={i_uf} TT={i_tt} HFS={i_ali} FARMA={i_far}", file=sys.stderr)
+        if i_rv is not None and i_uf is not None:
+            for r in rows:
+                if not r:
+                    continue
+                rv = s(r[i_rv])
+                uf = s(r[i_uf])
+                if not rv or not uf:
+                    continue
+                k = rv + "|" + uf
+                b = magg.setdefault(k, {"rv": rv, "uf": uf, "total": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
+                                        "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0})
+                if i_tt is not None:
+                    b["p_total"] += n(r[i_tt])
+                if i_ali is not None:
+                    b["p_ali"] += n(r[i_ali])
+                if i_far is not None:
+                    b["p_far"] += n(r[i_far])
+
     metas = list(magg.values())
 
     # timestamp em horário de Brasília
