@@ -1102,55 +1102,40 @@
 
     <div class="cards-row cards-row-3" id="section-positivacao">
 
-      <div class="kpi-card pos-total">
+      <div class="kpi-card pos-total" id="card-pos-total">
         <div class="card-title">Positivação Total</div>
-        <div class="kpi-value">1.842</div>
-        <div class="kpi-meta">Meta: <span>2.200 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">358 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">83,7%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:83.7%"></div></div>
-        <div class="bar-header" style="margin-top:6px;">
-          <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">4.077 PDVs · 45%</span>
-        </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:45%;opacity:0.45;"></div><div class="meta-marker" style="left:54.0%;"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
-      <div class="kpi-card pos-alimentar">
+      <div class="kpi-card pos-alimentar" id="card-pos-ali">
         <div class="card-title">Positivação Alimentar</div>
-        <div class="kpi-value">431</div>
-        <div class="kpi-meta">Meta: <span>580 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">149 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">74,3%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:74.3%"></div></div>
-        <div class="bar-header" style="margin-top:6px;">
-          <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">980 PDVs · 44%</span>
-        </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:59.2%;"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
-      <div class="kpi-card pos-farma">
+      <div class="kpi-card pos-farma" id="card-pos-far">
         <div class="card-title">Positivação Farma</div>
-        <div class="kpi-value">310</div>
-        <div class="kpi-meta">Meta: <span>430 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">120 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">72,1%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:72.1%"></div></div>
-        <div class="bar-header" style="margin-top:6px;">
-          <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">710 PDVs · 44%</span>
-        </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:60.6%;"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
     </div>
@@ -2166,7 +2151,8 @@
 
 
     const sums = {v:0, ec:0, sp:0, ali:0, far:0,
-                  vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0};
+                  vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0,
+                  p:0, p_ali:0, p_far:0};
     vendas.forEach(x=>{
       if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
@@ -2177,9 +2163,14 @@
       sums.vf_sp  += x.vf_sp  || 0;
       sums.vf_ali += x.vf_ali || 0;
       sums.vf_far += x.vf_far || 0;
+      // positivação (contagem de CNPJs únicos com vl_financeiro > 0)
+      sums.p     += x.p     || 0;
+      sums.p_ali += x.p_ali || 0;
+      sums.p_far += x.p_far || 0;
     });
 
-    const metaSums = {total:0, ec:0, sp:0, ali:0, far:0};
+    const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
+                      p_total:0, p_ali:0, p_far:0};
     metas.forEach(m=>{
       if (!eligibleKeys.has(ck(m.rv, m.uf))) return;
       metaSums.total += m.total||0;
@@ -2187,12 +2178,19 @@
       metaSums.sp    += m.sp||0;
       metaSums.ali   += m.ali||0;
       metaSums.far   += m.far||0;
+      metaSums.p_total += m.p_total||0;
+      metaSums.p_ali   += m.p_ali||0;
+      metaSums.p_far   += m.p_far||0;
     });
 
+    const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
+    const fmtPDV = (v)=> fmtInt(v) + ' PDVs';
 
-    function paint(cardId, total, fat, metaVal, index){
+    function paint(cardId, total, fat, metaVal, index, opts){
       const card = document.getElementById(cardId);
       if (!card) return;
+      const fmtVal  = (opts && opts.fmtVal)  || fmtMoney;
+      const fmtMeta = (opts && opts.fmtMeta) || fmtVal;
       const gap = metaVal - total;
       const pct    = metaVal > 0 ? total / metaVal : 0;
       const pctFat = metaVal > 0 ? fat   / metaVal : 0;
@@ -2201,7 +2199,7 @@
       const pctEl   = card.querySelector('[data-bind=pct]');
       const barEl   = card.querySelector('[data-bind=bar]');
       const barTotEl= card.querySelector('[data-bind=bar-total]');
-      card.querySelector('[data-bind=meta]').textContent = fmtMoney(metaVal);
+      card.querySelector('[data-bind=meta]').textContent = fmtMeta(metaVal);
       gapEl.style.color = gap > 0 ? '#DC2626' : '#059669';
 
       const fromValor = valorEl.__value || 0;
@@ -2219,7 +2217,6 @@
         barTotEl.style.transition = 'none';
         barTotEl.style.width = '0%';
       }
-      // force reflow
       void barEl.offsetWidth;
       barEl.style.transition = '';
       if (barTotEl) barTotEl.style.transition = '';
@@ -2227,8 +2224,8 @@
       const delay = REDUCE_MOTION ? 0 : (index || 0) * 90;
       const DUR = 1100;
       setTimeout(() => {
-        animateCount(valorEl, fromValor, total,          DUR, fmtMoney);
-        animateCount(gapEl,   fromGap,   Math.abs(gap),  DUR, fmtMoney);
+        animateCount(valorEl, fromValor, total,          DUR, fmtVal);
+        animateCount(gapEl,   fromGap,   Math.abs(gap),  DUR, fmtMeta);
         animateCount(pctEl,   fromPct,   pct,            DUR, fmtPct);
         requestAnimationFrame(() => requestAnimationFrame(() => {
           barEl.classList.add('animate');
@@ -2242,6 +2239,11 @@
     paint('card-fat-sp',    sums.sp,  sums.vf_sp,  metaSums.sp,    2);
     paint('card-fat-ali',   sums.ali, sums.vf_ali, metaSums.ali,   3);
     paint('card-fat-far',   sums.far, sums.vf_far, metaSums.far,   4);
+
+    const posOpts = { fmtVal: fmtInt, fmtMeta: fmtPDV };
+    paint('card-pos-total', sums.p,     sums.p,     metaSums.p_total, 0, posOpts);
+    paint('card-pos-ali',   sums.p_ali, sums.p_ali, metaSums.p_ali,   1, posOpts);
+    paint('card-pos-far',   sums.p_far, sums.p_far, metaSums.p_far,   2, posOpts);
   }
 
 

@@ -86,6 +86,9 @@ def build(xlsx_path):
     print(f"[build_data] f_vendas_total headers: {header}", file=sys.stderr)
     print(f"[build_data] vl_faturamento column: {fat_key!r} (found={has_fat_flag})", file=sys.stderr)
     vagg = {}
+    # Positivação: por (rv,uf,cnpj) somamos vl_financeiro split total/ali/far
+    # Depois contamos CNPJs únicos onde a soma > 0.
+    cnpj_sums = {}  # {(rv,uf): {cnpj: {"t":..., "a":..., "f":...}}}
     fat_rows = 0
     total_rows = 0
     for r in rows:
@@ -98,6 +101,7 @@ def build(xlsx_path):
         val = n(r[idx["vl_financeiro"]])
         plat = s(r[idx["Plataforma"]])
         chan = s(r[idx["Store Channel"]])
+        cnpj = s(r[idx["nr_cnpj_cpf"]]) if "nr_cnpj_cpf" in idx else ""
         # aceita qualquer valor não-zero (1, "1", 1.0, "Sim", etc.) como faturado
         raw_fat = r[idx[fat_key]] if has_fat_flag else None
         if has_fat_flag:
@@ -116,6 +120,7 @@ def build(xlsx_path):
             "rv": rv, "uf": uf,
             "v": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
             "vf": 0.0, "vf_ec": 0.0, "vf_sp": 0.0, "vf_ali": 0.0, "vf_far": 0.0,
+            "p": 0, "p_ali": 0, "p_far": 0,
         })
         b["v"] += val
         if plat == "Escolha Certa":
@@ -136,8 +141,32 @@ def build(xlsx_path):
                 b["vf_far"] += val
             else:
                 b["vf_ali"] += val
+        if cnpj:
+            cm = cnpj_sums.setdefault(k, {})
+            cs = cm.setdefault(cnpj, {"t": 0.0, "a": 0.0, "f": 0.0})
+            cs["t"] += val
+            if chan in FARMA:
+                cs["f"] += val
+            else:
+                cs["a"] += val
+
+    # Conta CNPJs únicos com somatória > 0 por (rv,uf)
+    pos_total_all = 0
+    for k, cm in cnpj_sums.items():
+        b = vagg.get(k)
+        if not b:
+            continue
+        for cnpj, cs in cm.items():
+            if cs["t"] > 0:
+                b["p"] += 1
+                pos_total_all += 1
+            if cs["a"] > 0:
+                b["p_ali"] += 1
+            if cs["f"] > 0:
+                b["p_far"] += 1
+
     vendas = list(vagg.values())
-    print(f"[build_data] linhas processadas: {total_rows}, faturadas: {fat_rows}", file=sys.stderr)
+    print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, CNPJs positivados: {pos_total_all}", file=sys.stderr)
 
 
     # ---------- d_metas_fin ----------
@@ -169,6 +198,48 @@ def build(xlsx_path):
                 b["far"] += val
             else:
                 b["ali"] += val
+    # inicializa campos de meta de positivação (preenchidos abaixo por d_metas)
+    for b in magg.values():
+        b["p_total"] = 0.0
+        b["p_ali"] = 0.0
+        b["p_far"] = 0.0
+
+    # ---------- d_metas (positivação) ----------
+    if "d_metas" in wb.sheetnames:
+        ws = wb["d_metas"]
+        rows = ws.iter_rows(values_only=True)
+        header = [s(h) for h in next(rows)]
+        # busca colunas tolerante a espaços/case
+        def find_col(name):
+            target = name.strip().lower()
+            for h in header:
+                if h.strip().lower() == target:
+                    return header.index(h)
+            return None
+        i_rv = find_col("RV")
+        i_uf = find_col("ds_uf")
+        i_tt = find_col("TT Positivação")
+        i_ali = find_col("OBJ PRODUTIVIDADE HFS")
+        i_far = find_col("OBJ PRODUTIVIDADE FARMA")
+        print(f"[build_data] d_metas cols: RV={i_rv} ds_uf={i_uf} TT={i_tt} HFS={i_ali} FARMA={i_far}", file=sys.stderr)
+        if i_rv is not None and i_uf is not None:
+            for r in rows:
+                if not r:
+                    continue
+                rv = s(r[i_rv])
+                uf = s(r[i_uf])
+                if not rv or not uf:
+                    continue
+                k = rv + "|" + uf
+                b = magg.setdefault(k, {"rv": rv, "uf": uf, "total": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
+                                        "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0})
+                if i_tt is not None:
+                    b["p_total"] += n(r[i_tt])
+                if i_ali is not None:
+                    b["p_ali"] += n(r[i_ali])
+                if i_far is not None:
+                    b["p_far"] += n(r[i_far])
+
     metas = list(magg.values())
 
     # timestamp em horário de Brasília
