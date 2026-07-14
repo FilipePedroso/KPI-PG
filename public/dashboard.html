@@ -2152,7 +2152,8 @@
 
     const sums = {v:0, ec:0, sp:0, ali:0, far:0,
                   vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0,
-                  p:0, p_ali:0, p_far:0};
+                  p:0, p_ali:0, p_far:0,
+                  pf:0, pf_ali:0, pf_far:0};
     vendas.forEach(x=>{
       if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
@@ -2163,10 +2164,14 @@
       sums.vf_sp  += x.vf_sp  || 0;
       sums.vf_ali += x.vf_ali || 0;
       sums.vf_far += x.vf_far || 0;
-      // positivação (contagem de CNPJs únicos com vl_financeiro > 0)
+      // positivação: CNPJs únicos com vl_financeiro > 0 (total)
+      // e sub-subset positivação faturada (pf*)
       sums.p     += x.p     || 0;
       sums.p_ali += x.p_ali || 0;
       sums.p_far += x.p_far || 0;
+      sums.pf     += x.pf     || 0;
+      sums.pf_ali += x.pf_ali || 0;
+      sums.pf_far += x.pf_far || 0;
     });
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
