@@ -942,9 +942,21 @@
     .team-bar-meta b { font-weight: 600; color: #1a1a2e; font-feature-settings: 'tnum'; }
     .team-bar-meta .gap-val { color: #DC2626; font-weight: 700; }
     .team-bar-track {
-      margin-top: 8px; height: 8px; border-radius: 999px; background: #E4E8F0; overflow: hidden;
+      margin-top: 8px; height: 8px; border-radius: 999px; background: #E4E8F0; overflow: hidden; position: relative;
     }
-    .team-bar-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 0.4s ease; }
+    .team-bar-total {
+      position: absolute; left: 0; top: 0; height: 100%; width: 0%;
+      background: #9CA3AF; border-radius: 999px; z-index: 1;
+      transition: width 1s cubic-bezier(0.22, 0.9, 0.3, 1);
+    }
+    .team-bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; width: 0%; z-index: 2; transition: width 0.4s ease; }
+    .team-bar-legend {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 9px; color: #64748B; font-weight: 500; white-space: nowrap; margin-right: 6px;
+    }
+    .team-bar-legend .lg-item { display: inline-flex; align-items: center; gap: 3px; }
+    .team-bar-legend .lg-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; flex: 0 0 auto; background: #9CA3AF; }
+    .team-bar-legend .lg-nfat { background: #9CA3AF; }
     .team-bars-empty { text-align: center; color: #94A3B8; padding: 18px; font-size: 12px; }
 
     @media (max-width: 640px) {
