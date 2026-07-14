@@ -1797,7 +1797,13 @@
       const wrap = document.createElement('div');
       wrap.className = 'team-view-wrap';
       wrap.innerHTML =
-        '<div class="team-view-header"><div class="team-view-title">Faturamento Total por Equipe</div></div>' +
+        '<div class="team-view-header">' +
+          '<div class="team-view-title">Faturamento Total por Equipe</div>' +
+          '<span class="team-view-legend">' +
+            '<span class="lg-item"><i class="lg-dot lg-fat" style="background:' + barColor + ';"></i>Faturado</span>' +
+            '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não Fat.</span>' +
+          '</span>' +
+        '</div>' +
         '<div class="team-table-wrap" id="team-table-wrap"></div>';
       card.appendChild(wrap);
       card.classList.add('team-view');
