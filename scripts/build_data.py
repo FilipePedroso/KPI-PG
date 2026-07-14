@@ -121,6 +121,7 @@ def build(xlsx_path):
             "v": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
             "vf": 0.0, "vf_ec": 0.0, "vf_sp": 0.0, "vf_ali": 0.0, "vf_far": 0.0,
             "p": 0, "p_ali": 0, "p_far": 0,
+            "pf": 0, "pf_ali": 0, "pf_far": 0,
         })
         b["v"] += val
         if plat == "Escolha Certa":
@@ -143,14 +144,22 @@ def build(xlsx_path):
                 b["vf_ali"] += val
         if cnpj:
             cm = cnpj_sums.setdefault(k, {})
-            cs = cm.setdefault(cnpj, {"t": 0.0, "a": 0.0, "f": 0.0})
+            cs = cm.setdefault(cnpj, {"t": 0.0, "a": 0.0, "f": 0.0,
+                                      "tf": 0.0, "af": 0.0, "ff": 0.0})
             cs["t"] += val
             if chan in FARMA:
                 cs["f"] += val
             else:
                 cs["a"] += val
+            if is_fat:
+                cs["tf"] += val
+                if chan in FARMA:
+                    cs["ff"] += val
+                else:
+                    cs["af"] += val
 
     # Conta CNPJs únicos com somatória > 0 por (rv,uf)
+    # p*  = positivados (total) ; pf* = positivados faturados
     pos_total_all = 0
     for k, cm in cnpj_sums.items():
         b = vagg.get(k)
@@ -164,9 +173,16 @@ def build(xlsx_path):
                 b["p_ali"] += 1
             if cs["f"] > 0:
                 b["p_far"] += 1
+            if cs["tf"] > 0:
+                b["pf"] += 1
+            if cs["af"] > 0:
+                b["pf_ali"] += 1
+            if cs["ff"] > 0:
+                b["pf_far"] += 1
 
     vendas = list(vagg.values())
     print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, CNPJs positivados: {pos_total_all}", file=sys.stderr)
+
 
 
     # ---------- d_metas_fin ----------
