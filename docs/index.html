@@ -845,6 +845,19 @@
       color: #0F172A;
       letter-spacing: 0.2px;
     }
+    .team-view-legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-right: auto;
+      margin-left: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748B;
+    }
+    .team-view-legend .lg-item { display: inline-flex; align-items: center; gap: 4px; }
+    .team-view-legend .lg-dot  { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: 0 0 auto; background: #9CA3AF; }
+    .team-view-legend .lg-nfat { background: #9CA3AF; }
     .team-dropdown {
       position: relative;
       display: inline-flex;
@@ -1631,10 +1644,6 @@
           '<div class="team-bar-item">' +
             '<div class="team-bar-head">' +
               '<div class="team-bar-name">' + r.name + '</div>' +
-              '<span class="team-bar-legend">' +
-                '<span class="lg-item"><i class="lg-dot lg-fat" style="background:' + barColor + ';"></i>Faturado</span>' +
-                '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não Fat.</span>' +
-              '</span>' +
               '<div class="team-bar-pct" data-target-pct="' + (r.pct * 100).toFixed(2) + '">0,0%</div>' +
             '</div>' +
             '<div class="team-bar-meta">' +
@@ -1801,7 +1810,13 @@
       const wrap = document.createElement('div');
       wrap.className = 'team-view-wrap';
       wrap.innerHTML =
-        '<div class="team-view-header"><div class="team-view-title">Faturamento Total por Equipe</div></div>' +
+        '<div class="team-view-header">' +
+          '<div class="team-view-title">Faturamento Total por Equipe</div>' +
+          '<span class="team-view-legend">' +
+            '<span class="lg-item"><i class="lg-dot lg-fat" style="background:' + barColor + ';"></i>Faturado</span>' +
+            '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não Fat.</span>' +
+          '</span>' +
+        '</div>' +
         '<div class="team-table-wrap" id="team-table-wrap"></div>';
       card.appendChild(wrap);
       card.classList.add('team-view');
@@ -2152,7 +2167,8 @@
 
     const sums = {v:0, ec:0, sp:0, ali:0, far:0,
                   vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0,
-                  p:0, p_ali:0, p_far:0};
+                  p:0, p_ali:0, p_far:0,
+                  pf:0, pf_ali:0, pf_far:0};
     vendas.forEach(x=>{
       if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
@@ -2163,10 +2179,14 @@
       sums.vf_sp  += x.vf_sp  || 0;
       sums.vf_ali += x.vf_ali || 0;
       sums.vf_far += x.vf_far || 0;
-      // positivação (contagem de CNPJs únicos com vl_financeiro > 0)
+      // positivação: CNPJs únicos com vl_financeiro > 0 (total)
+      // e sub-subset positivação faturada (pf*)
       sums.p     += x.p     || 0;
       sums.p_ali += x.p_ali || 0;
       sums.p_far += x.p_far || 0;
+      sums.pf     += x.pf     || 0;
+      sums.pf_ali += x.pf_ali || 0;
+      sums.pf_far += x.pf_far || 0;
     });
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
@@ -2241,9 +2261,9 @@
     paint('card-fat-far',   sums.far, sums.vf_far, metaSums.far,   4);
 
     const posOpts = { fmtVal: fmtInt, fmtMeta: fmtPDV };
-    paint('card-pos-total', sums.p,     sums.p,     metaSums.p_total, 0, posOpts);
-    paint('card-pos-ali',   sums.p_ali, sums.p_ali, metaSums.p_ali,   1, posOpts);
-    paint('card-pos-far',   sums.p_far, sums.p_far, metaSums.p_far,   2, posOpts);
+    paint('card-pos-total', sums.p,     sums.pf,     metaSums.p_total, 0, posOpts);
+    paint('card-pos-ali',   sums.p_ali, sums.pf_ali, metaSums.p_ali,   1, posOpts);
+    paint('card-pos-far',   sums.p_far, sums.pf_far, metaSums.p_far,   2, posOpts);
   }
 
 
