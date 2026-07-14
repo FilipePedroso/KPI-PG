@@ -1102,55 +1102,40 @@
 
     <div class="cards-row cards-row-3" id="section-positivacao">
 
-      <div class="kpi-card pos-total">
+      <div class="kpi-card pos-total" id="card-pos-total">
         <div class="card-title">Positivação Total</div>
-        <div class="kpi-value">1.842</div>
-        <div class="kpi-meta">Meta: <span>2.200 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">358 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">83,7%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:83.7%"></div></div>
-        <div class="bar-header" style="margin-top:6px;">
-          <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">4.077 PDVs · 45%</span>
-        </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:45%;opacity:0.45;"></div><div class="meta-marker" style="left:54.0%;"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
-      <div class="kpi-card pos-alimentar">
+      <div class="kpi-card pos-alimentar" id="card-pos-ali">
         <div class="card-title">Positivação Alimentar</div>
-        <div class="kpi-value">431</div>
-        <div class="kpi-meta">Meta: <span>580 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">149 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">74,3%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:74.3%"></div></div>
-        <div class="bar-header" style="margin-top:6px;">
-          <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">980 PDVs · 44%</span>
-        </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:59.2%;"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
-      <div class="kpi-card pos-farma">
+      <div class="kpi-card pos-farma" id="card-pos-far">
         <div class="card-title">Positivação Farma</div>
-        <div class="kpi-value">310</div>
-        <div class="kpi-meta">Meta: <span>430 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">120 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">72,1%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:72.1%"></div></div>
-        <div class="bar-header" style="margin-top:6px;">
-          <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">710 PDVs · 44%</span>
-        </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:60.6%;"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
     </div>
