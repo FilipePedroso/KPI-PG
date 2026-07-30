@@ -27,7 +27,6 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      overflow: hidden;
     }
 
     .header::before {
@@ -369,6 +368,10 @@
         padding: 8px 16px 12px;
       }
 
+      .header {
+        margin-bottom: 21px;
+      }
+
       .filters-toggle {
         display: flex;
         align-items: center;
@@ -383,10 +386,13 @@
         font-family: inherit;
         font-size: 18px;
         padding: 0;
-        margin: -21px auto 0;
+        margin: 0;
         cursor: pointer;
         box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-        position: relative;
+        position: absolute;
+        bottom: -21px;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 2;
         transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
       }
