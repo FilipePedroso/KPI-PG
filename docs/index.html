@@ -373,24 +373,27 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        width: 100%;
-        border: 0;
-        border-top: 1px solid rgba(255,255,255,0.15);
-        background: rgba(255,255,255,0.10);
+        gap: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.25);
+        background: #003DA5;
         color: #fff;
         font-family: inherit;
-        font-size: 12px;
-        font-weight: 500;
-        padding: 8px 16px;
+        font-size: 18px;
+        padding: 0;
+        margin: -21px auto 0;
         cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+        position: relative;
+        z-index: 2;
+        transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
       }
-      .filters-toggle i { font-size: 14px; }
-      .filters-toggle .ft-arrow {
-        transition: transform 0.3s ease;
-        display: inline-block;
-      }
-      .header.filters-open .filters-toggle .ft-arrow { transform: rotate(180deg); }
+      .filters-toggle:active { transform: scale(0.94); }
+      .filters-toggle i { font-size: 18px; line-height: 1; }
+      .filters-toggle .ft-text,
+      .filters-toggle .ft-arrow { display: none; }
 
       .section-container {
         padding: 16px 16px 20px;
@@ -1066,10 +1069,8 @@
 
     </div>
 
-    <button type="button" class="filters-toggle" id="filters-toggle" aria-expanded="false" aria-controls="filters-bar">
+    <button type="button" class="filters-toggle" id="filters-toggle" aria-expanded="false" aria-controls="filters-bar" aria-label="Filtros">
       <i class="ti ti-filter" aria-hidden="true"></i>
-      <span>Filtros</span>
-      <span class="ft-arrow">▾</span>
     </button>
   </div>
 
