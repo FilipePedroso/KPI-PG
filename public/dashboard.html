@@ -2236,7 +2236,9 @@
     const sums = {v:0, ec:0, sp:0, ali:0, far:0,
                   vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0,
                   p:0, p_ali:0, p_far:0,
-                  pf:0, pf_ali:0, pf_far:0};
+                  pf:0, pf_ali:0, pf_far:0,
+                  r_hfs:0, r_far:0, r_alw:0, r_pmp:0,
+                  rf_hfs:0, rf_far:0, rf_alw:0, rf_pmp:0};
     vendas.forEach(x=>{
       if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
@@ -2255,10 +2257,24 @@
       sums.pf     += x.pf     || 0;
       sums.pf_ali += x.pf_ali || 0;
       sums.pf_far += x.pf_far || 0;
+      // positivação ranking (HFS / Farma / Always Noturno / Pampers)
+      ['hfs','far','alw','pmp'].forEach(m=>{
+        sums['r_'+m]  += x['r_'+m]  || 0;
+        sums['rf_'+m] += x['rf_'+m] || 0;
+      });
+    });
+
+    // Potencial (d_clientes_braveo): contagem distinta de CNPJ elegível
+    const potSums = {hfs:0, far:0, alw:0, pmp:0};
+    potencial.forEach(x=>{
+      if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
+      potSums.hfs += x.hfs||0; potSums.far += x.far||0;
+      potSums.alw += x.alw||0; potSums.pmp += x.pmp||0;
     });
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
-                      p_total:0, p_ali:0, p_far:0};
+                      p_total:0, p_ali:0, p_far:0,
+                      r_hfs:0, r_far:0, r_alw:0, r_pmp:0};
     metas.forEach(m=>{
       if (!noFilters && !eligibleKeys.has(ck(m.rv, m.uf))) return;
       metaSums.total += m.total||0;
@@ -2269,7 +2285,12 @@
       metaSums.p_total += m.p_total||0;
       metaSums.p_ali   += m.p_ali||0;
       metaSums.p_far   += m.p_far||0;
+      metaSums.r_hfs += m.r_hfs||0;
+      metaSums.r_far += m.r_far||0;
+      metaSums.r_alw += m.r_alw||0;
+      metaSums.r_pmp += m.r_pmp||0;
     });
+
 
     const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
     const fmtPDV = (v)=> fmtInt(v) + ' PDVs';
