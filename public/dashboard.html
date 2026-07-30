@@ -2034,6 +2034,8 @@
   const rvEntries = data.comercial.map(r=>({uf:r.uf, cv:r.cv, sv:r.sv, rvName:r.rvName, rv:String(r.rv)}));
   const metas = data.metas;     // [{rv,uf,total,ec,sp,ali,far}]
   const vendas = data.vendas;   // [{rv,uf,v,ec,sp,ali,far}]
+  const potencial = data.potencial || [];  // [{rv,uf,hfs,far,alw,pmp}]
+
   const ck = (rv,uf) => String(rv)+'|'+String(uf);
 
   // ── Filtros: dropdown customizado (clique = único; Ctrl/Cmd = múltiplo) ──
