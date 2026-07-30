@@ -142,6 +142,8 @@ def build(dados_path, estrutura_path):
     v_can = col(idx, "Canal")
     v_fat = col(idx, "vl_faturamento")
     v_cnpj = col(idx, "nr_cnpj_cpf")
+    v_ger = col(idx, "cd_gerente")
+    v_sup = col(idx, "cd_vendedor_superior")
 
     vagg = {}
     cnpj_sums = {}
@@ -174,6 +176,10 @@ def build(dados_path, estrutura_path):
             "p": 0, "p_ali": 0, "p_far": 0,
             "pf": 0, "pf_ali": 0, "pf_far": 0,
         })
+        if v_sup is not None and not b.get("cdSv"):
+            b["cdSv"] = rv_key(r[v_sup])
+        if v_ger is not None and not b.get("cdCv"):
+            b["cdCv"] = rv_key(r[v_ger])
         b["v"] += val
         if plat == "Escolha Certa":
             b["ec"] += val
@@ -255,6 +261,7 @@ def build_orfaos(data):
             "vl_financeiro": round(x.get("v", 0.0), 2),
             "vl_faturado": round(x.get("vf", 0.0), 2),
             "positivados": x.get("p", 0),
+            "cdSv": x.get("cdSv", ""), "cdCv": x.get("cdCv", ""),
         })
     vkeys = {x["rv"] + "|" + x["uf"] for x in data["vendas"]}
     for m in data["metas"]:
@@ -264,6 +271,7 @@ def build_orfaos(data):
         itens.append({
             "chave": k, "rv": m["rv"], "uf": m["uf"], "origem": "metas",
             "vl_financeiro": 0.0, "vl_faturado": 0.0, "positivados": 0,
+            "cdSv": "", "cdCv": "",
             "meta_financeira": round(m.get("total", 0.0), 2),
             "meta_positivacao": round(m.get("p_total", 0.0), 2),
         })
@@ -277,7 +285,8 @@ def completar_estrutura(data, itens):
         data["comercial"].append({
             "rv": i["rv"], "uf": i["uf"],
             "rvName": f"{i['rv']} - -",
-            "sv": "-", "cv": "-",
+            "sv": f"{i['cdSv']} - -" if i.get("cdSv") else "-",
+            "cv": f"{i['cdCv']} - -" if i.get("cdCv") else "-",
         })
 
 
@@ -323,11 +332,11 @@ def main():
     completar_estrutura(data, orfaos)
     write_all("data.json", data)
     write_csv("sem-estrutura.csv",
-              [[i["rv"], i["uf"], "-", i["origem"],
+              [[i["rv"], i["uf"], "-", i.get("cdSv", ""), i.get("cdCv", ""), i["origem"],
                 f"{i.get('vl_financeiro', 0.0):.2f}".replace(".", ","),
                 f"{i.get('vl_faturado', 0.0):.2f}".replace(".", ","),
                 i.get("positivados", 0)] for i in orfaos],
-              ["cd_vendedor", "ds_uf", "nome", "origem",
+              ["cd_vendedor", "ds_uf", "nome", "cd_vendedor_superior", "cd_gerente", "origem",
                "vl_financeiro", "vl_faturado", "positivados"])
     print(f"OK. generated_at = {data['generated_at']}")
     print(f"comercial: {len(data['comercial'])}  vendas: {len(data['vendas'])}  metas: {len(data['metas'])}")
