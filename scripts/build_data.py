@@ -19,6 +19,15 @@ DATA_DIR = os.path.join(ROOT, "data")
 OUT_PATHS = [os.path.join(ROOT, "docs", "data.json"),
              os.path.join(ROOT, "public", "data.json")]
 
+# EANs válidos para o card "Positivação Always Noturno"
+ALWAYS_EANS = {
+    "7506309805498", "7500435214650", "7500435214667", "7500435248334",
+    "7506339326055", "7506339394603", "7500435190640", "7506339326031",
+    "7500435265263", "7500435233446", "7506339325263", "7500435190657",
+    "7506339394535", "7506339325249",
+}
+
+
 
 def s(v):
     return "" if v is None else str(v).strip()
@@ -107,6 +116,10 @@ def build(dados_path, estrutura_path):
     p_tot = col(idx, "Objetivo Positivação Total")
     p_ali = col(idx, "Objetivo Positivação Alimentar")
     p_far = col(idx, "Objetivo Positivação Farma")
+    r_hfs = col(idx, "OBJ PRODUTIVIDADE HFS")
+    r_far = col(idx, "OBJ PRODUTIVIDADE FARMA", "OBJ PRODUTIVIDADE FARMA ")
+    r_alw = col(idx, "Objetivo Marca 1")
+    r_pmp = col(idx, "Objetivo Marca 2")
     magg = {}
     for r in rows:
         if not r:
@@ -118,7 +131,9 @@ def build(dados_path, estrutura_path):
         k = rv + "|" + uf
         b = magg.setdefault(k, {"rv": rv, "uf": uf, "total": 0.0, "ec": 0.0,
                                 "sp": 0.0, "ali": 0.0, "far": 0.0,
-                                "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0})
+                                "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0,
+                                "r_hfs": 0.0, "r_far": 0.0,
+                                "r_alw": 0.0, "r_pmp": 0.0})
         b["total"] += n(r[m_tot]) if m_tot is not None else 0.0
         b["ec"] += n(r[m_ec]) if m_ec is not None else 0.0
         b["sp"] += n(r[m_sp]) if m_sp is not None else 0.0
@@ -127,7 +142,53 @@ def build(dados_path, estrutura_path):
         b["p_total"] += n(r[p_tot]) if p_tot is not None else 0.0
         b["p_ali"] += n(r[p_ali]) if p_ali is not None else 0.0
         b["p_far"] += n(r[p_far]) if p_far is not None else 0.0
+        b["r_hfs"] += n(r[r_hfs]) if r_hfs is not None else 0.0
+        b["r_far"] += n(r[r_far]) if r_far is not None else 0.0
+        b["r_alw"] += n(r[r_alw]) if r_alw is not None else 0.0
+        b["r_pmp"] += n(r[r_pmp]) if r_pmp is not None else 0.0
     metas = list(magg.values())
+
+    # ---------- Estrutura: d_clientes_braveo (potencial) ----------
+    # Contagem distinta de CNPJ por rv|uf, aplicando as mesmas regras de
+    # negócio (Canal Ranking / Plataforma) de cada card de ranking.
+    potencial = {}
+    if "d_clientes_braveo" in wbe.sheetnames:
+        ws = wbe["d_clientes_braveo"]
+        rows, header, idx = header_map(ws)
+        c_rv = col(idx, "cd_vendedor")
+        c_uf = col(idx, "ds_uf")
+        c_cnpj = col(idx, "nr_cnpj_cpf")
+        c_can = col(idx, "Canal Ranking")
+        c_plat = col(idx, "Plataforma")
+        psets = {}
+        for r in rows:
+            if not r:
+                continue
+            rv = rv_key(r[c_rv])
+            uf = s(r[c_uf])
+            cnpj = s(r[c_cnpj]) if c_cnpj is not None else ""
+            if not rv or not uf or not cnpj:
+                continue
+            canal = s(r[c_can]) if c_can is not None else ""
+            plat = s(r[c_plat]) if c_plat is not None else ""
+            k = rv + "|" + uf
+            b = psets.setdefault(k, {"hfs": set(), "far": set(),
+                                     "alw": set(), "pmp": set()})
+            plat_ok = plat in ("Escolha Certa", "Store Platform")
+            if canal == "HFS" and plat_ok:
+                b["hfs"].add(cnpj)
+            if canal in ("Farma Indep", "Farma Rede") and plat_ok:
+                b["far"].add(cnpj)
+            if canal in ("HFS", "Farma Indep") and plat == "Escolha Certa":
+                b["alw"].add(cnpj)
+            if canal in ("HFS", "Farma Indep") and plat_ok:
+                b["pmp"].add(cnpj)
+        for k, b in psets.items():
+            rv, uf = k.split("|", 1)
+            potencial[k] = {"rv": rv, "uf": uf,
+                            "hfs": len(b["hfs"]), "far": len(b["far"]),
+                            "alw": len(b["alw"]), "pmp": len(b["pmp"])}
+
 
     # ---------- Dados: f_venda_total ----------
     wbd = openpyxl.load_workbook(dados_path, read_only=True, data_only=True)
@@ -144,10 +205,16 @@ def build(dados_path, estrutura_path):
     v_cnpj = col(idx, "nr_cnpj_cpf")
     v_ger = col(idx, "cd_gerente")
     v_sup = col(idx, "cd_vendedor_superior")
+    v_crank = col(idx, "Canal Ranking")
+    v_ean = col(idx, "ds_ean")
+    v_grupo = col(idx, "nm_grupo")
+    v_prod = col(idx, "nm_produto")
 
     vagg = {}
     cnpj_sums = {}
+    rank_sums = {}
     total_rows = fat_rows = 0
+
     for r in rows:
         if not r:
             continue
@@ -209,6 +276,33 @@ def build(dados_path, estrutura_path):
                 cs["tf"] += val
                 cs["ff" if is_far else "af"] += val
 
+            # ----- Ranking (Canal Ranking / Plataforma / EAN / grupo) -----
+            crank = s(r[v_crank]) if v_crank is not None else ""
+            plat_ok = plat in ("Escolha Certa", "Store Platform")
+            ean = rv_key(r[v_ean]) if v_ean is not None else ""
+            grupo = s(r[v_grupo]).upper() if v_grupo is not None else ""
+            prod = s(r[v_prod]).upper() if v_prod is not None else ""
+            rb = rank_sums.setdefault(k, {})
+
+            def add_rank(metric):
+                cc = rb.setdefault(metric, {}).setdefault(cnpj, {"t": 0.0, "f": 0.0})
+                cc["t"] += val
+                if is_fat:
+                    cc["f"] += val
+
+            if crank == "HFS" and plat_ok:
+                add_rank("hfs")
+            if crank in ("Farma Indep", "Farma Rede") and plat_ok:
+                add_rank("far")
+            if crank in ("HFS", "Farma Indep") and plat == "Escolha Certa" \
+                    and ean in ALWAYS_EANS:
+                add_rank("alw")
+            if crank in ("HFS", "Farma Indep") and plat_ok \
+                    and ("PAMPERS" in grupo or "FRALDA" in grupo) \
+                    and "TOALHAS" not in prod:
+                add_rank("pmp")
+
+
     pos_total_all = 0
     for k, cm in cnpj_sums.items():
         b = vagg.get(k)
@@ -229,6 +323,16 @@ def build(dados_path, estrutura_path):
             if cs["ff"] > 0:
                 b["pf_far"] += 1
 
+    for k, mm in rank_sums.items():
+        b = vagg.get(k)
+        if not b:
+            continue
+        for metric, cm in mm.items():
+            tot = sum(1 for cs in cm.values() if cs["t"] > 0)
+            fat = sum(1 for cs in cm.values() if cs["f"] > 0)
+            b["r_" + metric] = tot
+            b["rf_" + metric] = fat
+
     vendas = list(vagg.values())
     print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, "
           f"CNPJs positivados: {pos_total_all}", file=sys.stderr)
@@ -240,7 +344,10 @@ def build(dados_path, estrutura_path):
         "comercial": comercial,
         "vendas": vendas,
         "metas": metas,
+        "potencial": list(potencial.values()),
     }
+
+
 
 
 def find(name):
