@@ -2342,6 +2342,27 @@
           if (barTotEl) barTotEl.style.width = Math.min(100, Math.max(0, pct*100)).toFixed(1) + '%';
         }));
       }, delay);
+
+      // Barra de potencial (cards de ranking)
+      const potVal = opts && opts.pot;
+      if (typeof potVal === 'number') {
+        const potTxt = card.querySelector('[data-bind=pot-text]');
+        const potBar = card.querySelector('[data-bind=pot-bar]');
+        const potMk  = card.querySelector('[data-bind=pot-marker]');
+        const cob    = potVal > 0 ? total / potVal : 0;
+        const mkPos  = potVal > 0 ? metaVal / potVal : 0;
+        if (potTxt) potTxt.textContent = fmtInt(potVal) + ' PDVs · ' + Math.round(cob*100) + '%';
+        if (potBar) {
+          potBar.style.transition = 'none';
+          potBar.style.width = '0%';
+          void potBar.offsetWidth;
+          potBar.style.transition = '';
+          setTimeout(()=>{
+            potBar.style.width = Math.min(100, Math.max(0, cob*100)).toFixed(1) + '%';
+          }, delay);
+        }
+        if (potMk) potMk.style.left = Math.min(100, Math.max(0, mkPos*100)).toFixed(1) + '%';
+      }
     }
     paint('card-fat-total', sums.v,   sums.vf,     metaSums.total, 0);
     paint('card-fat-ec',    sums.ec,  sums.vf_ec,  metaSums.ec,    1);
@@ -2353,10 +2374,17 @@
     paint('card-pos-total', sums.p,     sums.pf,     metaSums.p_total, 0, posOpts);
     paint('card-pos-ali',   sums.p_ali, sums.pf_ali, metaSums.p_ali,   1, posOpts);
     paint('card-pos-far',   sums.p_far, sums.pf_far, metaSums.p_far,   2, posOpts);
+
+    const rankOpts = (pot)=>({ fmtVal: fmtInt, fmtMeta: fmtPDV, pot });
+    paint('card-rank-hfs', sums.r_hfs, sums.rf_hfs, metaSums.r_hfs, 0, rankOpts(potSums.hfs));
+    paint('card-rank-far', sums.r_far, sums.rf_far, metaSums.r_far, 1, rankOpts(potSums.far));
+    paint('card-rank-alw', sums.r_alw, sums.rf_alw, metaSums.r_alw, 2, rankOpts(potSums.alw));
+    paint('card-rank-pmp', sums.r_pmp, sums.rf_pmp, metaSums.r_pmp, 3, rankOpts(potSums.pmp));
   }
 
 
   window.dashboardAPI = { rvEntries, vendas, metas, passes, ck, fmtMoney };
+
   recompute();
 })();
 </script>
