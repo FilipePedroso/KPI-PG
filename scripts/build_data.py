@@ -267,6 +267,33 @@ def build(dados_path, estrutura_path):
                 cs["tf"] += val
                 cs["ff" if is_far else "af"] += val
 
+            # ----- Ranking (Canal Ranking / Plataforma / EAN / grupo) -----
+            crank = s(r[v_crank]) if v_crank is not None else ""
+            plat_ok = plat in ("Escolha Certa", "Store Platform")
+            ean = rv_key(r[v_ean]) if v_ean is not None else ""
+            grupo = s(r[v_grupo]).upper() if v_grupo is not None else ""
+            prod = s(r[v_prod]).upper() if v_prod is not None else ""
+            rb = rank_sums.setdefault(k, {})
+
+            def add_rank(metric):
+                cc = rb.setdefault(metric, {}).setdefault(cnpj, {"t": 0.0, "f": 0.0})
+                cc["t"] += val
+                if is_fat:
+                    cc["f"] += val
+
+            if crank == "HFS" and plat_ok:
+                add_rank("hfs")
+            if crank in ("Farma Indep", "Farma Rede") and plat_ok:
+                add_rank("far")
+            if crank in ("HFS", "Farma Indep") and plat == "Escolha Certa" \
+                    and ean in ALWAYS_EANS:
+                add_rank("alw")
+            if crank in ("HFS", "Farma Indep") and plat_ok \
+                    and ("PAMPERS" in grupo or "FRALDA" in grupo) \
+                    and "TOALHAS" not in prod:
+                add_rank("pmp")
+
+
     pos_total_all = 0
     for k, cm in cnpj_sums.items():
         b = vagg.get(k)
