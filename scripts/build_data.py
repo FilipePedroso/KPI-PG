@@ -1,38 +1,27 @@
 #!/usr/bin/env python3
 """
-Gera docs/data.json e public/data.json a partir de um arquivo .xlsx.
+Gera docs/data.json e public/data.json a partir de dois arquivos .xlsx em data/:
 
-Uso:
-  python3 scripts/build_data.py [caminho.xlsx]
+  - Dados.xlsx      -> aba f_venda_total (dados de venda)
+  - Estrutura.xlsx  -> abas d_comercial (estrutura) e d_metas (metas)
 
-Se nenhum caminho for informado, procura o primeiro .xlsx em data/.
-Basta jogar o novo arquivo dentro de data/ e rodar o script — o
-dashboard automaticamente passa a refletir os dados novos.
-
-Estrutura esperada do .xlsx (mesmos nomes de aba/coluna do modelo atual):
-  - d_comercial:     RV, CONCATENAÇÃO RV+NOME, CONCATENAÇÃO SV+NOME,
-                     CONCATENAÇÃO CV+NOME, ds_uf
-  - f_vendas_total:  cd_vendedor, ds_uf, vl_financeiro, Plataforma, Store Channel
-  - d_metas_fin:     vd, ds_uf, vl_objetivo, Plataforma, Store Channel
+Relacionamento: RV + ds_uf (comercial) <-> cd_vendedor + ds_uf (vendas)
+                                       <-> RV + Uf (metas)
 """
 import json
 import sys
-import glob
 import os
 from datetime import datetime, timezone, timedelta
 import openpyxl
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(ROOT, "data")
 OUT_PATHS = [os.path.join(ROOT, "docs", "data.json"),
              os.path.join(ROOT, "public", "data.json")]
 
-FARMA = {"DRUG/PHARMACY", "PERFUMERIES"}
-
 
 def s(v):
-    if v is None:
-        return ""
-    return str(v).strip()
+    return "" if v is None else str(v).strip()
 
 
 def n(v):
@@ -42,76 +31,138 @@ def n(v):
         return 0.0
 
 
-def build(xlsx_path):
-    wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
+def rv_key(v):
+    """Normaliza código de vendedor (448 / '448' / 448.0 -> '448')."""
+    if v is None:
+        return ""
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    t = str(v).strip()
+    if t.endswith(".0"):
+        t = t[:-2]
+    return t
 
-    # ---------- d_comercial ----------
-    ws = wb["d_comercial"]
+
+def header_map(ws):
     rows = ws.iter_rows(values_only=True)
     header = [s(h) for h in next(rows)]
-    idx = {h: i for i, h in enumerate(header)}
-    comercial = []
-    seen = set()
+    idx = {}
+    for i, h in enumerate(header):
+        if h and h not in idx:
+            idx[h] = i
+        low = h.strip().lower()
+        idx.setdefault("~" + low, i)
+    return rows, header, idx
+
+
+def col(idx, *names):
+    for nm in names:
+        if nm in idx:
+            return idx[nm]
+        k = "~" + nm.strip().lower()
+        if k in idx:
+            return idx[k]
+    return None
+
+
+def build(dados_path, estrutura_path):
+    # ---------- Estrutura: d_comercial ----------
+    wbe = openpyxl.load_workbook(estrutura_path, read_only=True, data_only=True)
+    ws = wbe["d_comercial"]
+    rows, header, idx = header_map(ws)
+    i_rv = col(idx, "RV")
+    i_uf = col(idx, "ds_uf")
+    i_rvn = col(idx, "CONCATENAÇÃO RV + NOME")
+    i_svn = col(idx, "CONCATENAÇÃO SV + NOME")
+    i_cvn = col(idx, "CONCATENAÇÃO CV + NOME")
+    comercial, seen = [], set()
     for r in rows:
         if not r:
             continue
-        rv = s(r[idx["RV"]])
-        uf = s(r[idx["ds_uf"]])
+        rv = rv_key(r[i_rv])
+        uf = s(r[i_uf])
         if not rv or not uf:
             continue
-        key = rv + "|" + uf
-        if key in seen:
+        k = rv + "|" + uf
+        if k in seen:
             continue
-        seen.add(key)
+        seen.add(k)
         comercial.append({
-            "rv": rv,
-            "uf": uf,
-            "rvName": s(r[idx["CONCATENAÇÃO RV + NOME"]]),
-            "sv": s(r[idx["CONCATENAÇÃO SV + NOME"]]),
-            "cv": s(r[idx["CONCATENAÇÃO CV + NOME"]]),
+            "rv": rv, "uf": uf,
+            "rvName": s(r[i_rvn]),
+            "sv": s(r[i_svn]),
+            "cv": s(r[i_cvn]),
         })
 
-    # ---------- f_vendas_total ----------
-    ws = wb["f_vendas_total"]
-    rows = ws.iter_rows(values_only=True)
-    header = [s(h) for h in next(rows)]
-    idx = {h: i for i, h in enumerate(header)}
-    # busca coluna vl_faturamento tolerante a maiúsculas/espaços
-    fat_key = None
-    for h in header:
-        if h.strip().lower().replace(" ", "_") == "vl_faturamento":
-            fat_key = h
-            break
-    has_fat_flag = fat_key is not None
-    print(f"[build_data] f_vendas_total headers: {header}", file=sys.stderr)
-    print(f"[build_data] vl_faturamento column: {fat_key!r} (found={has_fat_flag})", file=sys.stderr)
-    vagg = {}
-    # Positivação: por (rv,uf,cnpj) somamos vl_financeiro split total/ali/far
-    # Depois contamos CNPJs únicos onde a soma > 0.
-    cnpj_sums = {}  # {(rv,uf): {cnpj: {"t":..., "a":..., "f":...}}}
-    fat_rows = 0
-    total_rows = 0
+    # ---------- Estrutura: d_metas ----------
+    ws = wbe["d_metas"]
+    rows, header, idx = header_map(ws)
+    m_rv = col(idx, "RV")
+    m_uf = col(idx, "Uf", "ds_uf")
+    m_tot = col(idx, "Meta Financeira Total")
+    m_ec = col(idx, "Meta Financeira Escolha Certa")
+    m_sp = col(idx, "Meta Financeira Store Platform")
+    m_ali = col(idx, "Meta Financeira Alimentar")
+    m_far = col(idx, "Meta Financeira Farma")
+    p_tot = col(idx, "Objetivo Positivação Total")
+    p_ali = col(idx, "Objetivo Positivação Alimentar")
+    p_far = col(idx, "Objetivo Positivação Farma")
+    magg = {}
     for r in rows:
         if not r:
             continue
-        rv = s(r[idx["cd_vendedor"]])
-        uf = s(r[idx["ds_uf"]])
+        rv = rv_key(r[m_rv])
+        uf = s(r[m_uf])
         if not rv or not uf:
             continue
-        val = n(r[idx["vl_financeiro"]])
-        plat = s(r[idx["Plataforma"]])
-        chan = s(r[idx["Store Channel"]])
-        cnpj = s(r[idx["nr_cnpj_cpf"]]) if "nr_cnpj_cpf" in idx else ""
-        # aceita qualquer valor não-zero (1, "1", 1.0, "Sim", etc.) como faturado
-        raw_fat = r[idx[fat_key]] if has_fat_flag else None
-        if has_fat_flag:
-            if isinstance(raw_fat, (int, float)):
-                is_fat = raw_fat != 0
-            else:
-                sv = s(raw_fat).lower()
-                is_fat = sv not in ("", "0", "0.0", "nao", "não", "no", "false")
+        k = rv + "|" + uf
+        b = magg.setdefault(k, {"rv": rv, "uf": uf, "total": 0.0, "ec": 0.0,
+                                "sp": 0.0, "ali": 0.0, "far": 0.0,
+                                "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0})
+        b["total"] += n(r[m_tot]) if m_tot is not None else 0.0
+        b["ec"] += n(r[m_ec]) if m_ec is not None else 0.0
+        b["sp"] += n(r[m_sp]) if m_sp is not None else 0.0
+        b["ali"] += n(r[m_ali]) if m_ali is not None else 0.0
+        b["far"] += n(r[m_far]) if m_far is not None else 0.0
+        b["p_total"] += n(r[p_tot]) if p_tot is not None else 0.0
+        b["p_ali"] += n(r[p_ali]) if p_ali is not None else 0.0
+        b["p_far"] += n(r[p_far]) if p_far is not None else 0.0
+    metas = list(magg.values())
+
+    # ---------- Dados: f_venda_total ----------
+    wbd = openpyxl.load_workbook(dados_path, read_only=True, data_only=True)
+    sheet = "f_venda_total" if "f_venda_total" in wbd.sheetnames else wbd.sheetnames[0]
+    ws = wbd[sheet]
+    rows, header, idx = header_map(ws)
+    print(f"[build_data] {sheet} headers: {header}", file=sys.stderr)
+    v_rv = col(idx, "cd_vendedor")
+    v_uf = col(idx, "ds_uf")
+    v_val = col(idx, "vl_financeiro")
+    v_plat = col(idx, "Plataforma")
+    v_can = col(idx, "Canal")
+    v_fat = col(idx, "vl_faturamento")
+    v_cnpj = col(idx, "nr_cnpj_cpf")
+
+    vagg = {}
+    cnpj_sums = {}
+    total_rows = fat_rows = 0
+    for r in rows:
+        if not r:
+            continue
+        rv = rv_key(r[v_rv])
+        uf = s(r[v_uf])
+        if not rv or not uf:
+            continue
+        val = n(r[v_val])
+        plat = s(r[v_plat]) if v_plat is not None else ""
+        canal = s(r[v_can]).lower() if v_can is not None else ""
+        is_far = canal == "farma"
+        raw = r[v_fat] if v_fat is not None else None
+        if isinstance(raw, (int, float)):
+            is_fat = raw != 0
         else:
-            is_fat = False
+            sv = s(raw).lower()
+            is_fat = sv not in ("", "0", "0.0", "nao", "não", "no", "false")
         total_rows += 1
         if is_fat:
             fat_rows += 1
@@ -126,9 +177,9 @@ def build(xlsx_path):
         b["v"] += val
         if plat == "Escolha Certa":
             b["ec"] += val
-        if plat == "Store Platform":
+        elif plat == "Store Platform":
             b["sp"] += val
-        if chan in FARMA:
+        if is_far:
             b["far"] += val
         else:
             b["ali"] += val
@@ -136,36 +187,28 @@ def build(xlsx_path):
             b["vf"] += val
             if plat == "Escolha Certa":
                 b["vf_ec"] += val
-            if plat == "Store Platform":
+            elif plat == "Store Platform":
                 b["vf_sp"] += val
-            if chan in FARMA:
+            if is_far:
                 b["vf_far"] += val
             else:
                 b["vf_ali"] += val
+        cnpj = s(r[v_cnpj]) if v_cnpj is not None else ""
         if cnpj:
-            cm = cnpj_sums.setdefault(k, {})
-            cs = cm.setdefault(cnpj, {"t": 0.0, "a": 0.0, "f": 0.0,
-                                      "tf": 0.0, "af": 0.0, "ff": 0.0})
+            cs = cnpj_sums.setdefault(k, {}).setdefault(
+                cnpj, {"t": 0.0, "a": 0.0, "f": 0.0, "tf": 0.0, "af": 0.0, "ff": 0.0})
             cs["t"] += val
-            if chan in FARMA:
-                cs["f"] += val
-            else:
-                cs["a"] += val
+            cs["f" if is_far else "a"] += val
             if is_fat:
                 cs["tf"] += val
-                if chan in FARMA:
-                    cs["ff"] += val
-                else:
-                    cs["af"] += val
+                cs["ff" if is_far else "af"] += val
 
-    # Conta CNPJs únicos com somatória > 0 por (rv,uf)
-    # p*  = positivados (total) ; pf* = positivados faturados
     pos_total_all = 0
     for k, cm in cnpj_sums.items():
         b = vagg.get(k)
         if not b:
             continue
-        for cnpj, cs in cm.items():
+        for cs in cm.values():
             if cs["t"] > 0:
                 b["p"] += 1
                 pos_total_all += 1
@@ -181,108 +224,32 @@ def build(xlsx_path):
                 b["pf_far"] += 1
 
     vendas = list(vagg.values())
-    print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, CNPJs positivados: {pos_total_all}", file=sys.stderr)
+    print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, "
+          f"CNPJs positivados: {pos_total_all}", file=sys.stderr)
 
-
-
-    # ---------- d_metas_fin ----------
-    ws = wb["d_metas_fin"]
-    rows = ws.iter_rows(values_only=True)
-    header = [s(h) for h in next(rows)]
-    idx = {h: i for i, h in enumerate(header)}
-    magg = {}
-    has_chan = "Store Channel" in idx
-    for r in rows:
-        if not r:
-            continue
-        rv = s(r[idx["vd"]])
-        uf = s(r[idx["ds_uf"]])
-        if not rv or not uf:
-            continue
-        val = n(r[idx["vl_objetivo"]])
-        plat = s(r[idx["Plataforma"]])
-        chan = s(r[idx["Store Channel"]]) if has_chan else ""
-        k = rv + "|" + uf
-        b = magg.setdefault(k, {"rv": rv, "uf": uf, "total": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0})
-        b["total"] += val
-        if plat == "Escolha Certa":
-            b["ec"] += val
-        if plat == "Store Platform":
-            b["sp"] += val
-        if chan:
-            if chan in FARMA:
-                b["far"] += val
-            else:
-                b["ali"] += val
-    # inicializa campos de meta de positivação (preenchidos abaixo por d_metas)
-    for b in magg.values():
-        b["p_total"] = 0.0
-        b["p_ali"] = 0.0
-        b["p_far"] = 0.0
-
-    # ---------- d_metas (positivação) ----------
-    if "d_metas" in wb.sheetnames:
-        ws = wb["d_metas"]
-        rows = ws.iter_rows(values_only=True)
-        header = [s(h) for h in next(rows)]
-        # busca colunas tolerante a espaços/case
-        def find_col(name):
-            target = name.strip().lower()
-            for h in header:
-                if h.strip().lower() == target:
-                    return header.index(h)
-            return None
-        i_rv = find_col("RV")
-        i_uf = find_col("ds_uf")
-        i_tt = find_col("TT Positivação")
-        i_ali = find_col("OBJ PRODUTIVIDADE HFS")
-        i_far = find_col("OBJ PRODUTIVIDADE FARMA")
-        print(f"[build_data] d_metas cols: RV={i_rv} ds_uf={i_uf} TT={i_tt} HFS={i_ali} FARMA={i_far}", file=sys.stderr)
-        if i_rv is not None and i_uf is not None:
-            for r in rows:
-                if not r:
-                    continue
-                rv = s(r[i_rv])
-                uf = s(r[i_uf])
-                if not rv or not uf:
-                    continue
-                k = rv + "|" + uf
-                b = magg.setdefault(k, {"rv": rv, "uf": uf, "total": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
-                                        "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0})
-                if i_tt is not None:
-                    b["p_total"] += n(r[i_tt])
-                if i_ali is not None:
-                    b["p_ali"] += n(r[i_ali])
-                if i_far is not None:
-                    b["p_far"] += n(r[i_far])
-
-    metas = list(magg.values())
-
-    # timestamp em horário de Brasília
     br = timezone(timedelta(hours=-3))
-    generated_at = datetime.now(br).strftime("%Y-%m-%dT%H:%M:%S-03:00")
-
-    data = {
-        "generated_at": generated_at,
-        "source_file": os.path.basename(xlsx_path),
+    return {
+        "generated_at": datetime.now(br).strftime("%Y-%m-%dT%H:%M:%S-03:00"),
+        "source_file": os.path.basename(dados_path),
         "comercial": comercial,
         "vendas": vendas,
         "metas": metas,
     }
-    return data
+
+
+def find(name):
+    p = os.path.join(DATA_DIR, name)
+    return p if os.path.exists(p) else None
 
 
 def main():
-    if len(sys.argv) > 1:
-        xlsx = sys.argv[1]
-    else:
-        cands = sorted(glob.glob(os.path.join(ROOT, "data", "*.xlsx")))
-        if not cands:
-            print("ERRO: nenhum .xlsx encontrado em data/. Passe o caminho como argumento.")
-            sys.exit(1)
-        xlsx = cands[-1]
-    print(f"Lendo {xlsx} ...")
-    data = build(xlsx)
+    dados = sys.argv[1] if len(sys.argv) > 1 else find("Dados.xlsx")
+    estrutura = sys.argv[2] if len(sys.argv) > 2 else find("Estrutura.xlsx")
+    if not dados or not estrutura:
+        print("ERRO: coloque Dados.xlsx e Estrutura.xlsx na pasta data/.")
+        sys.exit(1)
+    print(f"Lendo {dados} + {estrutura} ...")
+    data = build(dados, estrutura)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     for p in OUT_PATHS:
         os.makedirs(os.path.dirname(p), exist_ok=True)
