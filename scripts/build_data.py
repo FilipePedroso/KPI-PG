@@ -196,10 +196,16 @@ def build(dados_path, estrutura_path):
     v_cnpj = col(idx, "nr_cnpj_cpf")
     v_ger = col(idx, "cd_gerente")
     v_sup = col(idx, "cd_vendedor_superior")
+    v_crank = col(idx, "Canal Ranking")
+    v_ean = col(idx, "ds_ean")
+    v_grupo = col(idx, "nm_grupo")
+    v_prod = col(idx, "nm_produto")
 
     vagg = {}
     cnpj_sums = {}
+    rank_sums = {}
     total_rows = fat_rows = 0
+
     for r in rows:
         if not r:
             continue
