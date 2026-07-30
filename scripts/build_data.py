@@ -314,6 +314,26 @@ def build(dados_path, estrutura_path):
             if cs["ff"] > 0:
                 b["pf_far"] += 1
 
+    for k, mm in rank_sums.items():
+        b = vagg.get(k)
+        if not b:
+            continue
+        for metric, cm in mm.items():
+            tot = sum(1 for cs in cm.values() if cs["t"] > 0)
+            fat = sum(1 for cs in cm.values() if cs["f"] > 0)
+            b["r_" + metric] = tot
+            b["rf_" + metric] = fat
+        pot = potencial.get(k)
+        if pot:
+            for metric in ("hfs", "far", "alw", "pmp"):
+                b["pot_" + metric] = pot.get(metric, 0)
+
+    for k, pot in potencial.items():
+        b = vagg.get(k)
+        if b:
+            for metric in ("hfs", "far", "alw", "pmp"):
+                b.setdefault("pot_" + metric, pot.get(metric, 0))
+
     vendas = list(vagg.values())
     print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, "
           f"CNPJs positivados: {pos_total_all}", file=sys.stderr)
@@ -326,6 +346,7 @@ def build(dados_path, estrutura_path):
         "vendas": vendas,
         "metas": metas,
     }
+
 
 
 def find(name):
