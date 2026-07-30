@@ -279,14 +279,34 @@ def build_orfaos(data):
     return itens
 
 
+def code_of(label):
+    """Extrai o código de rótulos como '11 - NOME' ou '211-NOME'."""
+    t = s(label)
+    return rv_key(t.split("-")[0]) if "-" in t else rv_key(t)
+
+
 def completar_estrutura(data, itens):
-    """Adiciona à d_comercial as combinações órfãs com nome '-'."""
+    """Adiciona à d_comercial as combinações órfãs, reaproveitando nomes
+    já existentes de supervisor/gerente quando o código for conhecido."""
+    known = {}
+    for c in data["comercial"]:
+        for field in ("sv", "cv"):
+            lbl = c.get(field) or ""
+            cd = code_of(lbl)
+            if cd and "-" in lbl and lbl.split("-", 1)[1].strip() not in ("", "-"):
+                known.setdefault(cd, lbl)
+
+    def label(cd):
+        if not cd:
+            return "-"
+        return known.get(cd, f"{cd} - -")
+
     for i in itens:
         data["comercial"].append({
             "rv": i["rv"], "uf": i["uf"],
             "rvName": f"{i['rv']} - -",
-            "sv": f"{i['cdSv']} - -" if i.get("cdSv") else "-",
-            "cv": f"{i['cdCv']} - -" if i.get("cdCv") else "-",
+            "sv": label(i.get("cdSv")),
+            "cv": label(i.get("cdCv")),
         })
 
 
