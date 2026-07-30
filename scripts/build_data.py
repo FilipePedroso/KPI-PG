@@ -107,6 +107,10 @@ def build(dados_path, estrutura_path):
     p_tot = col(idx, "Objetivo Positivação Total")
     p_ali = col(idx, "Objetivo Positivação Alimentar")
     p_far = col(idx, "Objetivo Positivação Farma")
+    r_hfs = col(idx, "OBJ PRODUTIVIDADE HFS")
+    r_far = col(idx, "OBJ PRODUTIVIDADE FARMA", "OBJ PRODUTIVIDADE FARMA ")
+    r_alw = col(idx, "Objetivo Marca 1")
+    r_pmp = col(idx, "Objetivo Marca 2")
     magg = {}
     for r in rows:
         if not r:
@@ -118,7 +122,9 @@ def build(dados_path, estrutura_path):
         k = rv + "|" + uf
         b = magg.setdefault(k, {"rv": rv, "uf": uf, "total": 0.0, "ec": 0.0,
                                 "sp": 0.0, "ali": 0.0, "far": 0.0,
-                                "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0})
+                                "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0,
+                                "r_hfs": 0.0, "r_far": 0.0,
+                                "r_alw": 0.0, "r_pmp": 0.0})
         b["total"] += n(r[m_tot]) if m_tot is not None else 0.0
         b["ec"] += n(r[m_ec]) if m_ec is not None else 0.0
         b["sp"] += n(r[m_sp]) if m_sp is not None else 0.0
@@ -127,7 +133,53 @@ def build(dados_path, estrutura_path):
         b["p_total"] += n(r[p_tot]) if p_tot is not None else 0.0
         b["p_ali"] += n(r[p_ali]) if p_ali is not None else 0.0
         b["p_far"] += n(r[p_far]) if p_far is not None else 0.0
+        b["r_hfs"] += n(r[r_hfs]) if r_hfs is not None else 0.0
+        b["r_far"] += n(r[r_far]) if r_far is not None else 0.0
+        b["r_alw"] += n(r[r_alw]) if r_alw is not None else 0.0
+        b["r_pmp"] += n(r[r_pmp]) if r_pmp is not None else 0.0
     metas = list(magg.values())
+
+    # ---------- Estrutura: d_clientes_braveo (potencial) ----------
+    # Contagem distinta de CNPJ por rv|uf, aplicando as mesmas regras de
+    # negócio (Canal Ranking / Plataforma) de cada card de ranking.
+    potencial = {}
+    if "d_clientes_braveo" in wbe.sheetnames:
+        ws = wbe["d_clientes_braveo"]
+        rows, header, idx = header_map(ws)
+        c_rv = col(idx, "cd_vendedor")
+        c_uf = col(idx, "ds_uf")
+        c_cnpj = col(idx, "nr_cnpj_cpf")
+        c_can = col(idx, "Canal Ranking")
+        c_plat = col(idx, "Plataforma")
+        psets = {}
+        for r in rows:
+            if not r:
+                continue
+            rv = rv_key(r[c_rv])
+            uf = s(r[c_uf])
+            cnpj = s(r[c_cnpj]) if c_cnpj is not None else ""
+            if not rv or not uf or not cnpj:
+                continue
+            canal = s(r[c_can]) if c_can is not None else ""
+            plat = s(r[c_plat]) if c_plat is not None else ""
+            k = rv + "|" + uf
+            b = psets.setdefault(k, {"hfs": set(), "far": set(),
+                                     "alw": set(), "pmp": set()})
+            plat_ok = plat in ("Escolha Certa", "Store Platform")
+            if canal == "HFS" and plat_ok:
+                b["hfs"].add(cnpj)
+            if canal in ("Farma Indep", "Farma Rede") and plat_ok:
+                b["far"].add(cnpj)
+            if canal in ("HFS", "Farma Indep") and plat == "Escolha Certa":
+                b["alw"].add(cnpj)
+            if canal in ("HFS", "Farma Indep") and plat_ok:
+                b["pmp"].add(cnpj)
+        for k, b in psets.items():
+            rv, uf = k.split("|", 1)
+            potencial[k] = {"rv": rv, "uf": uf,
+                            "hfs": len(b["hfs"]), "far": len(b["far"]),
+                            "alw": len(b["alw"]), "pmp": len(b["pmp"])}
+
 
     # ---------- Dados: f_venda_total ----------
     wbd = openpyxl.load_workbook(dados_path, read_only=True, data_only=True)
