@@ -1,31 +1,35 @@
-# Atualização de Dados — Modo Automático
+# Atualização de Dados
 
-## Como funciona
+## Arquivos necessários
 
-Basta colocar seu arquivo `.xlsx` dentro desta pasta (`data/`) e fazer **deploy** (clicar em "Update" ou "Publish" no Lovable).
+Coloque **dois arquivos** nesta pasta (`data/`) e faça o deploy:
 
-O build do projeto roda automaticamente o script `scripts/build_data.py`, que:
-1. Lê o primeiro arquivo `.xlsx` encontrado nesta pasta
-2. Extrai os dados das abas `d_comercial`, `f_vendas_total` e `d_metas_fin`
-3. Gera os arquivos `docs/data.json` e `public/data.json`
-4. Atualiza a data/hora no header do dashboard
+| Arquivo | Abas usadas |
+|---------|-------------|
+| `Dados.xlsx` | `f_venda_total` |
+| `Estrutura.xlsx` | `d_comercial`, `d_metas` |
 
-**Não precisa rodar nenhum comando manual.**
+O build roda `scripts/build_data.py` automaticamente e gera `docs/data.json` e `public/data.json`.
 
-## Estrutura esperada do Excel
+> Os `.xlsx` são grandes demais para o repositório Git (limite de 10 MB por arquivo), por isso ficam ignorados no `.gitignore` e são guardados como assets externos (`*.asset.json`). O que vai para o site é o `data.json` gerado.
 
-As abas e colunas devem manter os mesmos nomes do modelo original:
+## Colunas esperadas
 
-| Aba | Colunas principais |
-|-----|-------------------|
-| `d_comercial` | `RV`, `CONCATENAÇÃO RV + NOME`, `CONCATENAÇÃO SV + NOME`, `CONCATENAÇÃO CV + NOME`, `ds_uf` |
-| `f_vendas_total` | `cd_vendedor`, `ds_uf`, `vl_financeiro`, `Plataforma`, `Store Channel` |
-| `d_metas_fin` | `vd`, `ds_uf`, `vl_objetivo`, `Plataforma`, `Store Channel` |
+**`f_venda_total`** (Dados.xlsx)
+`ds_uf`, `cd_vendedor`, `nr_cnpj_cpf`, `vl_financeiro`, `vl_faturamento` (1 = faturado, 0 = não faturado), `Plataforma` (`Escolha Certa` / `Store Platform`), `Canal` (`Alimentar` / `Farma`)
 
-## Passo a passo
+**`d_comercial`** (Estrutura.xlsx)
+`RV`, `ds_uf`, `CONCATENAÇÃO RV + NOME`, `CONCATENAÇÃO SV + NOME`, `CONCATENAÇÃO CV + NOME`
 
-1. Suba ou substitua o arquivo `.xlsx` nesta pasta `data/`
-2. Clique em **Publish** ou **Update** no Lovable
-3. Pronto — os dados do dashboard serão atualizados automaticamente
+**`d_metas`** (Estrutura.xlsx)
+`RV`, `Uf`, `Meta Financeira Total`, `Meta Financeira Escolha Certa`, `Meta Financeira Store Platform`, `Meta Financeira Alimentar`, `Meta Financeira Farma`, `Objetivo Positivação Total`, `Objetivo Positivação Alimentar`, `Objetivo Positivação Farma`
 
-> Dica: mantenha apenas um arquivo `.xlsx` nesta pasta para evitar confusão. O script sempre usa o último arquivo (ordem alfabética) se houver mais de um.
+## Relacionamento
+
+`d_comercial.RV + ds_uf` ↔ `f_venda_total.cd_vendedor + ds_uf` ↔ `d_metas.RV + Uf`
+
+## Rodar manualmente (opcional)
+
+```bash
+python3 scripts/build_data.py data/Dados.xlsx data/Estrutura.xlsx
+```
