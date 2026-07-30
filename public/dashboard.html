@@ -2163,6 +2163,9 @@
       if (!passes(r)) return;
       eligibleKeys.add(ck(r.rv, r.uf));
     });
+    // Sem nenhum filtro ativo, mostramos os totais completos da base —
+    // inclusive combinações rv|uf que não existem na estrutura (d_comercial).
+    const noFilters = !['uf','cv','sv','rv'].some(k=>filters[k].size);
 
 
     const sums = {v:0, ec:0, sp:0, ali:0, far:0,
@@ -2170,7 +2173,7 @@
                   p:0, p_ali:0, p_far:0,
                   pf:0, pf_ali:0, pf_far:0};
     vendas.forEach(x=>{
-      if (!eligibleKeys.has(ck(x.rv, x.uf))) return;
+      if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
       sums.ali += x.ali||0; sums.far += x.far||0;
       // faturado (vl_faturamento = 1) — optional fields, default 0
@@ -2192,7 +2195,7 @@
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
                       p_total:0, p_ali:0, p_far:0};
     metas.forEach(m=>{
-      if (!eligibleKeys.has(ck(m.rv, m.uf))) return;
+      if (!noFilters && !eligibleKeys.has(ck(m.rv, m.uf))) return;
       metaSums.total += m.total||0;
       metaSums.ec    += m.ec||0;
       metaSums.sp    += m.sp||0;
