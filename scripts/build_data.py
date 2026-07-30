@@ -263,24 +263,40 @@ def build_orfaos(data):
             continue
         itens.append({
             "chave": k, "rv": m["rv"], "uf": m["uf"], "origem": "metas",
+            "vl_financeiro": 0.0, "vl_faturado": 0.0, "positivados": 0,
             "meta_financeira": round(m.get("total", 0.0), 2),
             "meta_positivacao": round(m.get("p_total", 0.0), 2),
         })
     itens.sort(key=lambda i: -i.get("vl_financeiro", 0.0))
-    ufs = {}
+    return itens
+
+
+def completar_estrutura(data, itens):
+    """Adiciona à d_comercial as combinações órfãs com nome '-'."""
     for i in itens:
-        u = ufs.setdefault(i["uf"], {"uf": i["uf"], "qtd": 0, "vl_financeiro": 0.0})
-        u["qtd"] += 1
-        u["vl_financeiro"] = round(u["vl_financeiro"] + i.get("vl_financeiro", 0.0), 2)
-    return {
-        "generated_at": data["generated_at"],
-        "descricao": "Combinações cd_vendedor|ds_uf existentes na base de dados "
-                     "(f_venda_total / d_metas) sem correspondência em d_comercial.",
-        "total_combinacoes": len(itens),
-        "valor_sem_estrutura": round(sum(i.get("vl_financeiro", 0.0) for i in itens), 2),
-        "por_uf": sorted(ufs.values(), key=lambda u: -u["vl_financeiro"]),
-        "itens": itens,
-    }
+        data["comercial"].append({
+            "rv": i["rv"], "uf": i["uf"],
+            "rvName": f"{i['rv']} - -",
+            "sv": "-", "cv": "-",
+        })
+
+
+def csv_escape(v):
+    t = "" if v is None else str(v)
+    return '"' + t.replace('"', '""') + '"' if (";" in t or '"' in t or "\n" in t) else t
+
+
+def write_csv(name, rows, header):
+    lines = [";".join(header)]
+    for r in rows:
+        lines.append(";".join(csv_escape(c) for c in r))
+    payload = "\ufeff" + "\r\n".join(lines) + "\r\n"
+    for base in ("docs", "public"):
+        p = os.path.join(ROOT, base, name)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(payload)
+        print(f"  -> {p} ({len(payload):,} bytes)")
 
 
 def write_all(name, obj, indent=None):
@@ -303,13 +319,21 @@ def main():
         sys.exit(1)
     print(f"Lendo {dados} + {estrutura} ...")
     data = build(dados, estrutura)
-    write_all("data.json", data)
     orfaos = build_orfaos(data)
-    write_all("sem-estrutura.json", orfaos, indent=2)
+    completar_estrutura(data, orfaos)
+    write_all("data.json", data)
+    write_csv("sem-estrutura.csv",
+              [[i["rv"], i["uf"], "-", i["origem"],
+                f"{i.get('vl_financeiro', 0.0):.2f}".replace(".", ","),
+                f"{i.get('vl_faturado', 0.0):.2f}".replace(".", ","),
+                i.get("positivados", 0)] for i in orfaos],
+              ["cd_vendedor", "ds_uf", "nome", "origem",
+               "vl_financeiro", "vl_faturado", "positivados"])
     print(f"OK. generated_at = {data['generated_at']}")
     print(f"comercial: {len(data['comercial'])}  vendas: {len(data['vendas'])}  metas: {len(data['metas'])}")
-    print(f"sem estrutura: {orfaos['total_combinacoes']} combinações, "
-          f"R$ {orfaos['valor_sem_estrutura']:,.2f}")
+    print(f"sem estrutura (adicionadas): {len(orfaos)} combinações, "
+          f"R$ {sum(i.get('vl_financeiro', 0.0) for i in orfaos):,.2f}")
+
 
 
 
