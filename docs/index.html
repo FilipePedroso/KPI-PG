@@ -1218,77 +1218,78 @@
 
     <div class="cards-row" id="section-positivacao-ranking">
 
-      <div class="kpi-card fat-total">
+      <div class="kpi-card fat-total" id="card-rank-hfs">
         <div class="info-icon" data-tooltip-id="tip-hfs">i</div>
         <div class="card-title">Positivação HFS</div>
-        <div class="kpi-value">1.104</div>
-        <div class="kpi-meta">Meta: <span>1.300 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">196 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">84,9%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:84.9%"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
         <div class="bar-header" style="margin-top:6px;">
           <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">3.200 PDVs · 35%</span>
+          <span class="bar-pct" data-bind="pot-text" style="color:#64748B;font-weight:600;">—</span>
         </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:35%;opacity:0.45;"></div><div class="meta-marker" style="left:40.6%;"></div></div>
+        <div class="progress-track-pot"><div class="progress-fill" data-bind="pot-bar" style="width:0%;opacity:0.45;"></div><div class="meta-marker" data-bind="pot-marker" style="left:0%;"></div></div>
       </div>
 
-      <div class="kpi-card fat-farma">
+      <div class="kpi-card fat-farma" id="card-rank-far">
         <div class="info-icon" data-tooltip-id="tip-farma">i</div>
         <div class="card-title">Positivação Farma</div>
-        <div class="kpi-value">310</div>
-        <div class="kpi-meta">Meta: <span>430 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">120 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">72,1%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:72.1%"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
         <div class="bar-header" style="margin-top:6px;">
           <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">710 PDVs · 44%</span>
+          <span class="bar-pct" data-bind="pot-text" style="color:#64748B;font-weight:600;">—</span>
         </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:44%;opacity:0.45;"></div><div class="meta-marker" style="left:60.6%;"></div></div>
+        <div class="progress-track-pot"><div class="progress-fill" data-bind="pot-bar" style="width:0%;opacity:0.45;"></div><div class="meta-marker" data-bind="pot-marker" style="left:0%;"></div></div>
       </div>
 
-      <div class="kpi-card fat-ponderada">
+      <div class="kpi-card fat-ponderada" id="card-rank-alw">
         <div class="info-icon" data-tooltip-id="tip-always">i</div>
         <div class="card-title">Positivação Always Noturno</div>
-        <div class="kpi-value">278</div>
-        <div class="kpi-meta">Meta: <span>350 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">72 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">79,4%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:79.4%"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
         <div class="bar-header" style="margin-top:6px;">
           <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">520 PDVs · 53%</span>
+          <span class="bar-pct" data-bind="pot-text" style="color:#64748B;font-weight:600;">—</span>
         </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:53%;opacity:0.45;"></div><div class="meta-marker" style="left:67.3%;"></div></div>
+        <div class="progress-track-pot"><div class="progress-fill" data-bind="pot-bar" style="width:0%;opacity:0.45;"></div><div class="meta-marker" data-bind="pot-marker" style="left:0%;"></div></div>
       </div>
 
-      <div class="kpi-card fat-numerica">
+      <div class="kpi-card fat-numerica" id="card-rank-pmp">
         <div class="info-icon">i</div>
-        <div class="card-title">Positivação Oral-B 3D-White</div>
-        <div class="kpi-value">341</div>
-        <div class="kpi-meta">Meta: <span>380 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">39 PDVs</span></div>
+        <div class="card-title">Positivação Pampers</div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">89,7%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:89.7%"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
         <div class="bar-header" style="margin-top:6px;">
           <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">680 PDVs · 50%</span>
+          <span class="bar-pct" data-bind="pot-text" style="color:#64748B;font-weight:600;">—</span>
         </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:50%;opacity:0.45;"></div><div class="meta-marker" style="left:55.9%;"></div></div>
+        <div class="progress-track-pot"><div class="progress-fill" data-bind="pot-bar" style="width:0%;opacity:0.45;"></div><div class="meta-marker" data-bind="pot-marker" style="left:0%;"></div></div>
       </div>
+
 
       <div class="kpi-card fat-alimentar">
         <div class="info-icon">i</div>
@@ -2033,6 +2034,8 @@
   const rvEntries = data.comercial.map(r=>({uf:r.uf, cv:r.cv, sv:r.sv, rvName:r.rvName, rv:String(r.rv)}));
   const metas = data.metas;     // [{rv,uf,total,ec,sp,ali,far}]
   const vendas = data.vendas;   // [{rv,uf,v,ec,sp,ali,far}]
+  const potencial = data.potencial || [];  // [{rv,uf,hfs,far,alw,pmp}]
+
   const ck = (rv,uf) => String(rv)+'|'+String(uf);
 
   // ── Filtros: dropdown customizado (clique = único; Ctrl/Cmd = múltiplo) ──
@@ -2235,7 +2238,9 @@
     const sums = {v:0, ec:0, sp:0, ali:0, far:0,
                   vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0,
                   p:0, p_ali:0, p_far:0,
-                  pf:0, pf_ali:0, pf_far:0};
+                  pf:0, pf_ali:0, pf_far:0,
+                  r_hfs:0, r_far:0, r_alw:0, r_pmp:0,
+                  rf_hfs:0, rf_far:0, rf_alw:0, rf_pmp:0};
     vendas.forEach(x=>{
       if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
@@ -2254,10 +2259,24 @@
       sums.pf     += x.pf     || 0;
       sums.pf_ali += x.pf_ali || 0;
       sums.pf_far += x.pf_far || 0;
+      // positivação ranking (HFS / Farma / Always Noturno / Pampers)
+      ['hfs','far','alw','pmp'].forEach(m=>{
+        sums['r_'+m]  += x['r_'+m]  || 0;
+        sums['rf_'+m] += x['rf_'+m] || 0;
+      });
+    });
+
+    // Potencial (d_clientes_braveo): contagem distinta de CNPJ elegível
+    const potSums = {hfs:0, far:0, alw:0, pmp:0};
+    potencial.forEach(x=>{
+      if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
+      potSums.hfs += x.hfs||0; potSums.far += x.far||0;
+      potSums.alw += x.alw||0; potSums.pmp += x.pmp||0;
     });
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
-                      p_total:0, p_ali:0, p_far:0};
+                      p_total:0, p_ali:0, p_far:0,
+                      r_hfs:0, r_far:0, r_alw:0, r_pmp:0};
     metas.forEach(m=>{
       if (!noFilters && !eligibleKeys.has(ck(m.rv, m.uf))) return;
       metaSums.total += m.total||0;
@@ -2268,7 +2287,12 @@
       metaSums.p_total += m.p_total||0;
       metaSums.p_ali   += m.p_ali||0;
       metaSums.p_far   += m.p_far||0;
+      metaSums.r_hfs += m.r_hfs||0;
+      metaSums.r_far += m.r_far||0;
+      metaSums.r_alw += m.r_alw||0;
+      metaSums.r_pmp += m.r_pmp||0;
     });
+
 
     const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
     const fmtPDV = (v)=> fmtInt(v) + ' PDVs';
@@ -2320,6 +2344,27 @@
           if (barTotEl) barTotEl.style.width = Math.min(100, Math.max(0, pct*100)).toFixed(1) + '%';
         }));
       }, delay);
+
+      // Barra de potencial (cards de ranking)
+      const potVal = opts && opts.pot;
+      if (typeof potVal === 'number') {
+        const potTxt = card.querySelector('[data-bind=pot-text]');
+        const potBar = card.querySelector('[data-bind=pot-bar]');
+        const potMk  = card.querySelector('[data-bind=pot-marker]');
+        const cob    = potVal > 0 ? total / potVal : 0;
+        const mkPos  = potVal > 0 ? metaVal / potVal : 0;
+        if (potTxt) potTxt.textContent = fmtInt(potVal) + ' PDVs · ' + Math.round(cob*100) + '%';
+        if (potBar) {
+          potBar.style.transition = 'none';
+          potBar.style.width = '0%';
+          void potBar.offsetWidth;
+          potBar.style.transition = '';
+          setTimeout(()=>{
+            potBar.style.width = Math.min(100, Math.max(0, cob*100)).toFixed(1) + '%';
+          }, delay);
+        }
+        if (potMk) potMk.style.left = Math.min(100, Math.max(0, mkPos*100)).toFixed(1) + '%';
+      }
     }
     paint('card-fat-total', sums.v,   sums.vf,     metaSums.total, 0);
     paint('card-fat-ec',    sums.ec,  sums.vf_ec,  metaSums.ec,    1);
@@ -2331,10 +2376,17 @@
     paint('card-pos-total', sums.p,     sums.pf,     metaSums.p_total, 0, posOpts);
     paint('card-pos-ali',   sums.p_ali, sums.pf_ali, metaSums.p_ali,   1, posOpts);
     paint('card-pos-far',   sums.p_far, sums.pf_far, metaSums.p_far,   2, posOpts);
+
+    const rankOpts = (pot)=>({ fmtVal: fmtInt, fmtMeta: fmtPDV, pot });
+    paint('card-rank-hfs', sums.r_hfs, sums.rf_hfs, metaSums.r_hfs, 0, rankOpts(potSums.hfs));
+    paint('card-rank-far', sums.r_far, sums.rf_far, metaSums.r_far, 1, rankOpts(potSums.far));
+    paint('card-rank-alw', sums.r_alw, sums.rf_alw, metaSums.r_alw, 2, rankOpts(potSums.alw));
+    paint('card-rank-pmp', sums.r_pmp, sums.rf_pmp, metaSums.r_pmp, 3, rankOpts(potSums.pmp));
   }
 
 
   window.dashboardAPI = { rvEntries, vendas, metas, passes, ck, fmtMoney };
+
   recompute();
 })();
 </script>
