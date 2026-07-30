@@ -86,6 +86,9 @@
       flex-wrap: wrap;
     }
 
+    /* Botão de expandir filtros (somente mobile) */
+    .filters-toggle { display: none; }
+
 
     .filter-chip {
       display: inline-flex;
@@ -353,9 +356,41 @@
       }
 
       .filters-bar {
-        padding: 8px 16px 12px;
+        padding: 0 16px;
         gap: 5px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease, padding 0.3s ease;
       }
+      .header.filters-open .filters-bar {
+        max-height: 320px;
+        opacity: 1;
+        padding: 8px 16px 12px;
+      }
+
+      .filters-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        border: 0;
+        border-top: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.10);
+        color: #fff;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 8px 16px;
+        cursor: pointer;
+      }
+      .filters-toggle i { font-size: 14px; }
+      .filters-toggle .ft-arrow {
+        transition: transform 0.3s ease;
+        display: inline-block;
+      }
+      .header.filters-open .filters-toggle .ft-arrow { transform: rotate(180deg); }
 
       .section-container {
         padding: 16px 16px 20px;
@@ -1030,6 +1065,12 @@
       </button>
 
     </div>
+
+    <button type="button" class="filters-toggle" id="filters-toggle" aria-expanded="false" aria-controls="filters-bar">
+      <i class="ti ti-filter" aria-hidden="true"></i>
+      <span>Filtros</span>
+      <span class="ft-arrow">▾</span>
+    </button>
   </div>
 
   <!-- ── SEÇÃO: FATURAMENTO ── -->
@@ -1381,6 +1422,17 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+  // Toggle de filtros (mobile)
+  (function(){
+    const btn = document.getElementById('filters-toggle');
+    const header = document.querySelector('.header');
+    if (!btn || !header) return;
+    btn.addEventListener('click', () => {
+      const open = header.classList.toggle('filters-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  })();
+
   // Section toggle
   document.querySelectorAll('.section-header').forEach(header => {
     header.addEventListener('click', () => {
