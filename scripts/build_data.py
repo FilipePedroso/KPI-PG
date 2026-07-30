@@ -19,6 +19,15 @@ DATA_DIR = os.path.join(ROOT, "data")
 OUT_PATHS = [os.path.join(ROOT, "docs", "data.json"),
              os.path.join(ROOT, "public", "data.json")]
 
+# EANs válidos para o card "Positivação Always Noturno"
+ALWAYS_EANS = {
+    "7506309805498", "7500435214650", "7500435214667", "7500435248334",
+    "7506339326055", "7506339394603", "7500435190640", "7506339326031",
+    "7500435265263", "7500435233446", "7506339325263", "7500435190657",
+    "7506339394535", "7506339325249",
+}
+
+
 
 def s(v):
     return "" if v is None else str(v).strip()
