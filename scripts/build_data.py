@@ -323,16 +323,6 @@ def build(dados_path, estrutura_path):
             fat = sum(1 for cs in cm.values() if cs["f"] > 0)
             b["r_" + metric] = tot
             b["rf_" + metric] = fat
-        pot = potencial.get(k)
-        if pot:
-            for metric in ("hfs", "far", "alw", "pmp"):
-                b["pot_" + metric] = pot.get(metric, 0)
-
-    for k, pot in potencial.items():
-        b = vagg.get(k)
-        if b:
-            for metric in ("hfs", "far", "alw", "pmp"):
-                b.setdefault("pot_" + metric, pot.get(metric, 0))
 
     vendas = list(vagg.values())
     print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, "
@@ -345,7 +335,9 @@ def build(dados_path, estrutura_path):
         "comercial": comercial,
         "vendas": vendas,
         "metas": metas,
+        "potencial": list(potencial.values()),
     }
+
 
 
 
