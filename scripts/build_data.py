@@ -242,6 +242,59 @@ def find(name):
     return p if os.path.exists(p) else None
 
 
+def build_orfaos(data):
+    """Combinações rv|uf presentes na base mas ausentes da d_comercial."""
+    est = {c["rv"] + "|" + c["uf"] for c in data["comercial"]}
+    itens = []
+    for x in data["vendas"]:
+        k = x["rv"] + "|" + x["uf"]
+        if k in est:
+            continue
+        itens.append({
+            "chave": k, "rv": x["rv"], "uf": x["uf"], "origem": "vendas",
+            "vl_financeiro": round(x.get("v", 0.0), 2),
+            "vl_faturado": round(x.get("vf", 0.0), 2),
+            "positivados": x.get("p", 0),
+        })
+    vkeys = {x["rv"] + "|" + x["uf"] for x in data["vendas"]}
+    for m in data["metas"]:
+        k = m["rv"] + "|" + m["uf"]
+        if k in est or k in vkeys:
+            continue
+        itens.append({
+            "chave": k, "rv": m["rv"], "uf": m["uf"], "origem": "metas",
+            "meta_financeira": round(m.get("total", 0.0), 2),
+            "meta_positivacao": round(m.get("p_total", 0.0), 2),
+        })
+    itens.sort(key=lambda i: -i.get("vl_financeiro", 0.0))
+    ufs = {}
+    for i in itens:
+        u = ufs.setdefault(i["uf"], {"uf": i["uf"], "qtd": 0, "vl_financeiro": 0.0})
+        u["qtd"] += 1
+        u["vl_financeiro"] = round(u["vl_financeiro"] + i.get("vl_financeiro", 0.0), 2)
+    return {
+        "generated_at": data["generated_at"],
+        "descricao": "Combinações cd_vendedor|ds_uf existentes na base de dados "
+                     "(f_venda_total / d_metas) sem correspondência em d_comercial.",
+        "total_combinacoes": len(itens),
+        "valor_sem_estrutura": round(sum(i.get("vl_financeiro", 0.0) for i in itens), 2),
+        "por_uf": sorted(ufs.values(), key=lambda u: -u["vl_financeiro"]),
+        "itens": itens,
+    }
+
+
+def write_all(name, obj, indent=None):
+    payload = json.dumps(obj, ensure_ascii=False,
+                         separators=(",", ":") if indent is None else None,
+                         indent=indent)
+    for base in ("docs", "public"):
+        p = os.path.join(ROOT, base, name)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(payload)
+        print(f"  -> {p} ({len(payload):,} bytes)")
+
+
 def main():
     dados = sys.argv[1] if len(sys.argv) > 1 else find("Dados.xlsx")
     estrutura = sys.argv[2] if len(sys.argv) > 2 else find("Estrutura.xlsx")
@@ -250,14 +303,14 @@ def main():
         sys.exit(1)
     print(f"Lendo {dados} + {estrutura} ...")
     data = build(dados, estrutura)
-    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-    for p in OUT_PATHS:
-        os.makedirs(os.path.dirname(p), exist_ok=True)
-        with open(p, "w", encoding="utf-8") as f:
-            f.write(payload)
-        print(f"  -> {p} ({len(payload):,} bytes)")
+    write_all("data.json", data)
+    orfaos = build_orfaos(data)
+    write_all("sem-estrutura.json", orfaos, indent=2)
     print(f"OK. generated_at = {data['generated_at']}")
     print(f"comercial: {len(data['comercial'])}  vendas: {len(data['vendas'])}  metas: {len(data['metas'])}")
+    print(f"sem estrutura: {orfaos['total_combinacoes']} combinações, "
+          f"R$ {orfaos['valor_sem_estrutura']:,.2f}")
+
 
 
 if __name__ == "__main__":
