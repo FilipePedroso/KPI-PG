@@ -1306,21 +1306,16 @@
 
     <div class="cards-row" id="section-escolha-certa">
 
-      <div class="kpi-card fat-total">
+      <div class="kpi-card fat-total" id="card-ec-pos">
         <div class="card-title">Positivação Escolha Certa</div>
-        <div class="kpi-value">4.298</div>
-        <div class="kpi-meta">Meta: <span>5.200 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">902 PDVs</span></div>
-        <div class="bar-header">
-          <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">82,7%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" style="width:82.7%"></div></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Potencial: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header" style="margin-top:6px;">
           <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">6.500 PDVs · 66%</span>
+          <span class="bar-pct" data-bind="pot-text" style="color:#64748B;font-weight:600;">—</span>
         </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:66%;opacity:0.45;"></div><div class="meta-marker" style="left:80%;"></div></div>
+        <div class="progress-track-pot"><div class="progress-fill" data-bind="pot-bar" style="width:0%;opacity:0.45;"></div></div>
       </div>
 
       <div class="kpi-card fat-numerica">
@@ -1352,29 +1347,6 @@
         <div class="progress-track"><div class="progress-fill" style="width:89.5%"></div></div>
       </div>
 
-      <div class="kpi-card fat-alimentar">
-        <div class="card-title">Golden Points Alimentar</div>
-        <div class="kpi-value">14.320</div>
-        <div class="kpi-meta">Meta: <span>16.500 pts</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">2.180 pts</span></div>
-        <div class="bar-header">
-          <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">86,8%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" style="width:86.8%"></div></div>
-      </div>
-
-      <div class="kpi-card fat-farma">
-        <div class="card-title">Golden Points Farma</div>
-        <div class="kpi-value">9.870</div>
-        <div class="kpi-meta">Meta: <span>12.000 pts</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">2.130 pts</span></div>
-        <div class="bar-header">
-          <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">82,3%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" style="width:82.3%"></div></div>
-      </div>
 
     </div>
   </div>
