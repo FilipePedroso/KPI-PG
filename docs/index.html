@@ -1306,21 +1306,16 @@
 
     <div class="cards-row" id="section-escolha-certa">
 
-      <div class="kpi-card fat-total">
+      <div class="kpi-card fat-total" id="card-ec-pos">
         <div class="card-title">Positivação Escolha Certa</div>
-        <div class="kpi-value">4.298</div>
-        <div class="kpi-meta">Meta: <span>5.200 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">902 PDVs</span></div>
-        <div class="bar-header">
-          <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">82,7%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" style="width:82.7%"></div></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Potencial: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header" style="margin-top:6px;">
           <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">6.500 PDVs · 66%</span>
+          <span class="bar-pct" data-bind="pot-text" style="color:#64748B;font-weight:600;">—</span>
         </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:66%;opacity:0.45;"></div><div class="meta-marker" style="left:80%;"></div></div>
+        <div class="progress-track-pot"><div class="progress-fill" data-bind="pot-bar" style="width:0%;opacity:0.45;"></div></div>
       </div>
 
       <div class="kpi-card fat-numerica">
@@ -1352,29 +1347,6 @@
         <div class="progress-track"><div class="progress-fill" style="width:89.5%"></div></div>
       </div>
 
-      <div class="kpi-card fat-alimentar">
-        <div class="card-title">Golden Points Alimentar</div>
-        <div class="kpi-value">14.320</div>
-        <div class="kpi-meta">Meta: <span>16.500 pts</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">2.180 pts</span></div>
-        <div class="bar-header">
-          <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">86,8%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" style="width:86.8%"></div></div>
-      </div>
-
-      <div class="kpi-card fat-farma">
-        <div class="card-title">Golden Points Farma</div>
-        <div class="kpi-value">9.870</div>
-        <div class="kpi-meta">Meta: <span>12.000 pts</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">2.130 pts</span></div>
-        <div class="bar-header">
-          <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">82,3%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" style="width:82.3%"></div></div>
-      </div>
 
     </div>
   </div>
@@ -2222,8 +2194,8 @@
                   vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0,
                   p:0, p_ali:0, p_far:0,
                   pf:0, pf_ali:0, pf_far:0,
-                  r_hfs:0, r_far:0, r_alw:0, r_pmp:0,
-                  rf_hfs:0, rf_far:0, rf_alw:0, rf_pmp:0};
+                  r_hfs:0, r_far:0, r_alw:0, r_pmp:0, r_ecp:0,
+                  rf_hfs:0, rf_far:0, rf_alw:0, rf_pmp:0, rf_ecp:0};
     vendas.forEach(x=>{
       if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
@@ -2243,18 +2215,19 @@
       sums.pf_ali += x.pf_ali || 0;
       sums.pf_far += x.pf_far || 0;
       // positivação ranking (HFS / Farma / Always Noturno / Pampers)
-      ['hfs','far','alw','pmp'].forEach(m=>{
+      ['hfs','far','alw','pmp','ecp'].forEach(m=>{
         sums['r_'+m]  += x['r_'+m]  || 0;
         sums['rf_'+m] += x['rf_'+m] || 0;
       });
     });
 
     // Potencial (d_clientes_braveo): contagem distinta de CNPJ elegível
-    const potSums = {hfs:0, far:0, alw:0, pmp:0};
+    const potSums = {hfs:0, far:0, alw:0, pmp:0, ecp:0};
     potencial.forEach(x=>{
       if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
       potSums.hfs += x.hfs||0; potSums.far += x.far||0;
       potSums.alw += x.alw||0; potSums.pmp += x.pmp||0;
+      potSums.ecp += x.ecp||0;
     });
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
@@ -2293,26 +2266,28 @@
       const pctEl   = card.querySelector('[data-bind=pct]');
       const barEl   = card.querySelector('[data-bind=bar]');
       const barTotEl= card.querySelector('[data-bind=bar-total]');
-      card.querySelector('[data-bind=meta]').textContent = fmtMeta(metaVal);
+      const metaEl = card.querySelector('[data-bind=meta]');
+      if (metaEl) metaEl.textContent = fmtMeta(metaVal);
       gapEl.style.color = gap > 0 ? '#DC2626' : '#059669';
 
       const fromValor = valorEl.__value || 0;
       const fromGap   = gapEl.__value   || 0;
-      const fromPct   = pctEl.__value   || 0;
+      const fromPct   = pctEl ? (pctEl.__value || 0) : 0;
       valorEl.__value = total;
       gapEl.__value   = Math.abs(gap);
-      pctEl.__value   = pct;
+      if (pctEl) pctEl.__value = pct;
 
       // reset bars to 0 to force width transition from 0
-      barEl.classList.remove('animate');
-      barEl.style.transition = 'none';
-      barEl.style.width = '0%';
+      if (barEl) {
+        barEl.classList.remove('animate');
+        barEl.style.transition = 'none';
+        barEl.style.width = '0%';
+      }
       if (barTotEl) {
         barTotEl.style.transition = 'none';
         barTotEl.style.width = '0%';
       }
-      void barEl.offsetWidth;
-      barEl.style.transition = '';
+      if (barEl) { void barEl.offsetWidth; barEl.style.transition = ''; }
       if (barTotEl) barTotEl.style.transition = '';
 
       const delay = REDUCE_MOTION ? 0 : (index || 0) * 90;
@@ -2320,10 +2295,12 @@
       setTimeout(() => {
         animateCount(valorEl, fromValor, total,          DUR, fmtVal);
         animateCount(gapEl,   fromGap,   Math.abs(gap),  DUR, fmtMeta);
-        animateCount(pctEl,   fromPct,   pct,            DUR, fmtPct);
+        if (pctEl) animateCount(pctEl, fromPct, pct,      DUR, fmtPct);
         requestAnimationFrame(() => requestAnimationFrame(() => {
-          barEl.classList.add('animate');
-          barEl.style.width    = Math.min(100, Math.max(0, pctFat*100)).toFixed(1) + '%';
+          if (barEl) {
+            barEl.classList.add('animate');
+            barEl.style.width  = Math.min(100, Math.max(0, pctFat*100)).toFixed(1) + '%';
+          }
           if (barTotEl) barTotEl.style.width = Math.min(100, Math.max(0, pct*100)).toFixed(1) + '%';
         }));
       }, delay);
@@ -2365,6 +2342,9 @@
     paint('card-rank-far', sums.r_far, sums.rf_far, metaSums.r_far, 1, rankOpts(potSums.far));
     paint('card-rank-alw', sums.r_alw, sums.rf_alw, metaSums.r_alw, 2, rankOpts(potSums.alw));
     paint('card-rank-pmp', sums.r_pmp, sums.rf_pmp, metaSums.r_pmp, 3, rankOpts(potSums.pmp));
+
+    // Escolha Certa: sem meta — usa o potencial como referência
+    paint('card-ec-pos', sums.r_ecp, sums.rf_ecp, potSums.ecp, 0, rankOpts(potSums.ecp));
   }
 
 

@@ -173,7 +173,7 @@ def build(dados_path, estrutura_path):
             plat = s(r[c_plat]) if c_plat is not None else ""
             k = rv + "|" + uf
             b = psets.setdefault(k, {"hfs": set(), "far": set(),
-                                     "alw": set(), "pmp": set()})
+                                     "alw": set(), "pmp": set(), "ecp": set()})
             plat_ok = plat in ("Escolha Certa", "Store Platform")
             if canal == "HFS" and plat_ok:
                 b["hfs"].add(cnpj)
@@ -183,11 +183,14 @@ def build(dados_path, estrutura_path):
                 b["alw"].add(cnpj)
             if canal in ("HFS", "Farma Indep") and plat_ok:
                 b["pmp"].add(cnpj)
+            if plat == "Escolha Certa":
+                b["ecp"].add(cnpj)
         for k, b in psets.items():
             rv, uf = k.split("|", 1)
             potencial[k] = {"rv": rv, "uf": uf,
                             "hfs": len(b["hfs"]), "far": len(b["far"]),
-                            "alw": len(b["alw"]), "pmp": len(b["pmp"])}
+                            "alw": len(b["alw"]), "pmp": len(b["pmp"]),
+                            "ecp": len(b["ecp"])}
 
 
     # ---------- Dados: f_venda_total ----------
@@ -301,6 +304,8 @@ def build(dados_path, estrutura_path):
                     and ("PAMPERS" in grupo or "FRALDA" in grupo) \
                     and "TOALHAS" not in prod:
                 add_rank("pmp")
+            if plat == "Escolha Certa":
+                add_rank("ecp")
 
 
     pos_total_all = 0
