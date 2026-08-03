@@ -120,6 +120,8 @@ def build(dados_path, estrutura_path):
     r_far = col(idx, "OBJ PRODUTIVIDADE FARMA", "OBJ PRODUTIVIDADE FARMA ")
     r_alw = col(idx, "Objetivo Marca 1")
     r_pmp = col(idx, "Objetivo Marca 2")
+    e_ch2 = col(idx, "OBJ ESCOLHA CERTA_NOVO")
+    e_pp = col(idx, "Objetivo Platinum Points")
     magg = {}
     for r in rows:
         if not r:
