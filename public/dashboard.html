@@ -2252,11 +2252,14 @@
       metaSums.r_far += m.r_far||0;
       metaSums.r_alw += m.r_alw||0;
       metaSums.r_pmp += m.r_pmp||0;
+      metaSums.e_ch2 += m.e_ch2||0;
+      metaSums.e_pp  += m.e_pp||0;
     });
 
 
     const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
     const fmtPDV = (v)=> fmtInt(v) + ' PDVs';
+    const fmtPTS = (v)=> fmtInt(v) + ' pts';
 
     function paint(cardId, total, fat, metaVal, index, opts){
       const card = document.getElementById(cardId);
