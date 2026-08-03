@@ -1986,6 +1986,7 @@
   const metas = data.metas;     // [{rv,uf,total,ec,sp,ali,far}]
   const vendas = data.vendas;   // [{rv,uf,v,ec,sp,ali,far}]
   const potencial = data.potencial || [];  // [{rv,uf,hfs,far,alw,pmp}]
+  const ecOniz = data.ec || [];            // [{rv,uf,ch2,pp}]
 
   const ck = (rv,uf) => String(rv)+'|'+String(uf);
 
