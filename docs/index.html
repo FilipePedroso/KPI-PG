@@ -1318,34 +1318,30 @@
         <div class="progress-track-pot"><div class="progress-fill" data-bind="pot-bar" style="width:0%;opacity:0.45;"></div></div>
       </div>
 
-      <div class="kpi-card fat-numerica">
+      <div class="kpi-card fat-numerica" id="card-ec-ch2">
         <div class="card-title">Positivação Chaves ≥2</div>
-        <div class="kpi-value">1.047</div>
-        <div class="kpi-meta">Meta: <span>1.250 PDVs</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">203 PDVs</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— PDVs</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">83,8%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:83.8%"></div></div>
-        <div class="bar-header" style="margin-top:6px;">
-          <span class="bar-label">Potencial</span>
-          <span class="bar-pct" style="color:#64748B;font-weight:600;">2.800 PDVs · 37%</span>
-        </div>
-        <div class="progress-track-pot"><div class="progress-fill" style="width:37%;opacity:0.45;"></div><div class="meta-marker" style="left:44.6%;"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
 
-      <div class="kpi-card fat-ponderada">
+      <div class="kpi-card fat-ponderada" id="card-ec-pp">
         <div class="card-title">Platinum Points</div>
-        <div class="kpi-value">28.640</div>
-        <div class="kpi-meta">Meta: <span>32.000 pts</span></div>
-        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span style="color:#DC2626;font-weight:700;">3.360 pts</span></div>
+        <div class="kpi-value" data-bind="valor">—</div>
+        <div class="kpi-meta">Meta: <span data-bind="meta">— pts</span></div>
+        <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">— pts</span></div>
         <div class="bar-header">
           <span class="bar-label">Atingimento</span>
-          <span class="bar-pct">89,5%</span>
+          <span class="bar-pct" data-bind="pct">—</span>
         </div>
-        <div class="progress-track"><div class="progress-fill" style="width:89.5%"></div></div>
+        <div class="progress-track"><div class="progress-fill" data-bind="bar" style="width:0%"></div></div>
       </div>
+
 
 
     </div>
@@ -1990,6 +1986,7 @@
   const metas = data.metas;     // [{rv,uf,total,ec,sp,ali,far}]
   const vendas = data.vendas;   // [{rv,uf,v,ec,sp,ali,far}]
   const potencial = data.potencial || [];  // [{rv,uf,hfs,far,alw,pmp}]
+  const ecOniz = data.ec || [];            // [{rv,uf,ch2,pp}]
 
   const ck = (rv,uf) => String(rv)+'|'+String(uf);
 
@@ -2230,9 +2227,17 @@
       potSums.ecp += x.ecp||0;
     });
 
+    // Escolha Certa (f_ec_oniz)
+    const ecSums = {ch2:0, pp:0};
+    ecOniz.forEach(x=>{
+      if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
+      ecSums.ch2 += x.ch2||0; ecSums.pp += x.pp||0;
+    });
+
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
                       p_total:0, p_ali:0, p_far:0,
-                      r_hfs:0, r_far:0, r_alw:0, r_pmp:0};
+                      r_hfs:0, r_far:0, r_alw:0, r_pmp:0,
+                      e_ch2:0, e_pp:0};
     metas.forEach(m=>{
       if (!noFilters && !eligibleKeys.has(ck(m.rv, m.uf))) return;
       metaSums.total += m.total||0;
@@ -2247,11 +2252,14 @@
       metaSums.r_far += m.r_far||0;
       metaSums.r_alw += m.r_alw||0;
       metaSums.r_pmp += m.r_pmp||0;
+      metaSums.e_ch2 += m.e_ch2||0;
+      metaSums.e_pp  += m.e_pp||0;
     });
 
 
     const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
     const fmtPDV = (v)=> fmtInt(v) + ' PDVs';
+    const fmtPTS = (v)=> fmtInt(v) + ' pts';
 
     function paint(cardId, total, fat, metaVal, index, opts){
       const card = document.getElementById(cardId);
@@ -2345,6 +2353,8 @@
 
     // Escolha Certa: sem meta — usa o potencial como referência
     paint('card-ec-pos', sums.r_ecp, sums.rf_ecp, potSums.ecp, 0, rankOpts(potSums.ecp));
+    paint('card-ec-ch2', ecSums.ch2, ecSums.ch2, metaSums.e_ch2, 1, {fmtVal:fmtInt, fmtMeta:fmtPDV});
+    paint('card-ec-pp',  ecSums.pp,  ecSums.pp,  metaSums.e_pp,  2, {fmtVal:fmtInt, fmtMeta:fmtPTS});
   }
 
 
