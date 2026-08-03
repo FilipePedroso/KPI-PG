@@ -2227,9 +2227,17 @@
       potSums.ecp += x.ecp||0;
     });
 
+    // Escolha Certa (f_ec_oniz)
+    const ecSums = {ch2:0, pp:0};
+    ecOniz.forEach(x=>{
+      if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
+      ecSums.ch2 += x.ch2||0; ecSums.pp += x.pp||0;
+    });
+
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
                       p_total:0, p_ali:0, p_far:0,
-                      r_hfs:0, r_far:0, r_alw:0, r_pmp:0};
+                      r_hfs:0, r_far:0, r_alw:0, r_pmp:0,
+                      e_ch2:0, e_pp:0};
     metas.forEach(m=>{
       if (!noFilters && !eligibleKeys.has(ck(m.rv, m.uf))) return;
       metaSums.total += m.total||0;
