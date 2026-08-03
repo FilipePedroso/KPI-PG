@@ -120,6 +120,8 @@ def build(dados_path, estrutura_path):
     r_far = col(idx, "OBJ PRODUTIVIDADE FARMA", "OBJ PRODUTIVIDADE FARMA ")
     r_alw = col(idx, "Objetivo Marca 1")
     r_pmp = col(idx, "Objetivo Marca 2")
+    e_ch2 = col(idx, "OBJ ESCOLHA CERTA_NOVO")
+    e_pp = col(idx, "Objetivo Platinum Points")
     magg = {}
     for r in rows:
         if not r:
@@ -133,7 +135,8 @@ def build(dados_path, estrutura_path):
                                 "sp": 0.0, "ali": 0.0, "far": 0.0,
                                 "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0,
                                 "r_hfs": 0.0, "r_far": 0.0,
-                                "r_alw": 0.0, "r_pmp": 0.0})
+                                "r_alw": 0.0, "r_pmp": 0.0,
+                                "e_ch2": 0.0, "e_pp": 0.0})
         b["total"] += n(r[m_tot]) if m_tot is not None else 0.0
         b["ec"] += n(r[m_ec]) if m_ec is not None else 0.0
         b["sp"] += n(r[m_sp]) if m_sp is not None else 0.0
@@ -146,6 +149,8 @@ def build(dados_path, estrutura_path):
         b["r_far"] += n(r[r_far]) if r_far is not None else 0.0
         b["r_alw"] += n(r[r_alw]) if r_alw is not None else 0.0
         b["r_pmp"] += n(r[r_pmp]) if r_pmp is not None else 0.0
+        b["e_ch2"] += n(r[e_ch2]) if e_ch2 is not None else 0.0
+        b["e_pp"] += n(r[e_pp]) if e_pp is not None else 0.0
     metas = list(magg.values())
 
     # ---------- Estrutura: d_clientes_braveo (potencial) ----------
@@ -342,6 +347,44 @@ def build(dados_path, estrutura_path):
     print(f"[build_data] linhas: {total_rows}, faturadas: {fat_rows}, "
           f"CNPJs positivados: {pos_total_all}", file=sys.stderr)
 
+    # ---------- Dados: f_ec_oniz (Escolha Certa) ----------
+    # chaves >= 2: contagem distinta de nr_doc com nr_chave >= 2
+    # platinum points: contagem distinta de (nr_doc, ds_combo_sku_lista_ativacao)
+    #                  com "Platinum Point?" = "Sim"
+    ec = []
+    if "f_ec_oniz" in wbd.sheetnames:
+        ws = wbd["f_ec_oniz"]
+        rows, header, idx = header_map(ws)
+        o_rv = col(idx, "cd_vendedor")
+        o_uf = col(idx, "ds_sigla", "ds_uf")
+        o_doc = col(idx, "nr_doc")
+        o_ch = col(idx, "nr_chave")
+        o_combo = col(idx, "ds_combo_sku_lista_ativacao")
+        o_pp = col(idx, "Platinum Point?")
+        esets = {}
+        for r in rows:
+            if not r:
+                continue
+            rv = rv_key(r[o_rv])
+            uf = s(r[o_uf])
+            doc = rv_key(r[o_doc]) if o_doc is not None else ""
+            if not rv or not uf or not doc:
+                continue
+            k = rv + "|" + uf
+            b = esets.setdefault(k, {"ch2": set(), "pp": set()})
+            if o_ch is not None and n(r[o_ch]) >= 2:
+                b["ch2"].add(doc)
+            if o_pp is not None and s(r[o_pp]).lower() in ("sim", "s", "yes", "1"):
+                combo = s(r[o_combo]) if o_combo is not None else ""
+                b["pp"].add(doc + "|" + combo)
+        for k, b in esets.items():
+            rv, uf = k.split("|", 1)
+            ec.append({"rv": rv, "uf": uf,
+                       "ch2": len(b["ch2"]), "pp": len(b["pp"])})
+        print(f"[build_data] f_ec_oniz: chaves>=2 = "
+              f"{sum(e['ch2'] for e in ec)}, platinum = "
+              f"{sum(e['pp'] for e in ec)}", file=sys.stderr)
+
     br = timezone(timedelta(hours=-3))
     return {
         "generated_at": datetime.now(br).strftime("%Y-%m-%dT%H:%M:%S-03:00"),
@@ -350,6 +393,7 @@ def build(dados_path, estrutura_path):
         "vendas": vendas,
         "metas": metas,
         "potencial": list(potencial.values()),
+        "ec": ec,
     }
 
 
