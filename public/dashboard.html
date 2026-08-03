@@ -2353,6 +2353,8 @@
 
     // Escolha Certa: sem meta — usa o potencial como referência
     paint('card-ec-pos', sums.r_ecp, sums.rf_ecp, potSums.ecp, 0, rankOpts(potSums.ecp));
+    paint('card-ec-ch2', ecSums.ch2, ecSums.ch2, metaSums.e_ch2, 1, {fmtVal:fmtInt, fmtMeta:fmtPDV});
+    paint('card-ec-pp',  ecSums.pp,  ecSums.pp,  metaSums.e_pp,  2, {fmtVal:fmtInt, fmtMeta:fmtPTS});
   }
 
 
