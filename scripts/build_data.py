@@ -135,7 +135,8 @@ def build(dados_path, estrutura_path):
                                 "sp": 0.0, "ali": 0.0, "far": 0.0,
                                 "p_total": 0.0, "p_ali": 0.0, "p_far": 0.0,
                                 "r_hfs": 0.0, "r_far": 0.0,
-                                "r_alw": 0.0, "r_pmp": 0.0})
+                                "r_alw": 0.0, "r_pmp": 0.0,
+                                "e_ch2": 0.0, "e_pp": 0.0})
         b["total"] += n(r[m_tot]) if m_tot is not None else 0.0
         b["ec"] += n(r[m_ec]) if m_ec is not None else 0.0
         b["sp"] += n(r[m_sp]) if m_sp is not None else 0.0
@@ -148,6 +149,8 @@ def build(dados_path, estrutura_path):
         b["r_far"] += n(r[r_far]) if r_far is not None else 0.0
         b["r_alw"] += n(r[r_alw]) if r_alw is not None else 0.0
         b["r_pmp"] += n(r[r_pmp]) if r_pmp is not None else 0.0
+        b["e_ch2"] += n(r[e_ch2]) if e_ch2 is not None else 0.0
+        b["e_pp"] += n(r[e_pp]) if e_pp is not None else 0.0
     metas = list(magg.values())
 
     # ---------- Estrutura: d_clientes_braveo (potencial) ----------
