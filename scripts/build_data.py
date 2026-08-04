@@ -225,11 +225,15 @@ def read_sc():
 
     def bucket(rv, uf):
         rv, uf = rv_key(rv), s(uf)
-        if not rv or not rv.isdigit() or not uf:
+        if not uf:
             return None
+        # linhas sem vendedor identificado (ex.: "Outros") vão para o código 0
+        if not rv or not rv.isdigit():
+            rv = "0"
         return acc.setdefault(rv + "|" + uf, {"hfs": 0.0, "far": 0.0,
                                               "alw": 0.0, "pmp": 0.0,
                                               "ch2": 0.0, "pp": 0.0})
+
 
     def sheet(name):
         return header_map(wb[name]) if name in wb.sheetnames else (None, None, None)
