@@ -2507,6 +2507,7 @@
     const wrap = document.getElementById('rk-bars');
     const scoreEl = document.getElementById('rk-score-value');
     const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
+    const DUR = 900;
     if (!wrap || !scoreEl) return;
     const defs = [
       { name: 'Positivação HFS',             real: sums.r_hfs, meta: metaSums.r_hfs, color: '#003DA5' },
@@ -2530,7 +2531,6 @@
     }
 
     const avg = rows.reduce((s,r)=>s+r.pct, 0) / rows.length;
-    scoreEl.textContent = fmtPct(avg);
 
     const bar = (pct, color, w) =>
       '<div class="rk-track"><div class="rk-fill" data-w="' + w + '" style="background:' + color + ';"></div></div>';
@@ -2539,30 +2539,43 @@
       '<div class="rk-item rk-total">' +
         '<div class="rk-item-head">' +
           '<div class="rk-item-name">Ranking Score</div>' +
-          '<div class="rk-item-pct">' + fmtPct(avg) + '</div>' +
+          '<div class="rk-item-pct" data-pct="' + avg + '">' + fmtPct(0) + '</div>' +
         '</div>' +
         '<div style="height:6px;"></div>' +
         bar(avg, '#003DA5', Math.min(100, Math.max(0, avg*100)).toFixed(1)) +
       '</div>';
 
-    html += rows.map(r => {
+    html += rows.map((r, idx) => {
       const w = Math.min(100, Math.max(0, r.pct*100)).toFixed(1);
       return '<div class="rk-item">' +
         '<div class="rk-item-head">' +
           '<div class="rk-item-name">' + r.name + '</div>' +
-          '<div class="rk-item-pct">' + fmtPct(r.pct) + '</div>' +
+          '<div class="rk-item-pct" data-pct="' + r.pct + '">' + fmtPct(0) + '</div>' +
         '</div>' +
         '<div class="rk-item-meta">' +
-          '<span>Meta: <b>' + fmtInt(r.meta) + '</b></span>' +
-          '<span>Gap: <b class="gap-val">' + fmtInt(r.gap) + '</b></span>' +
-          '<span>Realizado: <b>' + fmtInt(r.real) + '</b></span>' +
+          '<span>Meta: <b class="rk-meta-value" data-val="' + r.meta + '">' + fmtInt(0) + '</b></span>' +
+          '<span>Gap: <b class="rk-meta-value gap-val" data-val="' + r.gap + '">' + fmtInt(0) + '</b></span>' +
+          '<span>Realizado: <b class="rk-meta-value" data-val="' + r.real + '">' + fmtInt(0) + '</b></span>' +
         '</div>' +
         bar(r.pct, r.color, w) +
       '</div>';
     }).join('');
 
     wrap.innerHTML = html;
+    scoreEl.textContent = fmtPct(0);
+    animateCount(scoreEl, 0, avg, DUR, fmtPct);
+
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const pctEls = wrap.querySelectorAll('.rk-item-pct');
+      pctEls.forEach((el, i) => {
+        const target = parseFloat(el.dataset.pct);
+        setTimeout(() => animateCount(el, 0, target, DUR, fmtPct), REDUCE_MOTION ? 0 : i * 70);
+      });
+      const metaEls = wrap.querySelectorAll('.rk-meta-value');
+      metaEls.forEach((el, i) => {
+        const target = parseFloat(el.dataset.val);
+        setTimeout(() => animateCount(el, 0, target, DUR, fmtInt), REDUCE_MOTION ? 0 : i * 70);
+      });
       wrap.querySelectorAll('.rk-fill').forEach((el,i)=>{
         setTimeout(()=>{ el.style.width = el.dataset.w + '%'; }, REDUCE_MOTION ? 0 : i*70);
       });
