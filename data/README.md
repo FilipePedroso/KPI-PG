@@ -8,6 +8,7 @@ Esta pasta contém os arquivos Excel-fonte usados para gerar o dashboard.
 |---|---|---|
 | `Dados_f_venda_total.parquet` | — (tabela fato) | Vendas, positivação |
 | `Dados_f_ec_oniz.parquet` | — (tabela fato) | Chaves e Platinum Points |
+| `Dados_SC.xlsx` | `Pos Relação`, `Marcas Relação`, `Escolha Certa`, `Platinum Points` | Indicadores já tratados de SC (sobrescrevem o cálculo normal para a UF SC) |
 | `Estrutura.xlsx` | `d_comercial`, `d_metas`, `d_clientes_braveo` | Hierarquia comercial, metas e potencial de clientes |
 
 ## Como atualizar os dados (GitHub)
@@ -16,7 +17,7 @@ O dashboard é estático e hospedado no GitHub Pages. A atualização dos dados 
 
 1. Acesse o repositório `KPI Ranking P&G` no GitHub.
 2. Navegue até a pasta `data/`.
-3. Substitua o arquivo desejado (`Dados_f_venda_total.parquet`, `Dados_f_ec_oniz.parquet` ou `Estrutura.xlsx`) por upload na web ou via `git push`.
+3. Substitua o arquivo desejado (`Dados_f_venda_total.parquet`, `Dados_f_ec_oniz.parquet`, `Dados_SC.xlsx` ou `Estrutura.xlsx`) por upload na web ou via `git push`.
 4. Commit com uma mensagem descritiva, por exemplo: `Atualização dados agosto/2026`.
 
 Pronto. O resto é automático.
@@ -58,3 +59,20 @@ O script `build_data.py` mantém compatibilidade com os arquivos de ponteiro `*.
 - Acesse o GitHub Actions do repositório e confirme se a execução de `Build Dashboard Data` terminou com sucesso (✅ verde).
 - No dashboard, o header mostra a data e hora da última geração dos dados.
 - Caso alguma combinação de vendedor + UF não exista na estrutura, o arquivo `sem-estrutura.csv` será gerado com as combinações que faltavam e foram inseridas automaticamente como "CÓDIGO - -".
+
+## `Dados_SC.xlsx` (fonte alternativa de SC)
+
+Quando este arquivo está em `data/`, os indicadores abaixo passam a vir dele para
+todas as combinações da UF `SC` (o cálculo pelas tabelas fato é desconsiderado):
+
+| Card | Aba | Regra |
+|---|---|---|
+| Positivação HFS | `Pos Relação` | distintos de `CNPJ` onde `TIPO` = `HFS` |
+| Positivação Farma | `Pos Relação` | distintos de `CNPJ` onde `TIPO` = `FARMA` |
+| Positivação Always Noturno | `Marcas Relação` | distintos de `CNPJ` onde `TIPO` = `ALWAYS NOTURNO` |
+| Positivação Pampers | `Marcas Relação` | distintos de `CNPJ` onde `TIPO` = `PAMPERS` |
+| Chaves >= 2 | `Escolha Certa` | distintos de `CNPJ` |
+| Platinum Points | `Platinum Points` | distintos de `CNPJ` + `GRUPO DE ATIVAÇÃO` |
+
+Relacionamento com os filtros: `RV` (ou `cd_vendedor`/`Rv`) + `ds_uf`.
+Basta substituir o arquivo em `data/` — o workflow roda automaticamente.
