@@ -1034,6 +1034,66 @@
     .team-bar-legend .lg-nfat { background: #9CA3AF; }
     .team-bars-empty { text-align: center; color: #94A3B8; padding: 18px; font-size: 12px; }
 
+    /* ── Resumo / Ranking P&G ── */
+    .resumo-row { display: block; }
+    .resumo-card {
+      width: 50%;
+      background: #FFFFFF;
+      border: 1px solid #E6EAF2;
+      border-radius: 12px;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(15,23,51,0.06);
+    }
+    .resumo-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: #003DA5; border-radius: 12px 12px 0 0;
+    }
+    .resumo-head { padding: 18px 20px 14px; text-align: center; }
+    .resumo-card-title {
+      font-size: 10.5px; font-weight: 600; color: #6B7A99;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .rk-score-label {
+      font-size: 11px; font-weight: 700; color: #6B7A99;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .rk-score-value {
+      font-size: 32px; font-weight: 700; color: #0F1733;
+      letter-spacing: -1px; line-height: 1.15; font-feature-settings: 'tnum';
+    }
+    .rk-divider { height: 1px; background: #E6EAF2; }
+    .rk-bars { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .rk-item-name {
+      font-size: 12px; font-weight: 700; color: #0F1733;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .rk-item-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .rk-item-pct { font-size: 12px; font-weight: 700; color: #1a1a2e; font-feature-settings: 'tnum'; }
+    .rk-item-meta {
+      display: flex; flex-wrap: wrap; gap: 2px 12px;
+      font-size: 11px; color: #6B7A99; margin: 3px 0 6px;
+    }
+    .rk-item-meta b { font-weight: 700; color: #1a1a2e; font-feature-settings: 'tnum'; }
+    .rk-item-meta .gap-val { color: #DC2626; font-weight: 700; }
+    .rk-track {
+      position: relative; height: 8px; border-radius: 999px;
+      background: #E8ECF3; overflow: hidden;
+    }
+    .rk-fill {
+      position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px;
+      width: 0%; transition: width 1s cubic-bezier(0.22,0.9,0.3,1);
+    }
+    .rk-total .rk-track { height: 10px; }
+    .rk-empty { text-align: center; color: #94A3B8; padding: 18px; font-size: 12px; }
+
+    @media (max-width: 900px) {
+      .resumo-card { width: 100%; }
+    }
+
+
+
     @media (max-width: 640px) {
       .team-view-title { font-size: 11px; }
       .team-dropdown { font-size: 11px; padding: 6px 10px; }
