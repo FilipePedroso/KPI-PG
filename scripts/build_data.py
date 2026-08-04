@@ -31,6 +31,99 @@ ALWAYS_EANS = {
 }
 
 
+def asset_base_url():
+    """Retorna a URL base do projeto para resolver assets relativos."""
+    return os.environ.get("LOVABLE_PROJECT_URL",
+                          "https://id-preview--fcb0edde-deb7-44dc-ab51-3bee86aa48cf.lovable.app")
+
+
+def read_asset(name):
+    p = os.path.join(DATA_DIR, name + ".asset.json")
+    if not os.path.exists(p):
+        return None
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def write_asset(name, payload):
+    p = os.path.join(DATA_DIR, name + ".asset.json")
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    print(f"  -> asset pointer atualizado: {p}")
+
+
+def upload_asset(name, source):
+    """Faz upload do arquivo local e retorna o asset pointer atualizado."""
+    try:
+        result = subprocess.run(
+            ["lovable-assets", "create", "--file", source],
+            capture_output=True, text=True, check=True,
+        )
+        payload = json.loads(result.stdout)
+        write_asset(name, payload)
+        return payload
+    except Exception as e:
+        print(f"  AVISO: não foi possível fazer upload de {name}: {e}")
+        return None
+
+
+def download_asset(name, target, asset):
+    """Baixa o asset do CDN para o path local."""
+    url = asset.get("url", "")
+    if not url:
+        return False
+    if url.startswith("/"):
+        url = asset_base_url().rstrip("/") + url
+    try:
+        print(f"  -> baixando {name} de {url} ...")
+        with urlopen(url) as resp:
+            with open(target, "wb") as f:
+                f.write(resp.read())
+        return True
+    except HTTPError as e:
+        print(f"  ERRO ao baixar {name}: {e.code} {e.reason}")
+        return False
+    except Exception as e:
+        print(f"  ERRO ao baixar {name}: {e}")
+        return False
+
+
+def ensure_asset(name):
+    """
+    Garante que o arquivo .xlsx esteja disponível em data/{name}.
+    - Se existe localmente e mudou de tamanho, faz upload e atualiza pointer.
+    - Se não existe localmente, baixa do CDN usando o pointer.
+    Retorna o path local ou None.
+    """
+    source = os.path.join(DATA_DIR, name)
+    asset = read_asset(name)
+
+    if os.path.exists(source):
+        local_size = os.path.getsize(source)
+        asset_size = asset.get("size") if asset else None
+        if asset_size is None or local_size != asset_size:
+            print(f"{name} local ({local_size:,} bytes) difere do asset ({asset_size or '?'}). Fazendo upload...")
+            new_asset = upload_asset(name, source)
+            if new_asset:
+                return source
+        return source
+
+    if asset:
+        if download_asset(name, source, asset):
+            return source
+        print(f"ERRO: {name} não encontrado localmente e não pôde ser baixado do CDN.")
+        return None
+
+    print(f"ERRO: {name} não encontrado localmente e não existe asset pointer.")
+    return None
+
+
+
+
+
 
 def s(v):
     return "" if v is None else str(v).strip()
