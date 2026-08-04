@@ -1,0 +1,41 @@
+name: Atualizar dados do dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "scripts/build_data.py"
+      - ".github/workflows/build-data.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install openpyxl
+
+      - name: Gerar data.json
+        run: python3 scripts/build_data.py
+
+      - name: Commitar dados gerados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data.json public/data.json docs/sem-estrutura.csv public/sem-estrutura.csv
+          if git diff --staged --quiet; then
+            echo "Nada a atualizar."
+          else
+            git commit -m "chore: atualiza dados do dashboard [skip ci]"
+            git push
+          fi
