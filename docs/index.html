@@ -1563,17 +1563,20 @@
 
       const actions = document.createElement('div');
       actions.className = 'card-actions';
+      const hasTeam = !!((window.dashboardAPI || {}).metrics || {})[card.id];
       actions.innerHTML =
+        (hasTeam ?
         '<button type="button" class="btn-action">' +
           '<span class="list-icon"><span></span><span></span><span></span></span>' +
           'Equipe' +
-        '</button>' +
+        '</button>' : '') +
         '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
       card.appendChild(actions);
       actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
-      actions.querySelector('.btn-action').addEventListener('click', (e)=>{
+      const teamBtn = actions.querySelector('.btn-action');
+      if (teamBtn) teamBtn.addEventListener('click', (e)=>{
         e.stopPropagation();
-        if (card.id === 'card-fat-total') openTeamView(card, actions);
+        openTeamView(card, actions);
       });
 
       const last = card.getBoundingClientRect();
@@ -1614,9 +1617,16 @@
     ];
     let teamState = null; // { card, originalHTML, originalActions, field }
 
-    function buildTeamRows(field){
+    function getMetric(cardId){
       const api = window.dashboardAPI;
-      if (!api) return [];
+      if (!api || !api.metrics) return null;
+      return api.metrics[cardId] || null;
+    }
+
+    function buildTeamRows(field, cardId){
+      const api = window.dashboardAPI;
+      const metric = getMetric(cardId);
+      if (!api || !metric) return [];
       // name -> Set of ck (rv|uf) keys for that person
       const groupMap = new Map();
       api.rvEntries.forEach(r => {
@@ -1626,24 +1636,33 @@
         if (!groupMap.has(name)) groupMap.set(name, new Set());
         groupMap.get(name).add(api.ck(r.rv, r.uf));
       });
-      const realMap = new Map();
-      const fatMap = new Map();
-      api.vendas.forEach(x => {
-        const k = api.ck(x.rv, x.uf);
-        groupMap.forEach((keys, name) => {
-          if (keys.has(k)) {
-            realMap.set(name, (realMap.get(name) || 0) + (x.v || 0));
-            fatMap.set(name, (fatMap.get(name) || 0) + (x.vf || 0));
-          }
+      // key -> [names]
+      const keyNames = new Map();
+      groupMap.forEach((keys, name) => {
+        keys.forEach(k => {
+          if (!keyNames.has(k)) keyNames.set(k, []);
+          keyNames.get(k).push(name);
         });
       });
-      const metaMap = new Map();
-      api.metas.forEach(m => {
-        const k = api.ck(m.rv, m.uf);
-        groupMap.forEach((keys, name) => {
-          if (keys.has(k)) metaMap.set(name, (metaMap.get(name) || 0) + (m.total || 0));
+
+      function sumBy(spec){
+        const out = new Map();
+        if (!spec) return out;
+        const arr = api.sources[spec.src] || [];
+        arr.forEach(x => {
+          const names = keyNames.get(api.ck(x.rv, x.uf));
+          if (!names) return;
+          const v = x[spec.field] || 0;
+          if (!v) return;
+          names.forEach(n => out.set(n, (out.get(n) || 0) + v));
         });
-      });
+        return out;
+      }
+
+      const realMap = sumBy(metric.real);
+      const fatMap  = sumBy(metric.fat || metric.real);
+      const metaMap = sumBy(metric.meta);
+
       const rows = [];
       groupMap.forEach((_, name) => {
         const real = realMap.get(name) || 0;
@@ -1657,15 +1676,19 @@
       return rows.sort((a, b) => b.pct - a.pct);
     }
 
+
     function renderTeamTable(wrap, field){
-      const rows = buildTeamRows(field);
-      const api = window.dashboardAPI;
+      const cardId = wrap.dataset.cardId;
+      const rows = buildTeamRows(field, cardId);
+      const metric = getMetric(cardId) || {};
       const barColor = wrap.dataset.barColor || '#003DA5';
       if (!rows.length) {
         wrap.innerHTML = '<div class="team-bars-empty">Sem dados</div>';
         return;
       }
-      const fmt = api ? api.fmtMoney : (v)=>v;
+      const fmt = metric.fmtVal || ((v)=>v);
+      const fmtMeta = metric.fmtMeta || fmt;
+      const metaLabel = metric.metaLabel || 'Meta';
       wrap.innerHTML = '<div class="team-bars">' + rows.map(r => {
         const w    = Math.min(100, Math.max(0, r.pct * 100)).toFixed(1);
         const wFat = Math.min(100, Math.max(0, r.pctFat * 100)).toFixed(1);
@@ -1676,10 +1699,11 @@
               '<div class="team-bar-pct" data-target-pct="' + (r.pct * 100).toFixed(2) + '">0,0%</div>' +
             '</div>' +
             '<div class="team-bar-meta">' +
-              '<span>Meta: <b>' + fmt(r.meta) + '</b></span>' +
+              '<span>' + metaLabel + ': <b>' + fmtMeta(r.meta) + '</b></span>' +
               '<span>Gap: <b class="gap-val">' + fmt(Math.abs(r.gap)) + '</b></span>' +
               '<span>Realizado: <b>' + fmt(r.real) + '</b></span>' +
             '</div>' +
+
             '<div class="team-bar-track">' +
               '<div class="team-bar-total" data-target-width="' + w + '" style="width:0%;"></div>' +
               '<div class="team-bar-fill" data-target-width="' + wFat + '" style="width:0%;background:' + barColor + ';"></div>' +
@@ -1707,11 +1731,19 @@
       });
     }
 
-    function exportTeamCSV(field){
-      const rows = buildTeamRows(field);
+    function slugify(s){
+      return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    }
+
+    function exportTeamCSV(field, cardId){
+      const rows = buildTeamRows(field, cardId);
       if (!rows.length) return;
+      const metric = getMetric(cardId) || {};
+      const metaLabel = metric.metaLabel || 'Meta';
+      const title = metric.title || 'Indicador';
       const fieldLabel = ({cv:'Gerente', sv:'Supervisor', rv:'Vendedor'})[field] || 'Nome';
-      const header = [fieldLabel, 'Meta', 'Realizado', 'Gap', 'Percentual'];
+      const header = [fieldLabel, metaLabel, 'Realizado', 'Gap', 'Percentual'];
       const esc = (v) => {
         const s = String(v);
         return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
@@ -1728,33 +1760,35 @@
       const a = document.createElement('a');
       const ts = new Date().toISOString().slice(0,10);
       a.href = url;
-      a.download = `faturamento-total-por-${fieldLabel.toLowerCase()}-${ts}.csv`;
+      a.download = slugify(title) + '-por-' + fieldLabel.toLowerCase() + '-' + ts + '.csv';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
 
-    function exportTeamPDF(field){
-      const rows = buildTeamRows(field);
+    function exportTeamPDF(field, cardId){
+      const rows = buildTeamRows(field, cardId);
       if (!rows.length) return;
-      const api = window.dashboardAPI;
-      const fmt = api ? api.fmtMoney : (v)=>String(v);
+      const metric = getMetric(cardId) || {};
+      const fmt = metric.fmtVal || ((v)=>String(v));
+      const fmtMeta = metric.fmtMeta || fmt;
+      const metaLabel = metric.metaLabel || 'Meta';
       const fieldLabel = ({cv:'Gerente', sv:'Supervisor', rv:'Vendedor'})[field] || 'Nome';
       const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
       if (!jsPDFCtor) { alert('Falha ao carregar gerador de PDF'); return; }
       const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
-      const title = 'Faturamento Total por ' + fieldLabel;
+      const title = (metric.title || 'Indicador') + ' por ' + fieldLabel;
       doc.setFontSize(14); doc.setTextColor(15, 23, 42);
       doc.text(title, 40, 40);
       doc.setFontSize(9); doc.setTextColor(100, 116, 139);
       doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 40, 56);
       const body = rows.map(r => [
-        r.name, fmt(r.meta), fmt(r.real), fmt(r.gap),
+        r.name, fmtMeta(r.meta), fmt(r.real), fmt(r.gap),
         (r.pct * 100).toFixed(1).replace('.', ',') + '%'
       ]);
       doc.autoTable({
-        head: [[fieldLabel, 'Meta', 'Realizado', 'Gap', '%']],
+        head: [[fieldLabel, metaLabel, 'Realizado', 'Gap', '%']],
         body, startY: 72,
         styles: { fontSize: 9, cellPadding: 6 },
         headStyles: { fillColor: [0, 61, 165], textColor: 255, fontStyle: 'bold' },
@@ -1762,8 +1796,9 @@
         columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'} },
       });
       const ts = new Date().toISOString().slice(0,10);
-      doc.save('faturamento-total-por-' + fieldLabel.toLowerCase() + '-' + ts + '.pdf');
+      doc.save(slugify(metric.title || 'indicador') + '-por-' + fieldLabel.toLowerCase() + '-' + ts + '.pdf');
     }
+
 
 
 
@@ -1796,7 +1831,7 @@
     }
 
     function openTeamView(card, actions){
-      if (!window.dashboardAPI) return;
+      if (!window.dashboardAPI || !getMetric(card.id)) return;
 
       const startH = card.getBoundingClientRect().height;
       const originalHTML = card.innerHTML;
@@ -1807,7 +1842,7 @@
         const c = getComputedStyle(pf).backgroundColor;
         if (c && c !== 'rgba(0, 0, 0, 0)') barColor = c;
       }
-      teamState = { card, originalHTML, field: 'cv' };
+      teamState = { card, originalHTML, field: 'cv', cardId: card.id };
 
       // Build team view
       card.innerHTML = '';
@@ -1840,7 +1875,7 @@
       wrap.className = 'team-view-wrap';
       wrap.innerHTML =
         '<div class="team-view-header">' +
-          '<div class="team-view-title">Faturamento Total por Equipe</div>' +
+          '<div class="team-view-title">' + ((getMetric(card.id) || {}).title || 'Indicador') + ' por Equipe</div>' +
           '<span class="team-view-legend">' +
             '<span class="lg-item"><i class="lg-dot lg-fat" style="background:' + barColor + ';"></i>Faturado</span>' +
             '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não Fat.</span>' +
@@ -1852,6 +1887,7 @@
 
       const tableWrap = wrap.querySelector('#team-table-wrap');
       tableWrap.dataset.barColor = barColor;
+      tableWrap.dataset.cardId = card.id;
       renderTeamTable(tableWrap, teamState.field);
 
       // Dropdown logic
@@ -1894,8 +1930,8 @@
           e.stopPropagation();
           exportMenu.classList.remove('open');
           const fmt = it.dataset.fmt;
-          if (fmt === 'csv') exportTeamCSV(teamState.field);
-          else if (fmt === 'pdf') exportTeamPDF(teamState.field);
+          if (fmt === 'csv') exportTeamCSV(teamState.field, teamState.cardId);
+          else if (fmt === 'pdf') exportTeamPDF(teamState.field, teamState.cardId);
         });
       });
 
@@ -1947,7 +1983,7 @@
         const btn = actions.querySelector('.btn-action');
         if (btn) btn.addEventListener('click', (e)=>{
           e.stopPropagation();
-          if (card.id === 'card-fat-total') openTeamView(card, actions);
+          openTeamView(card, actions);
         });
       }
 
@@ -2382,7 +2418,45 @@
   }
 
 
-  window.dashboardAPI = { rvEntries, vendas, metas, passes, ck, fmtMoney };
+  const _fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
+  const _fmtPDV = (v)=> _fmtInt(v) + ' PDVs';
+  const _fmtPTS = (v)=> _fmtInt(v) + ' pts';
+  const M = (title, src, real, fat, metaSrc, metaField, opts) => Object.assign({
+    title,
+    real: { src, field: real },
+    fat:  { src, field: fat },
+    meta: { src: metaSrc, field: metaField },
+    fmtVal: fmtMoney,
+  }, opts || {});
+  const intOpts = { fmtVal: _fmtInt, fmtMeta: _fmtPDV };
+
+  const metrics = {
+    'card-fat-total': M('Faturamento Total',          'vendas', 'v',     'vf',     'metas', 'total'),
+    'card-fat-ec':    M('Faturamento Escolha Certa',  'vendas', 'ec',    'vf_ec',  'metas', 'ec'),
+    'card-fat-sp':    M('Faturamento Store Platform', 'vendas', 'sp',    'vf_sp',  'metas', 'sp'),
+    'card-fat-ali':   M('Faturamento Alimentar',      'vendas', 'ali',   'vf_ali', 'metas', 'ali'),
+    'card-fat-far':   M('Faturamento Farma',          'vendas', 'far',   'vf_far', 'metas', 'far'),
+
+    'card-pos-total': M('Positivação Total',      'vendas', 'p',     'pf',     'metas', 'p_total', intOpts),
+    'card-pos-ali':   M('Positivação Alimentar',  'vendas', 'p_ali', 'pf_ali', 'metas', 'p_ali',   intOpts),
+    'card-pos-far':   M('Positivação Farma',      'vendas', 'p_far', 'pf_far', 'metas', 'p_far',   intOpts),
+
+    'card-rank-hfs':  M('Positivação HFS',            'vendas', 'r_hfs', 'rf_hfs', 'metas', 'r_hfs', intOpts),
+    'card-rank-far':  M('Positivação Farma (Ranking)','vendas', 'r_far', 'rf_far', 'metas', 'r_far', intOpts),
+    'card-rank-alw':  M('Positivação Always Noturno', 'vendas', 'r_alw', 'rf_alw', 'metas', 'r_alw', intOpts),
+    'card-rank-pmp':  M('Positivação Pampers',        'vendas', 'r_pmp', 'rf_pmp', 'metas', 'r_pmp', intOpts),
+
+    'card-ec-pos':    M('Positivação Escolha Certa', 'vendas', 'r_ecp', 'rf_ecp', 'potencial', 'ecp',
+                        Object.assign({ metaLabel: 'Potencial' }, intOpts)),
+    'card-ec-ch2':    M('Positivação Chaves ≥ 2', 'ecOniz', 'ch2', 'ch2', 'metas', 'e_ch2', intOpts),
+    'card-ec-pp':     M('Platinum Points',        'ecOniz', 'pp',  'pp',  'metas', 'e_pp',
+                        { fmtVal: _fmtInt, fmtMeta: _fmtPTS }),
+  };
+
+  window.dashboardAPI = {
+    rvEntries, vendas, metas, passes, ck, fmtMoney, metrics,
+    sources: { vendas, metas, potencial, ecOniz },
+  };
 
   recompute();
 })();
