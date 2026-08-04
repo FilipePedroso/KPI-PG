@@ -11,6 +11,9 @@ Relacionamento: RV + ds_uf (comercial) <-> cd_vendedor + ds_uf (vendas)
 import json
 import sys
 import os
+import subprocess
+from urllib.request import urlopen
+from urllib.error import HTTPError
 from datetime import datetime, timezone, timedelta
 import openpyxl
 
