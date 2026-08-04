@@ -445,8 +445,9 @@ def build(dados_path, estrutura_path):
         if not b:
             continue
         for metric, cm in mm.items():
-            tot = sum(1 for cs in cm.values() if cs["t"] > 0)
-            fat = sum(1 for cs in cm.values() if cs["f"] > 0)
+            minv = 10.0 if metric == "pmp" else 0.0
+            tot = sum(1 for cs in cm.values() if cs["t"] > 0 and cs["vt"] >= minv)
+            fat = sum(1 for cs in cm.values() if cs["f"] > 0 and cs["vf"] >= minv)
             b["r_" + metric] = tot
             b["rf_" + metric] = fat
 
