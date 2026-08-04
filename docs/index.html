@@ -1554,7 +1554,7 @@
       placeholder.style.height = first.height + 'px';
       card.after(placeholder);
 
-      const targetW = Math.min(first.width * 2, 470, window.innerWidth - 60);
+      const targetW = window.innerWidth <= 768 ? window.innerWidth - 24 : Math.min(first.width * 2, 470);
       card.classList.add('expanded');
       card.style.width = targetW + 'px';
       card.style.left  = ((window.innerWidth - targetW) / 2) + 'px';
