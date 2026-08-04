@@ -215,7 +215,7 @@ SC_FILE = "Dados_SC.xlsx"
 def read_sc():
     """
     Lê data/Dados_SC.xlsx (indicadores já tratados de SC) e devolve
-    {rv|uf: {hfs, far, alw, pmp, ch2, pp}} com contagens distintas.
+    {rv|uf: {hfs, far, alw, pmp, ch2, pp}} somando a coluna POSITIVAÇÃO.
     """
     path = os.path.join(DATA_DIR, SC_FILE)
     if not os.path.exists(path):
@@ -227,76 +227,83 @@ def read_sc():
         rv, uf = rv_key(rv), s(uf)
         if not rv or not rv.isdigit() or not uf:
             return None
-        return acc.setdefault(rv + "|" + uf, {"hfs": set(), "far": set(),
-                                              "alw": set(), "pmp": set(),
-                                              "ch2": set(), "pp": set()})
+        return acc.setdefault(rv + "|" + uf, {"hfs": 0.0, "far": 0.0,
+                                              "alw": 0.0, "pmp": 0.0,
+                                              "ch2": 0.0, "pp": 0.0})
 
     def sheet(name):
         return header_map(wb[name]) if name in wb.sheetnames else (None, None, None)
 
+    def pos_col(header, last=False):
+        """Índice da coluna POSITIVAÇÃO (a última quando last=True)."""
+        hits = [i for i, h in enumerate(header)
+                if s(h).strip().lower().startswith("positiva")]
+        if not hits:
+            return None
+        return hits[-1] if last else hits[0]
+
     # Pos Relação -> HFS / FARMA
-    rows, _, idx = sheet("Pos Relação")
+    rows, hdr, idx = sheet("Pos Relação")
     if rows:
         c_rv, c_uf = col(idx, "RV", "cd_vendedor"), col(idx, "ds_uf")
-        c_tp, c_cn = col(idx, "TIPO"), col(idx, "CNPJ")
+        c_tp, c_pos = col(idx, "TIPO"), pos_col(hdr)
         for r in rows:
             if not r:
                 continue
             b = bucket(r[c_rv], r[c_uf])
-            cnpj = rv_key(r[c_cn])
-            if not b or not cnpj:
+            if not b:
                 continue
+            val = n(r[c_pos]) if c_pos is not None else 0
             tp = s(r[c_tp]).upper()
             if tp == "HFS":
-                b["hfs"].add(cnpj)
+                b["hfs"] += val
             elif tp == "FARMA":
-                b["far"].add(cnpj)
+                b["far"] += val
 
     # Marcas Relação -> ALWAYS NOTURNO / PAMPERS
-    rows, _, idx = sheet("Marcas Relação")
+    rows, hdr, idx = sheet("Marcas Relação")
     if rows:
         c_rv, c_uf = col(idx, "RV", "cd_vendedor"), col(idx, "ds_uf")
-        c_tp, c_cn = col(idx, "TIPO"), col(idx, "CNPJ")
+        c_tp, c_pos = col(idx, "TIPO"), pos_col(hdr)
         for r in rows:
             if not r:
                 continue
             b = bucket(r[c_rv], r[c_uf])
-            cnpj = rv_key(r[c_cn])
-            if not b or not cnpj:
+            if not b:
                 continue
+            val = n(r[c_pos]) if c_pos is not None else 0
             tp = s(r[c_tp]).upper()
             if tp == "ALWAYS NOTURNO":
-                b["alw"].add(cnpj)
+                b["alw"] += val
             elif tp == "PAMPERS":
-                b["pmp"].add(cnpj)
+                b["pmp"] += val
 
     # Escolha Certa -> chaves >= 2
-    rows, _, idx = sheet("Escolha Certa")
+    rows, hdr, idx = sheet("Escolha Certa")
     if rows:
         c_rv, c_uf = col(idx, "cd_vendedor", "RV"), col(idx, "ds_uf")
-        c_cn = col(idx, "CNPJ")
+        c_pos = pos_col(hdr)
         for r in rows:
             if not r:
                 continue
             b = bucket(r[c_rv], r[c_uf])
-            cnpj = rv_key(r[c_cn])
-            if b and cnpj:
-                b["ch2"].add(cnpj)
+            if b and c_pos is not None:
+                b["ch2"] += n(r[c_pos])
 
-    # Platinum Points -> CNPJ + GRUPO DE ATIVAÇÃO
-    rows, _, idx = sheet("Platinum Points")
+    # Platinum Points -> segunda coluna POSITIVAÇÃO
+    rows, hdr, idx = sheet("Platinum Points")
     if rows:
         c_rv, c_uf = col(idx, "Rv", "RV", "cd_vendedor"), col(idx, "ds_uf")
-        c_cn, c_gr = col(idx, "CNPJ"), col(idx, "GRUPO DE ATIVAÇÃO")
+        c_pos = pos_col(hdr, last=True)
         for r in rows:
             if not r:
                 continue
             b = bucket(r[c_rv], r[c_uf])
-            cnpj = rv_key(r[c_cn])
-            if b and cnpj:
-                b["pp"].add(cnpj + "|" + s(r[c_gr]))
+            if b and c_pos is not None:
+                b["pp"] += n(r[c_pos])
 
-    return {k: {m: len(v) for m, v in b.items()} for k, b in acc.items()}
+    return {k: {m: round(v) for m, v in b.items()} for k, b in acc.items()}
+
 
 
 
