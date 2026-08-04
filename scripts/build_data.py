@@ -301,11 +301,16 @@ def build(dados_path, estrutura_path):
 
 
     # ---------- Dados: f_venda_total ----------
-    wbd = openpyxl.load_workbook(dados_path, read_only=True, data_only=True)
-    sheet = "f_venda_total" if "f_venda_total" in wbd.sheetnames else wbd.sheetnames[0]
-    ws = wbd[sheet]
-    rows, header, idx = header_map(ws)
-    print(f"[build_data] {sheet} headers: {header}", file=sys.stderr)
+    wbd = None
+    if dados_path:
+        wbd = openpyxl.load_workbook(dados_path, read_only=True, data_only=True)
+    src = fact_source("f_venda_total", wbd)
+    if not src:
+        print("ERRO: fonte f_venda_total não encontrada (parquet ou xlsx).")
+        sys.exit(1)
+    rows, header, idx = src
+    print(f"[build_data] f_venda_total headers: {header}", file=sys.stderr)
+
     v_rv = col(idx, "cd_vendedor")
     v_uf = col(idx, "ds_uf")
     v_val = col(idx, "vl_financeiro")
