@@ -172,7 +172,7 @@
       position: fixed;
       top: 0; left: 0;
       min-width: 220px;
-      max-width: 280px;
+      max-width: min(280px, calc(100vw - 16px));
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-radius: 14px;
@@ -2115,12 +2115,23 @@
       if (chip.classList.contains('open')) { chip.classList.remove('open'); return; }
       closeAllPops(chip);
       chip.classList.add('open');
-      const rect = chip.getBoundingClientRect();
-      pop.style.left = rect.left + 'px';
-      pop.style.top = (rect.bottom + 6) + 'px';
       search.value = '';
       renderPop(chip, '');
-      setTimeout(()=>search.focus(), 0);
+      const rect = chip.getBoundingClientRect();
+      const margin = 8;
+      const pw = pop.offsetWidth || 220;
+      let left = rect.left;
+      left = Math.min(left, window.innerWidth - pw - margin);
+      left = Math.max(margin, left);
+      pop.style.left = left + 'px';
+      let top = rect.bottom + 6;
+      const ph = pop.offsetHeight || 260;
+      if (top + ph + margin > window.innerHeight) {
+        top = Math.max(margin, window.innerHeight - ph - margin);
+      }
+      pop.style.top = top + 'px';
+      const isTouch = window.matchMedia('(hover: none)').matches || window.innerWidth <= 768;
+      if (!isTouch) setTimeout(()=>search.focus(), 0);
     });
     updateChipLabel(chip);
   });
