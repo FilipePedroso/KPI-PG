@@ -2584,7 +2584,7 @@
       return;
     }
 
-    const avg = rows.reduce((s,r)=>s+r.pct, 0) / rows.length;
+    const avg = rows.reduce((s,r)=>s+Math.min(1, r.pct), 0) / rows.length;
     setIndicators('rk-ind-value', rows.filter(r=>r.gap <= 0).length, rows.length);
 
     const bar = (pct, color, w) =>
