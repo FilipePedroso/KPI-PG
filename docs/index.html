@@ -1064,6 +1064,20 @@
       font-size: 24px; font-weight: 700; color: #5A6A8A;
       letter-spacing: -0.5px; line-height: 1.2; font-feature-settings: 'tnum';
     }
+    .resumo-stats {
+      display: flex; align-items: flex-start; justify-content: center; gap: 34px;
+    }
+    .resumo-stat { min-width: 92px; }
+    .rk-ind-value {
+      font-size: 24px; font-weight: 700; color: #5A6A8A;
+      letter-spacing: -0.5px; line-height: 1.2; font-feature-settings: 'tnum';
+    }
+    .rk-ind-value .rk-ind-total { font-size: 15px; font-weight: 600; color: #93A0B8; }
+    .rk-ind-value.ind-full { color: #059669; }
+    .rk-ind-value.ind-high { color: #0EA5E9; }
+    .rk-ind-value.ind-mid  { color: #D97706; }
+    .rk-ind-value.ind-low  { color: #DC2626; }
+    @media (max-width: 640px) { .resumo-stats { gap: 20px; } .resumo-stat { min-width: 78px; } }
     .rk-divider { height: 1px; background: #E6EAF2; }
     .rk-bars { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
     .rk-item-name {
@@ -1435,8 +1449,16 @@
       <div class="resumo-card" id="card-resumo-ranking">
         <div class="resumo-head">
           <div class="resumo-card-title">Ranking P&amp;G</div>
-          <div class="rk-score-label">Ranking Score</div>
-          <div class="rk-score-value" id="rk-score-value">—</div>
+          <div class="resumo-stats">
+            <div class="resumo-stat">
+              <div class="rk-score-label">Ranking Score</div>
+              <div class="rk-score-value" id="rk-score-value">—</div>
+            </div>
+            <div class="resumo-stat">
+              <div class="rk-score-label">Indicadores</div>
+              <div class="rk-ind-value" id="rk-ind-value">—</div>
+            </div>
+          </div>
         </div>
         <div class="rk-divider"></div>
         <div class="rk-bars" id="rk-bars"></div>
@@ -1444,8 +1466,16 @@
       <div class="resumo-card" id="card-resumo-faturamento">
         <div class="resumo-head">
           <div class="resumo-card-title">Faturamento</div>
-          <div class="rk-score-label">Total</div>
-          <div class="rk-score-value" id="fat-score-value">—</div>
+          <div class="resumo-stats">
+            <div class="resumo-stat">
+              <div class="rk-score-label">Total</div>
+              <div class="rk-score-value" id="fat-score-value">—</div>
+            </div>
+            <div class="resumo-stat">
+              <div class="rk-score-label">Indicadores</div>
+              <div class="rk-ind-value" id="fat-ind-value">—</div>
+            </div>
+          </div>
         </div>
         <div class="rk-divider"></div>
         <div class="rk-bars" id="fat-bars"></div>
@@ -2515,6 +2545,16 @@
     renderFaturamento(sums, metaSums);
   }
 
+  function setIndicators(id, hit, total){
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!total) { el.textContent = '—'; el.className = 'rk-ind-value'; return; }
+    const ratio = hit / total;
+    const cls = ratio >= 1 ? 'ind-full' : ratio >= 0.6 ? 'ind-high' : ratio > 0 ? 'ind-mid' : 'ind-low';
+    el.className = 'rk-ind-value ' + cls;
+    el.innerHTML = hit + '<span class="rk-ind-total"> / ' + total + '</span>';
+  }
+
   function renderResumo(sums, metaSums, ecSums){
     const wrap = document.getElementById('rk-bars');
     const scoreEl = document.getElementById('rk-score-value');
@@ -2537,12 +2577,14 @@
       .sort((a,b) => b.pct - a.pct);
 
     if (!rows.length) {
+      setIndicators('rk-ind-value', 0, 0);
       scoreEl.textContent = '—';
       wrap.innerHTML = '<div class="rk-empty">Sem dados</div>';
       return;
     }
 
     const avg = rows.reduce((s,r)=>s+r.pct, 0) / rows.length;
+    setIndicators('rk-ind-value', rows.filter(r=>r.gap <= 0).length, rows.length);
 
     const bar = (pct, color, w) =>
       '<div class="rk-track"><div class="rk-fill" data-w="' + w + '" style="background:' + color + ';"></div></div>';
@@ -2616,10 +2658,13 @@
       .sort((a,b) => b.pct - a.pct);
 
     if (total.meta <= 0) {
+      setIndicators('fat-ind-value', 0, 0);
       scoreEl.textContent = '—';
       wrap.innerHTML = '<div class="rk-empty">Sem dados</div>';
       return;
     }
+
+    setIndicators('fat-ind-value', rows.filter(r=>r.gap <= 0).length, rows.length);
 
     const bar = (pct, color, w) =>
       '<div class="rk-track"><div class="rk-fill" data-w="' + w + '" style="background:' + color + ';"></div></div>';
