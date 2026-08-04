@@ -319,6 +319,7 @@ def build(dados_path, estrutura_path):
     v_ean = col(idx, "ds_ean")
     v_grupo = col(idx, "nm_grupo")
     v_prod = col(idx, "nm_produto")
+    v_vol = col(idx, "vl_volume_cx")
 
     vagg = {}
     cnpj_sums = {}
