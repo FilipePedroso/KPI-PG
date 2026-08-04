@@ -176,6 +176,40 @@ def col(idx, *names):
     return None
 
 
+# Arquivos parquet das tabelas fato (substituem as abas do Dados.xlsx)
+PARQUET_FILES = {
+    "f_venda_total": "Dados_f_venda_total.parquet",
+    "f_ec_oniz": "Dados_f_ec_oniz.parquet",
+}
+
+
+def parquet_rows(path):
+    """Lê um parquet e devolve (rows, header, idx) no mesmo formato de header_map."""
+    import pyarrow.parquet as pq
+    table = pq.read_table(path)
+    header = [s(h) for h in table.column_names]
+    idx = {}
+    for i, h in enumerate(header):
+        if h and h not in idx:
+            idx[h] = i
+        idx.setdefault("~" + h.strip().lower(), i)
+    cols = [c.to_pylist() for c in table.columns]
+    rows = (tuple(c[i] for c in cols) for i in range(table.num_rows))
+    return rows, header, idx
+
+
+def fact_source(sheet, wbd=None):
+    """Prefere o parquet em data/; cai para a aba do Dados.xlsx se não existir."""
+    p = os.path.join(DATA_DIR, PARQUET_FILES[sheet])
+    if os.path.exists(p):
+        print(f"[build_data] {sheet}: usando {os.path.basename(p)}", file=sys.stderr)
+        return parquet_rows(p)
+    if wbd is not None and sheet in wbd.sheetnames:
+        return header_map(wbd[sheet])
+    return None
+
+
+
 def build(dados_path, estrutura_path):
     # ---------- Estrutura: d_comercial ----------
     wbe = openpyxl.load_workbook(estrutura_path, read_only=True, data_only=True)
