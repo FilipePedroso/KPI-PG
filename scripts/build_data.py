@@ -209,6 +209,96 @@ def fact_source(sheet, wbd=None):
     return None
 
 
+SC_FILE = "Dados_SC.xlsx"
+
+
+def read_sc():
+    """
+    Lê data/Dados_SC.xlsx (indicadores já tratados de SC) e devolve
+    {rv|uf: {hfs, far, alw, pmp, ch2, pp}} com contagens distintas.
+    """
+    path = os.path.join(DATA_DIR, SC_FILE)
+    if not os.path.exists(path):
+        return {}
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    acc = {}
+
+    def bucket(rv, uf):
+        rv, uf = rv_key(rv), s(uf)
+        if not rv or not rv.isdigit() or not uf:
+            return None
+        return acc.setdefault(rv + "|" + uf, {"hfs": set(), "far": set(),
+                                              "alw": set(), "pmp": set(),
+                                              "ch2": set(), "pp": set()})
+
+    def sheet(name):
+        return header_map(wb[name]) if name in wb.sheetnames else (None, None, None)
+
+    # Pos Relação -> HFS / FARMA
+    rows, _, idx = sheet("Pos Relação")
+    if rows:
+        c_rv, c_uf = col(idx, "RV", "cd_vendedor"), col(idx, "ds_uf")
+        c_tp, c_cn = col(idx, "TIPO"), col(idx, "CNPJ")
+        for r in rows:
+            if not r:
+                continue
+            b = bucket(r[c_rv], r[c_uf])
+            cnpj = rv_key(r[c_cn])
+            if not b or not cnpj:
+                continue
+            tp = s(r[c_tp]).upper()
+            if tp == "HFS":
+                b["hfs"].add(cnpj)
+            elif tp == "FARMA":
+                b["far"].add(cnpj)
+
+    # Marcas Relação -> ALWAYS NOTURNO / PAMPERS
+    rows, _, idx = sheet("Marcas Relação")
+    if rows:
+        c_rv, c_uf = col(idx, "RV", "cd_vendedor"), col(idx, "ds_uf")
+        c_tp, c_cn = col(idx, "TIPO"), col(idx, "CNPJ")
+        for r in rows:
+            if not r:
+                continue
+            b = bucket(r[c_rv], r[c_uf])
+            cnpj = rv_key(r[c_cn])
+            if not b or not cnpj:
+                continue
+            tp = s(r[c_tp]).upper()
+            if tp == "ALWAYS NOTURNO":
+                b["alw"].add(cnpj)
+            elif tp == "PAMPERS":
+                b["pmp"].add(cnpj)
+
+    # Escolha Certa -> chaves >= 2
+    rows, _, idx = sheet("Escolha Certa")
+    if rows:
+        c_rv, c_uf = col(idx, "cd_vendedor", "RV"), col(idx, "ds_uf")
+        c_cn = col(idx, "CNPJ")
+        for r in rows:
+            if not r:
+                continue
+            b = bucket(r[c_rv], r[c_uf])
+            cnpj = rv_key(r[c_cn])
+            if b and cnpj:
+                b["ch2"].add(cnpj)
+
+    # Platinum Points -> CNPJ + GRUPO DE ATIVAÇÃO
+    rows, _, idx = sheet("Platinum Points")
+    if rows:
+        c_rv, c_uf = col(idx, "Rv", "RV", "cd_vendedor"), col(idx, "ds_uf")
+        c_cn, c_gr = col(idx, "CNPJ"), col(idx, "GRUPO DE ATIVAÇÃO")
+        for r in rows:
+            if not r:
+                continue
+            b = bucket(r[c_rv], r[c_uf])
+            cnpj = rv_key(r[c_cn])
+            if b and cnpj:
+                b["pp"].add(cnpj + "|" + s(r[c_gr]))
+
+    return {k: {m: len(v) for m, v in b.items()} for k, b in acc.items()}
+
+
 
 def build(dados_path, estrutura_path):
     # ---------- Estrutura: d_comercial ----------
@@ -533,7 +623,41 @@ def build(dados_path, estrutura_path):
               f"{sum(e['ch2'] for e in ec)}, platinum = "
               f"{sum(e['pp'] for e in ec)}", file=sys.stderr)
 
+    # ---------- Dados_SC.xlsx (fonte alternativa para as UFs contidas nele) ----------
+    sc = read_sc()
+    if sc:
+        sc_ufs = {k.split("|", 1)[1] for k in sc}
+        vmap = {b["rv"] + "|" + b["uf"]: b for b in vendas}
+        emap = {e["rv"] + "|" + e["uf"]: e for e in ec}
+        keys = set(sc) | {k for k in vmap if k.split("|", 1)[1] in sc_ufs} \
+                       | {k for k in emap if k.split("|", 1)[1] in sc_ufs}
+        for k in keys:
+            rv, uf = k.split("|", 1)
+            v = sc.get(k, {})
+            b = vmap.get(k)
+            if b is None:
+                b = {"rv": rv, "uf": uf,
+                     "v": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
+                     "vf": 0.0, "vf_ec": 0.0, "vf_sp": 0.0, "vf_ali": 0.0,
+                     "vf_far": 0.0, "p": 0, "p_ali": 0, "p_far": 0,
+                     "pf": 0, "pf_ali": 0, "pf_far": 0}
+                vendas.append(b)
+                vmap[k] = b
+            for m in ("hfs", "far", "alw", "pmp"):
+                b["r_" + m] = v.get(m, 0)
+                b["rf_" + m] = v.get(m, 0)
+            e = emap.get(k)
+            if e is None:
+                e = {"rv": rv, "uf": uf, "ch2": 0, "pp": 0}
+                ec.append(e)
+                emap[k] = e
+            e["ch2"] = v.get("ch2", 0)
+            e["pp"] = v.get("pp", 0)
+        print(f"[build_data] Dados_SC: UFs {sorted(sc_ufs)}, "
+              f"{len(sc)} combinações rv|uf sobrescritas", file=sys.stderr)
+
     br = timezone(timedelta(hours=-3))
+
     return {
         "generated_at": datetime.now(br).strftime("%Y-%m-%dT%H:%M:%S-03:00"),
         "source_file": os.path.basename(dados_path) if dados_path else "parquet",
