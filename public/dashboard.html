@@ -1728,11 +1728,19 @@
       });
     }
 
-    function exportTeamCSV(field){
-      const rows = buildTeamRows(field);
+    function slugify(s){
+      return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    }
+
+    function exportTeamCSV(field, cardId){
+      const rows = buildTeamRows(field, cardId);
       if (!rows.length) return;
+      const metric = getMetric(cardId) || {};
+      const metaLabel = metric.metaLabel || 'Meta';
+      const title = metric.title || 'Indicador';
       const fieldLabel = ({cv:'Gerente', sv:'Supervisor', rv:'Vendedor'})[field] || 'Nome';
-      const header = [fieldLabel, 'Meta', 'Realizado', 'Gap', 'Percentual'];
+      const header = [fieldLabel, metaLabel, 'Realizado', 'Gap', 'Percentual'];
       const esc = (v) => {
         const s = String(v);
         return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
@@ -1749,33 +1757,35 @@
       const a = document.createElement('a');
       const ts = new Date().toISOString().slice(0,10);
       a.href = url;
-      a.download = `faturamento-total-por-${fieldLabel.toLowerCase()}-${ts}.csv`;
+      a.download = slugify(title) + '-por-' + fieldLabel.toLowerCase() + '-' + ts + '.csv';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
 
-    function exportTeamPDF(field){
-      const rows = buildTeamRows(field);
+    function exportTeamPDF(field, cardId){
+      const rows = buildTeamRows(field, cardId);
       if (!rows.length) return;
-      const api = window.dashboardAPI;
-      const fmt = api ? api.fmtMoney : (v)=>String(v);
+      const metric = getMetric(cardId) || {};
+      const fmt = metric.fmtVal || ((v)=>String(v));
+      const fmtMeta = metric.fmtMeta || fmt;
+      const metaLabel = metric.metaLabel || 'Meta';
       const fieldLabel = ({cv:'Gerente', sv:'Supervisor', rv:'Vendedor'})[field] || 'Nome';
       const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
       if (!jsPDFCtor) { alert('Falha ao carregar gerador de PDF'); return; }
       const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
-      const title = 'Faturamento Total por ' + fieldLabel;
+      const title = (metric.title || 'Indicador') + ' por ' + fieldLabel;
       doc.setFontSize(14); doc.setTextColor(15, 23, 42);
       doc.text(title, 40, 40);
       doc.setFontSize(9); doc.setTextColor(100, 116, 139);
       doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 40, 56);
       const body = rows.map(r => [
-        r.name, fmt(r.meta), fmt(r.real), fmt(r.gap),
+        r.name, fmtMeta(r.meta), fmt(r.real), fmt(r.gap),
         (r.pct * 100).toFixed(1).replace('.', ',') + '%'
       ]);
       doc.autoTable({
-        head: [[fieldLabel, 'Meta', 'Realizado', 'Gap', '%']],
+        head: [[fieldLabel, metaLabel, 'Realizado', 'Gap', '%']],
         body, startY: 72,
         styles: { fontSize: 9, cellPadding: 6 },
         headStyles: { fillColor: [0, 61, 165], textColor: 255, fontStyle: 'bold' },
@@ -1783,8 +1793,9 @@
         columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'} },
       });
       const ts = new Date().toISOString().slice(0,10);
-      doc.save('faturamento-total-por-' + fieldLabel.toLowerCase() + '-' + ts + '.pdf');
+      doc.save(slugify(metric.title || 'indicador') + '-por-' + fieldLabel.toLowerCase() + '-' + ts + '.pdf');
     }
+
 
 
 
