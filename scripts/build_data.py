@@ -12,7 +12,7 @@ import json
 import sys
 import os
 import subprocess
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 from datetime import datetime, timezone, timedelta
 import openpyxl
