@@ -1034,10 +1034,11 @@
     .team-bar-legend .lg-nfat { background: #9CA3AF; }
     .team-bars-empty { text-align: center; color: #94A3B8; padding: 18px; font-size: 12px; }
 
-    /* ── Resumo / Ranking P&G ── */
-    .resumo-row { display: block; }
+    /* ── Resumo / Ranking P&G + Faturamento ── */
+    .resumo-row { display: flex; gap: 16px; align-items: stretch; }
     .resumo-card {
-      width: 50%;
+      flex: 1 1 calc(50% - 8px);
+      width: calc(50% - 8px);
       background: #FFFFFF;
       border: 1px solid #E6EAF2;
       border-radius: 12px;
@@ -1089,7 +1090,8 @@
     .rk-empty { text-align: center; color: #94A3B8; padding: 18px; font-size: 12px; }
 
     @media (max-width: 900px) {
-      .resumo-card { width: 100%; }
+      .resumo-row { flex-direction: column; }
+      .resumo-card { width: 100%; flex: 1 1 auto; }
     }
 
 
