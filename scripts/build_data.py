@@ -645,12 +645,20 @@ def write_all(name, obj, indent=None):
 
 
 def main():
-    dados = sys.argv[1] if len(sys.argv) > 1 else find("Dados.xlsx")
+    parquet_ok = all(os.path.exists(os.path.join(DATA_DIR, f))
+                     for f in PARQUET_FILES.values())
+    if len(sys.argv) > 1:
+        dados = sys.argv[1]
+    elif parquet_ok:
+        dados = None  # tabelas fato vêm dos parquet em data/
+    else:
+        dados = find("Dados.xlsx")
     estrutura = sys.argv[2] if len(sys.argv) > 2 else find("Estrutura.xlsx")
-    if not dados or not estrutura:
-        print("ERRO: coloque Dados.xlsx e Estrutura.xlsx na pasta data/.")
+    if not estrutura or (not dados and not parquet_ok):
+        print("ERRO: coloque os parquet das tabelas fato e Estrutura.xlsx na pasta data/.")
         sys.exit(1)
-    print(f"Lendo {dados} + {estrutura} ...")
+    print(f"Lendo {dados or 'parquet (data/)'} + {estrutura} ...")
+
     data = build(dados, estrutura)
     orfaos = build_orfaos(data)
     completar_estrutura(data, orfaos)
