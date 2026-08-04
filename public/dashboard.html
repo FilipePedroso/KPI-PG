@@ -1573,7 +1573,7 @@
       actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
       actions.querySelector('.btn-action').addEventListener('click', (e)=>{
         e.stopPropagation();
-        if (card.id === 'card-fat-total') openTeamView(card, actions);
+        openTeamView(card, actions);
       });
 
       const last = card.getBoundingClientRect();
@@ -1828,7 +1828,7 @@
     }
 
     function openTeamView(card, actions){
-      if (!window.dashboardAPI) return;
+      if (!window.dashboardAPI || !getMetric(card.id)) return;
 
       const startH = card.getBoundingClientRect().height;
       const originalHTML = card.innerHTML;
@@ -1839,7 +1839,7 @@
         const c = getComputedStyle(pf).backgroundColor;
         if (c && c !== 'rgba(0, 0, 0, 0)') barColor = c;
       }
-      teamState = { card, originalHTML, field: 'cv' };
+      teamState = { card, originalHTML, field: 'cv', cardId: card.id };
 
       // Build team view
       card.innerHTML = '';
@@ -1872,7 +1872,7 @@
       wrap.className = 'team-view-wrap';
       wrap.innerHTML =
         '<div class="team-view-header">' +
-          '<div class="team-view-title">Faturamento Total por Equipe</div>' +
+          '<div class="team-view-title">' + ((getMetric(card.id) || {}).title || 'Indicador') + ' por Equipe</div>' +
           '<span class="team-view-legend">' +
             '<span class="lg-item"><i class="lg-dot lg-fat" style="background:' + barColor + ';"></i>Faturado</span>' +
             '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não Fat.</span>' +
@@ -1884,6 +1884,7 @@
 
       const tableWrap = wrap.querySelector('#team-table-wrap');
       tableWrap.dataset.barColor = barColor;
+      tableWrap.dataset.cardId = card.id;
       renderTeamTable(tableWrap, teamState.field);
 
       // Dropdown logic
@@ -1926,8 +1927,8 @@
           e.stopPropagation();
           exportMenu.classList.remove('open');
           const fmt = it.dataset.fmt;
-          if (fmt === 'csv') exportTeamCSV(teamState.field);
-          else if (fmt === 'pdf') exportTeamPDF(teamState.field);
+          if (fmt === 'csv') exportTeamCSV(teamState.field, teamState.cardId);
+          else if (fmt === 'pdf') exportTeamPDF(teamState.field, teamState.cardId);
         });
       });
 
@@ -1979,7 +1980,7 @@
         const btn = actions.querySelector('.btn-action');
         if (btn) btn.addEventListener('click', (e)=>{
           e.stopPropagation();
-          if (card.id === 'card-fat-total') openTeamView(card, actions);
+          openTeamView(card, actions);
         });
       }
 
