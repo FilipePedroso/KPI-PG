@@ -1636,7 +1636,7 @@
         const real = realMap.get(name) || 0;
         const fat  = fatMap.get(name) || 0;
         const meta = metaMap.get(name) || 0;
-        const gap = meta - real;
+        const gap = Math.max(0, meta - real);
         const pct = meta > 0 ? real / meta : 0;
         const pctFat = meta > 0 ? fat / meta : 0;
         rows.push({ name, real, fat, meta, gap, pct, pctFat });
@@ -2266,7 +2266,7 @@
       if (!card) return;
       const fmtVal  = (opts && opts.fmtVal)  || fmtMoney;
       const fmtMeta = (opts && opts.fmtMeta) || fmtVal;
-      const gap = metaVal - total;
+      const gap = Math.max(0, metaVal - total);
       const pct    = metaVal > 0 ? total / metaVal : 0;
       const pctFat = metaVal > 0 ? fat   / metaVal : 0;
       const valorEl = card.querySelector('[data-bind=valor]');
