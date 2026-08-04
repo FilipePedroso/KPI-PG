@@ -536,7 +536,7 @@ def build(dados_path, estrutura_path):
     br = timezone(timedelta(hours=-3))
     return {
         "generated_at": datetime.now(br).strftime("%Y-%m-%dT%H:%M:%S-03:00"),
-        "source_file": os.path.basename(dados_path),
+        "source_file": os.path.basename(dados_path) if dados_path else "parquet",
         "comercial": comercial,
         "vendas": vendas,
         "metas": metas,
