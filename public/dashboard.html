@@ -1563,15 +1563,18 @@
 
       const actions = document.createElement('div');
       actions.className = 'card-actions';
+      const hasTeam = !!((window.dashboardAPI || {}).metrics || {})[card.id];
       actions.innerHTML =
+        (hasTeam ?
         '<button type="button" class="btn-action">' +
           '<span class="list-icon"><span></span><span></span><span></span></span>' +
           'Equipe' +
-        '</button>' +
+        '</button>' : '') +
         '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
       card.appendChild(actions);
       actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
-      actions.querySelector('.btn-action').addEventListener('click', (e)=>{
+      const teamBtn = actions.querySelector('.btn-action');
+      if (teamBtn) teamBtn.addEventListener('click', (e)=>{
         e.stopPropagation();
         openTeamView(card, actions);
       });
@@ -2415,7 +2418,45 @@
   }
 
 
-  window.dashboardAPI = { rvEntries, vendas, metas, passes, ck, fmtMoney };
+  const _fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
+  const _fmtPDV = (v)=> _fmtInt(v) + ' PDVs';
+  const _fmtPTS = (v)=> _fmtInt(v) + ' pts';
+  const M = (title, src, real, fat, metaSrc, metaField, opts) => Object.assign({
+    title,
+    real: { src, field: real },
+    fat:  { src, field: fat },
+    meta: { src: metaSrc, field: metaField },
+    fmtVal: fmtMoney,
+  }, opts || {});
+  const intOpts = { fmtVal: _fmtInt, fmtMeta: _fmtPDV };
+
+  const metrics = {
+    'card-fat-total': M('Faturamento Total',          'vendas', 'v',     'vf',     'metas', 'total'),
+    'card-fat-ec':    M('Faturamento Escolha Certa',  'vendas', 'ec',    'vf_ec',  'metas', 'ec'),
+    'card-fat-sp':    M('Faturamento Store Platform', 'vendas', 'sp',    'vf_sp',  'metas', 'sp'),
+    'card-fat-ali':   M('Faturamento Alimentar',      'vendas', 'ali',   'vf_ali', 'metas', 'ali'),
+    'card-fat-far':   M('Faturamento Farma',          'vendas', 'far',   'vf_far', 'metas', 'far'),
+
+    'card-pos-total': M('Positivação Total',      'vendas', 'p',     'pf',     'metas', 'p_total', intOpts),
+    'card-pos-ali':   M('Positivação Alimentar',  'vendas', 'p_ali', 'pf_ali', 'metas', 'p_ali',   intOpts),
+    'card-pos-far':   M('Positivação Farma',      'vendas', 'p_far', 'pf_far', 'metas', 'p_far',   intOpts),
+
+    'card-rank-hfs':  M('Positivação HFS',            'vendas', 'r_hfs', 'rf_hfs', 'metas', 'r_hfs', intOpts),
+    'card-rank-far':  M('Positivação Farma (Ranking)','vendas', 'r_far', 'rf_far', 'metas', 'r_far', intOpts),
+    'card-rank-alw':  M('Positivação Always Noturno', 'vendas', 'r_alw', 'rf_alw', 'metas', 'r_alw', intOpts),
+    'card-rank-pmp':  M('Positivação Pampers',        'vendas', 'r_pmp', 'rf_pmp', 'metas', 'r_pmp', intOpts),
+
+    'card-ec-pos':    M('Positivação Escolha Certa', 'vendas', 'r_ecp', 'rf_ecp', 'potencial', 'ecp',
+                        Object.assign({ metaLabel: 'Potencial' }, intOpts)),
+    'card-ec-ch2':    M('Positivação Chaves ≥ 2', 'ecOniz', 'ch2', 'ch2', 'metas', 'e_ch2', intOpts),
+    'card-ec-pp':     M('Platinum Points',        'ecOniz', 'pp',  'pp',  'metas', 'e_pp',
+                        { fmtVal: _fmtInt, fmtMeta: _fmtPTS }),
+  };
+
+  window.dashboardAPI = {
+    rvEntries, vendas, metas, passes, ck, fmtMoney, metrics,
+    sources: { vendas, metas, potencial, ecOniz },
+  };
 
   recompute();
 })();
