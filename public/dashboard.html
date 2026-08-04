@@ -1614,9 +1614,16 @@
     ];
     let teamState = null; // { card, originalHTML, originalActions, field }
 
-    function buildTeamRows(field){
+    function getMetric(cardId){
       const api = window.dashboardAPI;
-      if (!api) return [];
+      if (!api || !api.metrics) return null;
+      return api.metrics[cardId] || null;
+    }
+
+    function buildTeamRows(field, cardId){
+      const api = window.dashboardAPI;
+      const metric = getMetric(cardId);
+      if (!api || !metric) return [];
       // name -> Set of ck (rv|uf) keys for that person
       const groupMap = new Map();
       api.rvEntries.forEach(r => {
@@ -1626,24 +1633,33 @@
         if (!groupMap.has(name)) groupMap.set(name, new Set());
         groupMap.get(name).add(api.ck(r.rv, r.uf));
       });
-      const realMap = new Map();
-      const fatMap = new Map();
-      api.vendas.forEach(x => {
-        const k = api.ck(x.rv, x.uf);
-        groupMap.forEach((keys, name) => {
-          if (keys.has(k)) {
-            realMap.set(name, (realMap.get(name) || 0) + (x.v || 0));
-            fatMap.set(name, (fatMap.get(name) || 0) + (x.vf || 0));
-          }
+      // key -> [names]
+      const keyNames = new Map();
+      groupMap.forEach((keys, name) => {
+        keys.forEach(k => {
+          if (!keyNames.has(k)) keyNames.set(k, []);
+          keyNames.get(k).push(name);
         });
       });
-      const metaMap = new Map();
-      api.metas.forEach(m => {
-        const k = api.ck(m.rv, m.uf);
-        groupMap.forEach((keys, name) => {
-          if (keys.has(k)) metaMap.set(name, (metaMap.get(name) || 0) + (m.total || 0));
+
+      function sumBy(spec){
+        const out = new Map();
+        if (!spec) return out;
+        const arr = api.sources[spec.src] || [];
+        arr.forEach(x => {
+          const names = keyNames.get(api.ck(x.rv, x.uf));
+          if (!names) return;
+          const v = x[spec.field] || 0;
+          if (!v) return;
+          names.forEach(n => out.set(n, (out.get(n) || 0) + v));
         });
-      });
+        return out;
+      }
+
+      const realMap = sumBy(metric.real);
+      const fatMap  = sumBy(metric.fat || metric.real);
+      const metaMap = sumBy(metric.meta);
+
       const rows = [];
       groupMap.forEach((_, name) => {
         const real = realMap.get(name) || 0;
@@ -1656,6 +1672,7 @@
       });
       return rows.sort((a, b) => b.pct - a.pct);
     }
+
 
     function renderTeamTable(wrap, field){
       const rows = buildTeamRows(field);
