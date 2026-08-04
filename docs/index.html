@@ -1838,7 +1838,7 @@
       }).join('') + '</div>';
       // stagger animation
       const items = wrap.querySelectorAll('.team-bar-item');
-      const STAGGER = 60;
+      const STAGGER = Math.min(60, 900 / Math.max(1, items.length));
       items.forEach((item, i) => {
         setTimeout(() => {
           const fill  = item.querySelector('.team-bar-fill');
