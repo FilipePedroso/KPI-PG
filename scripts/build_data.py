@@ -176,6 +176,40 @@ def col(idx, *names):
     return None
 
 
+# Arquivos parquet das tabelas fato (substituem as abas do Dados.xlsx)
+PARQUET_FILES = {
+    "f_venda_total": "Dados_f_venda_total.parquet",
+    "f_ec_oniz": "Dados_f_ec_oniz.parquet",
+}
+
+
+def parquet_rows(path):
+    """Lê um parquet e devolve (rows, header, idx) no mesmo formato de header_map."""
+    import pyarrow.parquet as pq
+    table = pq.read_table(path)
+    header = [s(h) for h in table.column_names]
+    idx = {}
+    for i, h in enumerate(header):
+        if h and h not in idx:
+            idx[h] = i
+        idx.setdefault("~" + h.strip().lower(), i)
+    cols = [c.to_pylist() for c in table.columns]
+    rows = (tuple(c[i] for c in cols) for i in range(table.num_rows))
+    return rows, header, idx
+
+
+def fact_source(sheet, wbd=None):
+    """Prefere o parquet em data/; cai para a aba do Dados.xlsx se não existir."""
+    p = os.path.join(DATA_DIR, PARQUET_FILES[sheet])
+    if os.path.exists(p):
+        print(f"[build_data] {sheet}: usando {os.path.basename(p)}", file=sys.stderr)
+        return parquet_rows(p)
+    if wbd is not None and sheet in wbd.sheetnames:
+        return header_map(wbd[sheet])
+    return None
+
+
+
 def build(dados_path, estrutura_path):
     # ---------- Estrutura: d_comercial ----------
     wbe = openpyxl.load_workbook(estrutura_path, read_only=True, data_only=True)
@@ -301,11 +335,16 @@ def build(dados_path, estrutura_path):
 
 
     # ---------- Dados: f_venda_total ----------
-    wbd = openpyxl.load_workbook(dados_path, read_only=True, data_only=True)
-    sheet = "f_venda_total" if "f_venda_total" in wbd.sheetnames else wbd.sheetnames[0]
-    ws = wbd[sheet]
-    rows, header, idx = header_map(ws)
-    print(f"[build_data] {sheet} headers: {header}", file=sys.stderr)
+    wbd = None
+    if dados_path:
+        wbd = openpyxl.load_workbook(dados_path, read_only=True, data_only=True)
+    src = fact_source("f_venda_total", wbd)
+    if not src:
+        print("ERRO: fonte f_venda_total não encontrada (parquet ou xlsx).")
+        sys.exit(1)
+    rows, header, idx = src
+    print(f"[build_data] f_venda_total headers: {header}", file=sys.stderr)
+
     v_rv = col(idx, "cd_vendedor")
     v_uf = col(idx, "ds_uf")
     v_val = col(idx, "vl_financeiro")
@@ -460,9 +499,10 @@ def build(dados_path, estrutura_path):
     # platinum points: contagem distinta de (nr_doc, ds_combo_sku_lista_ativacao)
     #                  com "Platinum Point?" = "Sim"
     ec = []
-    if "f_ec_oniz" in wbd.sheetnames:
-        ws = wbd["f_ec_oniz"]
-        rows, header, idx = header_map(ws)
+    src_ec = fact_source("f_ec_oniz", wbd)
+    if src_ec:
+        rows, header, idx = src_ec
+
         o_rv = col(idx, "cd_vendedor")
         o_uf = col(idx, "ds_sigla", "ds_uf")
         o_doc = col(idx, "nr_doc")
@@ -496,7 +536,7 @@ def build(dados_path, estrutura_path):
     br = timezone(timedelta(hours=-3))
     return {
         "generated_at": datetime.now(br).strftime("%Y-%m-%dT%H:%M:%S-03:00"),
-        "source_file": os.path.basename(dados_path),
+        "source_file": os.path.basename(dados_path) if dados_path else "parquet",
         "comercial": comercial,
         "vendas": vendas,
         "metas": metas,
@@ -605,12 +645,20 @@ def write_all(name, obj, indent=None):
 
 
 def main():
-    dados = sys.argv[1] if len(sys.argv) > 1 else find("Dados.xlsx")
+    parquet_ok = all(os.path.exists(os.path.join(DATA_DIR, f))
+                     for f in PARQUET_FILES.values())
+    if len(sys.argv) > 1:
+        dados = sys.argv[1]
+    elif parquet_ok:
+        dados = None  # tabelas fato vêm dos parquet em data/
+    else:
+        dados = find("Dados.xlsx")
     estrutura = sys.argv[2] if len(sys.argv) > 2 else find("Estrutura.xlsx")
-    if not dados or not estrutura:
-        print("ERRO: coloque Dados.xlsx e Estrutura.xlsx na pasta data/.")
+    if not estrutura or (not dados and not parquet_ok):
+        print("ERRO: coloque os parquet das tabelas fato e Estrutura.xlsx na pasta data/.")
         sys.exit(1)
-    print(f"Lendo {dados} + {estrutura} ...")
+    print(f"Lendo {dados or 'parquet (data/)'} + {estrutura} ...")
+
     data = build(dados, estrutura)
     orfaos = build_orfaos(data)
     completar_estrutura(data, orfaos)

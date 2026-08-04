@@ -6,7 +6,8 @@ Esta pasta contém os arquivos Excel-fonte usados para gerar o dashboard.
 
 | Arquivo | Abas utilizadas | Conteúdo |
 |---|---|---|
-| `Dados.xlsx` | `f_venda_total`, `f_ec_oniz` | Vendas, positivação, chaves e pontos |
+| `Dados_f_venda_total.parquet` | — (tabela fato) | Vendas, positivação |
+| `Dados_f_ec_oniz.parquet` | — (tabela fato) | Chaves e Platinum Points |
 | `Estrutura.xlsx` | `d_comercial`, `d_metas`, `d_clientes_braveo` | Hierarquia comercial, metas e potencial de clientes |
 
 ## Como atualizar os dados (GitHub)
@@ -15,7 +16,7 @@ O dashboard é estático e hospedado no GitHub Pages. A atualização dos dados 
 
 1. Acesse o repositório `KPI Ranking P&G` no GitHub.
 2. Navegue até a pasta `data/`.
-3. Substitua o arquivo desejado (`Dados.xlsx` ou `Estrutura.xlsx`) por upload na web ou via `git push`.
+3. Substitua o arquivo desejado (`Dados_f_venda_total.parquet`, `Dados_f_ec_oniz.parquet` ou `Estrutura.xlsx`) por upload na web ou via `git push`.
 4. Commit com uma mensagem descritiva, por exemplo: `Atualização dados agosto/2026`.
 
 Pronto. O resto é automático.
@@ -24,7 +25,7 @@ Pronto. O resto é automático.
 
 O workflow `.github/workflows/build-data.yml` dispara automaticamente sempre que algum arquivo dentro de `data/` for alterado. Ele:
 
-1. Roda `scripts/build_data.py` usando os arquivos `.xlsx` do repositório.
+1. Roda `scripts/build_data.py` usando os arquivos `.parquet` (tabelas fato) e `.xlsx` (estrutura) do repositório.
 2. Gera/atualiza:
    - `docs/data.json`
    - `public/data.json`
@@ -41,10 +42,10 @@ O script `build_data.py` mantém compatibilidade com os arquivos de ponteiro `*.
 
 ## Estrutura esperada das abas
 
-### `Dados.xlsx`
+### Tabelas fato (parquet)
 
-- **`f_venda_total`** — colunas esperadas: `cd_vendedor`, `ds_uf`, `vl_financeiro`, `vl_faturamento`, `Store Channel`, `Plataforma`, `Canal Ranking`, `nm_grupo`, `nm_produto`, `cd_gerente`, `cd_vendedor_superior`, `CNPJ`.
-- **`f_ec_oniz`** — colunas esperadas: `nr_doc`, `nr_chave`, `ds_combo_sku_lista_ativacao`, `Platinum Point?`, `cd_vendedor`, `ds_sigla`, `Plataforma`.
+- **`Dados_f_venda_total.parquet`** — colunas esperadas: `cd_vendedor`, `ds_uf`, `vl_financeiro`, `vl_faturamento`, `Store Channel`, `Plataforma`, `Canal Ranking`, `nm_grupo`, `nm_produto`, `cd_gerente`, `cd_vendedor_superior`, `CNPJ`.
+- **`Dados_f_ec_oniz.parquet`** — colunas esperadas: `nr_doc`, `nr_chave`, `ds_combo_sku_lista_ativacao`, `Platinum Point?`, `cd_vendedor`, `ds_sigla`, `Plataforma`.
 
 ### `Estrutura.xlsx`
 
