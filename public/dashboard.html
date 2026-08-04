@@ -2506,6 +2506,7 @@
   function renderResumo(sums, metaSums, ecSums){
     const wrap = document.getElementById('rk-bars');
     const scoreEl = document.getElementById('rk-score-value');
+    const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
     if (!wrap || !scoreEl) return;
     const defs = [
       { name: 'Positivação HFS',             real: sums.r_hfs, meta: metaSums.r_hfs, color: '#003DA5' },
