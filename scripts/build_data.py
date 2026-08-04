@@ -319,6 +319,7 @@ def build(dados_path, estrutura_path):
     v_ean = col(idx, "ds_ean")
     v_grupo = col(idx, "nm_grupo")
     v_prod = col(idx, "nm_produto")
+    v_vol = col(idx, "vl_volume_cx")
 
     vagg = {}
     cnpj_sums = {}
@@ -392,13 +393,17 @@ def build(dados_path, estrutura_path):
             ean = rv_key(r[v_ean]) if v_ean is not None else ""
             grupo = s(r[v_grupo]).upper() if v_grupo is not None else ""
             prod = s(r[v_prod]).upper() if v_prod is not None else ""
+            vol = n(r[v_vol]) if v_vol is not None else 0.0
             rb = rank_sums.setdefault(k, {})
 
             def add_rank(metric):
-                cc = rb.setdefault(metric, {}).setdefault(cnpj, {"t": 0.0, "f": 0.0})
+                cc = rb.setdefault(metric, {}).setdefault(
+                    cnpj, {"t": 0.0, "f": 0.0, "vt": 0.0, "vf": 0.0})
                 cc["t"] += val
+                cc["vt"] += vol
                 if is_fat:
                     cc["f"] += val
+                    cc["vf"] += vol
 
             if crank == "HFS" and plat_ok:
                 add_rank("hfs")
@@ -440,8 +445,9 @@ def build(dados_path, estrutura_path):
         if not b:
             continue
         for metric, cm in mm.items():
-            tot = sum(1 for cs in cm.values() if cs["t"] > 0)
-            fat = sum(1 for cs in cm.values() if cs["f"] > 0)
+            minv = 10.0 if metric == "pmp" else 0.0
+            tot = sum(1 for cs in cm.values() if cs["t"] > 0 and cs["vt"] >= minv)
+            fat = sum(1 for cs in cm.values() if cs["f"] > 0 and cs["vf"] >= minv)
             b["r_" + metric] = tot
             b["rf_" + metric] = fat
 
