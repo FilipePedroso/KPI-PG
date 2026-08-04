@@ -460,9 +460,10 @@ def build(dados_path, estrutura_path):
     # platinum points: contagem distinta de (nr_doc, ds_combo_sku_lista_ativacao)
     #                  com "Platinum Point?" = "Sim"
     ec = []
-    if "f_ec_oniz" in wbd.sheetnames:
-        ws = wbd["f_ec_oniz"]
-        rows, header, idx = header_map(ws)
+    src_ec = fact_source("f_ec_oniz", wbd)
+    if src_ec:
+        rows, header, idx = src_ec
+
         o_rv = col(idx, "cd_vendedor")
         o_uf = col(idx, "ds_sigla", "ds_uf")
         o_doc = col(idx, "nr_doc")
