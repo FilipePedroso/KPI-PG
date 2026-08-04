@@ -496,8 +496,8 @@ def build(dados_path, estrutura_path):
 
 
 def find(name):
-    p = os.path.join(DATA_DIR, name)
-    return p if os.path.exists(p) else None
+    return ensure_asset(name)
+
 
 
 def build_orfaos(data):
