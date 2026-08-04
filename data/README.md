@@ -6,12 +6,22 @@ Coloque **dois arquivos** nesta pasta (`data/`) e faça o deploy:
 
 | Arquivo | Abas usadas |
 |---------|-------------|
-| `Dados.xlsx` | `f_venda_total` |
-| `Estrutura.xlsx` | `d_comercial`, `d_metas` |
+| `Dados.xlsx` | `f_venda_total`, `f_ec_oniz` |
+| `Estrutura.xlsx` | `d_comercial`, `d_metas`, `d_clientes_braveo` |
 
 O build roda `scripts/build_data.py` automaticamente e gera `docs/data.json` e `public/data.json`.
 
-> Os `.xlsx` são grandes demais para o repositório Git (limite de 10 MB por arquivo), por isso ficam ignorados no `.gitignore` e são guardados como assets externos (`*.asset.json`). O que vai para o site é o `data.json` gerado.
+> Os `.xlsx` são grandes demais para o repositório Git (limite de 10 MB por arquivo), por isso ficam ignorados no `.gitignore` e são guardados como assets externos (`*.asset.json`). O script detecta automaticamente quando o arquivo local mudou e faz o upload do novo asset; se o arquivo não estiver localmente, ele baixa o último asset do CDN.
+
+## Fluxo de atualização
+
+1. Substitua o arquivo em `data/` (ex: `Estrutura.xlsx`).
+2. Rode o deploy no Lovable ou execute localmente:
+   ```bash
+   python3 scripts/build_data.py
+   ```
+   O script sobe automaticamente o novo asset e atualiza o `*.asset.json` se o arquivo mudou.
+3. Se publicar pelo **GitHub Pages**, commit também o `data.json` e o `*.asset.json` gerados, pois o GitHub Pages não roda o build novamente.
 
 ## Colunas esperadas
 
@@ -33,3 +43,4 @@ O build roda `scripts/build_data.py` automaticamente e gera `docs/data.json` e `
 ```bash
 python3 scripts/build_data.py data/Dados.xlsx data/Estrutura.xlsx
 ```
+
