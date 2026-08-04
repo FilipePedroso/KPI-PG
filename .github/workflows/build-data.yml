@@ -23,7 +23,8 @@ jobs:
           python-version: "3.12"
 
       - name: Instalar dependências
-        run: pip install openpyxl
+        run: pip install openpyxl pyarrow
+
 
       - name: Gerar data.json
         run: python3 scripts/build_data.py
