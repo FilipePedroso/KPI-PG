@@ -1,21 +1,20 @@
 # Dados
 
-Os dois arquivos Excel ficam **fora do repositório** (limite de 10 MB por arquivo)
-e são hospedados no CDN via `*.asset.json`:
+Coloque aqui os dois arquivos Excel:
 
 - `Dados.xlsx` — abas `f_venda_total` e `f_ec_oniz`
 - `Estrutura.xlsx` — abas `d_comercial`, `d_metas`, `d_clientes_braveo`
 
-## Como atualizar (automático)
+## Como atualizar
 
-1. Solte o arquivo novo aqui em `data/` pelo Lovable.
-2. Publique / faça deploy pelo Lovable.
+1. Substitua o `.xlsx` direto no GitHub (upload/commit ou push).
+2. Pronto.
 
-O `prebuild` roda `scripts/build_data.py`, que:
-- detecta que o arquivo local mudou, sobe o asset novo e atualiza o `*.asset.json`;
-- regenera `docs/data.json`, `public/data.json` e os `sem-estrutura.csv`;
-- esses arquivos gerados são commitados e sincronizados com o GitHub.
+O workflow `.github/workflows/build-data.yml` dispara a cada push que altere
+`data/`, roda `scripts/build_data.py` usando os arquivos do repositório e
+commita `docs/data.json`, `public/data.json` e os `sem-estrutura.csv`.
+Em ~1 min o GitHub Pages já mostra os dados novos — nenhum comando manual.
 
-O GitHub Actions (`.github/workflows/build-data.yml`) também regenera o
-`data.json` a cada push que altere `data/` ou o script, baixando os `.xlsx`
-do CDN pelos pointers. Nenhum comando manual é necessário.
+Obs.: no ambiente do Lovable o editor não aceita arquivos acima de 10 MB, por
+isso os `.xlsx` grandes só entram pelo GitHub. O script mantém compatibilidade
+com os `*.asset.json` (CDN) quando o `.xlsx` não está presente.

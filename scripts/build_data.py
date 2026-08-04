@@ -106,6 +106,10 @@ def ensure_asset(name):
     if os.path.exists(source):
         local_size = os.path.getsize(source)
         asset_size = asset.get("size") if asset else None
+        if os.environ.get("CI"):
+            # No GitHub Actions usamos o .xlsx do próprio repositório.
+            print(f"{name}: usando arquivo do repositório ({local_size:,} bytes).")
+            return source
         if asset_size is None or local_size != asset_size:
             print(f"{name} local ({local_size:,} bytes) difere do asset ({asset_size or '?'}). Fazendo upload...")
             new_asset = upload_asset(name, source)
