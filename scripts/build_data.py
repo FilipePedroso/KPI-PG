@@ -79,7 +79,8 @@ def download_asset(name, target, asset):
         url = asset_base_url().rstrip("/") + url
     try:
         print(f"  -> baixando {name} de {url} ...")
-        with urlopen(url) as resp:
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0 (Lovable build)"})
+        with urlopen(req) as resp:
             with open(target, "wb") as f:
                 f.write(resp.read())
         return True
@@ -89,6 +90,7 @@ def download_asset(name, target, asset):
     except Exception as e:
         print(f"  ERRO ao baixar {name}: {e}")
         return False
+
 
 
 def ensure_asset(name):
