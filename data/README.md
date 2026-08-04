@@ -1,20 +1,59 @@
-# Dados
+# Dados do KPI Ranking P&G
 
-Coloque aqui os dois arquivos Excel:
+Esta pasta contém os arquivos Excel-fonte usados para gerar o dashboard.
 
-- `Dados.xlsx` — abas `f_venda_total` e `f_ec_oniz`
-- `Estrutura.xlsx` — abas `d_comercial`, `d_metas`, `d_clientes_braveo`
+## Arquivos esperados
 
-## Como atualizar
+| Arquivo | Abas utilizadas | Conteúdo |
+|---|---|---|
+| `Dados.xlsx` | `f_venda_total`, `f_ec_oniz` | Vendas, positivação, chaves e pontos |
+| `Estrutura.xlsx` | `d_comercial`, `d_metas`, `d_clientes_braveo` | Hierarquia comercial, metas e potencial de clientes |
 
-1. Substitua o `.xlsx` direto no GitHub (upload/commit ou push).
-2. Pronto.
+## Como atualizar os dados (GitHub)
 
-O workflow `.github/workflows/build-data.yml` dispara a cada push que altere
-`data/`, roda `scripts/build_data.py` usando os arquivos do repositório e
-commita `docs/data.json`, `public/data.json` e os `sem-estrutura.csv`.
-Em ~1 min o GitHub Pages já mostra os dados novos — nenhum comando manual.
+O dashboard é estático e hospedado no GitHub Pages. A atualização dos dados é feita **diretamente no repositório do GitHub**, sem precisar rodar comandos manualmente.
 
-Obs.: no ambiente do Lovable o editor não aceita arquivos acima de 10 MB, por
-isso os `.xlsx` grandes só entram pelo GitHub. O script mantém compatibilidade
-com os `*.asset.json` (CDN) quando o `.xlsx` não está presente.
+1. Acesse o repositório `KPI Ranking P&G` no GitHub.
+2. Navegue até a pasta `data/`.
+3. Substitua o arquivo desejado (`Dados.xlsx` ou `Estrutura.xlsx`) por upload na web ou via `git push`.
+4. Commit com uma mensagem descritiva, por exemplo: `Atualização dados agosto/2026`.
+
+Pronto. O resto é automático.
+
+## O que acontece depois do commit
+
+O workflow `.github/workflows/build-data.yml` dispara automaticamente sempre que algum arquivo dentro de `data/` for alterado. Ele:
+
+1. Roda `scripts/build_data.py` usando os arquivos `.xlsx` do repositório.
+2. Gera/atualiza:
+   - `docs/data.json`
+   - `public/data.json`
+   - `sem-estrutura.csv`
+3. Commita esses arquivos de volta no repositório.
+
+Em aproximadamente 1 minuto o GitHub Pages já reflete os novos dados no dashboard.
+
+## Importante sobre o Lovable editor
+
+O editor do Lovable não aceita uploads de arquivos acima de ~10 MB. Por isso, **arquivos Excel grandes devem ser atualizados diretamente no GitHub**, nunca arrastando para dentro do editor do Lovable.
+
+O script `build_data.py` mantém compatibilidade com os arquivos de ponteiro `*.asset.json` (CDN) caso o `.xlsx` não esteja presente no repositório, mas o fluxo principal e recomendado é o de arquivos locais no GitHub.
+
+## Estrutura esperada das abas
+
+### `Dados.xlsx`
+
+- **`f_venda_total`** — colunas esperadas: `cd_vendedor`, `ds_uf`, `vl_financeiro`, `vl_faturamento`, `Store Channel`, `Plataforma`, `Canal Ranking`, `nm_grupo`, `nm_produto`, `cd_gerente`, `cd_vendedor_superior`, `CNPJ`.
+- **`f_ec_oniz`** — colunas esperadas: `nr_doc`, `nr_chave`, `ds_combo_sku_lista_ativacao`, `Platinum Point?`, `cd_vendedor`, `ds_sigla`, `Plataforma`.
+
+### `Estrutura.xlsx`
+
+- **`d_comercial`** — colunas esperadas: `RV`, `ds_uf`, `NOME`, `CONCATENAÇÃO RV + NOME`, `CONCATENAÇÃO SV + NOME`, `CONCATENAÇÃO CV + NOME`, `SV`, `GV`.
+- **`d_metas`** — colunas esperadas: `RV`, `ds_uf`, `TT Positivação`, `OBJ PRODUTIVIDADE HFS`, `OBJ PRODUTIVIDADE FARMA`.
+- **`d_clientes_braveo`** — colunas esperadas: `cd_vendedor`, `ds_uf`, `Potencial` (ou equivalente usado para potencial de positivação).
+
+## Verificando se a atualização funcionou
+
+- Acesse o GitHub Actions do repositório e confirme se a execução de `Build Dashboard Data` terminou com sucesso (✅ verde).
+- No dashboard, o header mostra a data e hora da última geração dos dados.
+- Caso alguma combinação de vendedor + UF não exista na estrutura, o arquivo `sem-estrutura.csv` será gerado com as combinações que faltavam e foram inseridas automaticamente como "CÓDIGO - -".
