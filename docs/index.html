@@ -332,12 +332,19 @@
       grid-template-columns: repeat(3, 1fr) !important;
     }
 
+    .cards-row-4 {
+      grid-template-columns: repeat(4, 1fr) !important;
+    }
+
     @media (max-width: 1024px) {
       .cards-row {
         grid-template-columns: repeat(3, 1fr);
       }
       .cards-row-3 {
         grid-template-columns: repeat(3, 1fr) !important;
+      }
+      .cards-row-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
       }
     }
 
@@ -346,6 +353,9 @@
         grid-template-columns: repeat(2, 1fr);
       }
       .cards-row-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .cards-row-4 {
         grid-template-columns: repeat(2, 1fr) !important;
       }
 
@@ -418,6 +428,9 @@
         grid-template-columns: 1fr;
       }
       .cards-row-3 {
+        grid-template-columns: 1fr !important;
+      }
+      .cards-row-4 {
         grid-template-columns: 1fr !important;
       }
     }
@@ -1216,7 +1229,7 @@
       <div class="section-line"></div>
     </div>
 
-    <div class="cards-row" id="section-positivacao-ranking">
+    <div class="cards-row cards-row-4" id="section-positivacao-ranking">
 
       <div class="kpi-card fat-total" id="card-rank-hfs">
         <div class="info-icon" data-tooltip-id="tip-hfs">i</div>
@@ -1304,7 +1317,7 @@
       <div class="section-line"></div>
     </div>
 
-    <div class="cards-row" id="section-escolha-certa">
+    <div class="cards-row cards-row-3" id="section-escolha-certa">
 
       <div class="kpi-card fat-total" id="card-ec-pos">
         <div class="card-title">Positivação Escolha Certa</div>
