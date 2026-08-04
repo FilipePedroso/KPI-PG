@@ -393,13 +393,17 @@ def build(dados_path, estrutura_path):
             ean = rv_key(r[v_ean]) if v_ean is not None else ""
             grupo = s(r[v_grupo]).upper() if v_grupo is not None else ""
             prod = s(r[v_prod]).upper() if v_prod is not None else ""
+            vol = n(r[v_vol]) if v_vol is not None else 0.0
             rb = rank_sums.setdefault(k, {})
 
             def add_rank(metric):
-                cc = rb.setdefault(metric, {}).setdefault(cnpj, {"t": 0.0, "f": 0.0})
+                cc = rb.setdefault(metric, {}).setdefault(
+                    cnpj, {"t": 0.0, "f": 0.0, "vt": 0.0, "vf": 0.0})
                 cc["t"] += val
+                cc["vt"] += vol
                 if is_fat:
                     cc["f"] += val
+                    cc["vf"] += vol
 
             if crank == "HFS" and plat_ok:
                 add_rank("hfs")
