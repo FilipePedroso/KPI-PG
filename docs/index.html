@@ -2600,7 +2600,7 @@
       { name: 'Platinum Points',             real: ecSums.pp,  meta: metaSums.e_pp,  color: '#7C3AED' },
     ];
     const rows = defs
-      .filter(d => (d.meta || 0) > 0)
+      .filter(d => Math.round(d.meta || 0) > 0)
       .map(d => Object.assign({}, d, {
         gap: Math.max(0, d.meta - d.real),
         pct: d.real / d.meta,
