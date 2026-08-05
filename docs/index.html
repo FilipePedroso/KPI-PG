@@ -42,13 +42,23 @@
       pointer-events: none;
     }
 
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 28px;
+      gap: 20px;
+    }
+
     .header-top {
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 18px 28px 14px;
+      justify-content: flex-start;
+      padding: 0;
+      flex-shrink: 0;
     }
-    .header-title-group { text-align: center; }
+    .header-title-group { text-align: left; }
+
 
 
     .pg-logo {
