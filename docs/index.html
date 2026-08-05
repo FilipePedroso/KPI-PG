@@ -1148,52 +1148,55 @@
 
   <!-- HEADER -->
   <div class="header">
-    <div class="header-top">
-      <div class="pg-logo">P&G</div>
-      <div class="header-title-group">
-        <h1>Dashboard Comercial</h1>
-        <p><span id="last-update">Atualizado em —</span></p>
+    <div class="header-inner">
+      <div class="header-top">
+        <div class="pg-logo">P&G</div>
+        <div class="header-title-group">
+          <h1>Dashboard Comercial</h1>
+          <p><span id="last-update">Atualizado em —</span></p>
 
-      </div>
-    </div>
-
-    <div class="filters-bar" id="filters-bar">
-
-      <div class="filter-chip" data-filter="uf" data-default-label="Distribuidor">
-        <i class="ti ti-building-store chip-icon" aria-hidden="true"></i>
-        <span class="chip-label">Distribuidor</span>
-        <span class="chip-arrow">▾</span>
+        </div>
       </div>
 
-      <div class="filter-chip" data-filter="cv" data-default-label="Gerente">
-        <i class="ti ti-user chip-icon" aria-hidden="true"></i>
-        <span class="chip-label">Gerente</span>
-        <span class="chip-arrow">▾</span>
+      <div class="filters-bar" id="filters-bar">
+
+        <div class="filter-chip" data-filter="uf" data-default-label="Distribuidor">
+          <i class="ti ti-building-store chip-icon" aria-hidden="true"></i>
+          <span class="chip-label">Distribuidor</span>
+          <span class="chip-arrow">▾</span>
+        </div>
+
+        <div class="filter-chip" data-filter="cv" data-default-label="Gerente">
+          <i class="ti ti-user chip-icon" aria-hidden="true"></i>
+          <span class="chip-label">Gerente</span>
+          <span class="chip-arrow">▾</span>
+        </div>
+
+        <div class="filter-chip" data-filter="sv" data-default-label="Supervisor">
+          <i class="ti ti-user-check chip-icon" aria-hidden="true"></i>
+          <span class="chip-label">Supervisor</span>
+          <span class="chip-arrow">▾</span>
+        </div>
+
+        <div class="filter-chip" data-filter="rv" data-default-label="Vendedor">
+          <i class="ti ti-user-circle chip-icon" aria-hidden="true"></i>
+          <span class="chip-label">Vendedor</span>
+          <span class="chip-arrow">▾</span>
+        </div>
+
+        <button class="clear-btn" id="clear-filters" title="Limpar filtros">
+          <i class="ti ti-x" aria-hidden="true"></i>
+          <span>Limpar</span>
+        </button>
+
       </div>
-
-      <div class="filter-chip" data-filter="sv" data-default-label="Supervisor">
-        <i class="ti ti-user-check chip-icon" aria-hidden="true"></i>
-        <span class="chip-label">Supervisor</span>
-        <span class="chip-arrow">▾</span>
-      </div>
-
-      <div class="filter-chip" data-filter="rv" data-default-label="Vendedor">
-        <i class="ti ti-user-circle chip-icon" aria-hidden="true"></i>
-        <span class="chip-label">Vendedor</span>
-        <span class="chip-arrow">▾</span>
-      </div>
-
-      <button class="clear-btn" id="clear-filters" title="Limpar filtros">
-        <i class="ti ti-x" aria-hidden="true"></i>
-        <span>Limpar</span>
-      </button>
-
     </div>
 
     <button type="button" class="filters-toggle" id="filters-toggle" aria-expanded="false" aria-controls="filters-bar" aria-label="Filtros">
       <i class="ti ti-filter" aria-hidden="true"></i>
     </button>
   </div>
+
 
   <!-- ── SEÇÃO: FATURAMENTO ── -->
   <div class="section-container">
