@@ -30,6 +30,12 @@ ALWAYS_EANS = {
     "7506339394535", "7506339325249",
 }
 
+# Bitmask dos indicadores usados na visão "Clientes" (cards de Positivação)
+CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp"]
+CB = {m: 1 << i for i, m in enumerate(CLIENT_METRICS)}
+FARMA_CHANNELS = {"DRUG/PHARMACY", "PERFUMERIES"}
+
+
 
 def asset_base_url():
     """Retorna a URL base do projeto para resolver assets relativos."""
