@@ -390,16 +390,19 @@ def build(dados_path, estrutura_path):
         b["e_pp"] += n(r[e_pp]) if e_pp is not None else 0.0
     metas = list(magg.values())
 
-    # ---------- Estrutura: d_clientes_braveo (potencial) ----------
+    # ---------- Estrutura: d_clientes_braveo (potencial + base de clientes) ----------
     # Contagem distinta de CNPJ por rv|uf, aplicando as mesmas regras de
     # negócio (Canal Ranking / Plataforma) de cada card de ranking.
     potencial = {}
+    clientes_base = {}   # {rv|uf: {cnpj: [nome, elig_bitmask]}}
     if "d_clientes_braveo" in wbe.sheetnames:
         ws = wbe["d_clientes_braveo"]
         rows, header, idx = header_map(ws)
         c_rv = col(idx, "cd_vendedor")
         c_uf = col(idx, "ds_uf")
         c_cnpj = col(idx, "nr_cnpj_cpf")
+        c_nome = col(idx, "nm_pessoa")
+        c_chan = col(idx, "Store Channel")
         c_can = col(idx, "Canal Ranking")
         c_plat = col(idx, "Plataforma")
         psets = {}
@@ -413,6 +416,7 @@ def build(dados_path, estrutura_path):
                 continue
             canal = s(r[c_can]) if c_can is not None else ""
             plat = s(r[c_plat]) if c_plat is not None else ""
+            chan = s(r[c_chan]).upper() if c_chan is not None else ""
             k = rv + "|" + uf
             b = psets.setdefault(k, {"hfs": set(), "far": set(),
                                      "alw": set(), "pmp": set(), "ecp": set()})
@@ -427,12 +431,31 @@ def build(dados_path, estrutura_path):
                 b["pmp"].add(cnpj)
             if plat == "Escolha Certa":
                 b["ecp"].add(cnpj)
+
+            # base de clientes (para a visão "Clientes" dos cards)
+            elig = CB["tot"]
+            elig |= CB["far"] if chan in FARMA_CHANNELS else CB["ali"]
+            if canal == "HFS" and plat_ok:
+                elig |= CB["hfs"]
+            if canal in ("Farma Indep", "Farma Rede") and plat_ok:
+                elig |= CB["rfar"]
+            if canal in ("HFS", "Farma Indep") and plat == "Escolha Certa":
+                elig |= CB["alw"]
+            if canal in ("HFS", "Farma Indep") and plat_ok:
+                elig |= CB["pmp"]
+            cb = clientes_base.setdefault(k, {})
+            cur = cb.get(cnpj)
+            if cur is None:
+                cb[cnpj] = [s(r[c_nome]) if c_nome is not None else "", elig]
+            else:
+                cur[1] |= elig
         for k, b in psets.items():
             rv, uf = k.split("|", 1)
             potencial[k] = {"rv": rv, "uf": uf,
                             "hfs": len(b["hfs"]), "far": len(b["far"]),
                             "alw": len(b["alw"]), "pmp": len(b["pmp"]),
                             "ecp": len(b["ecp"])}
+
 
 
     # ---------- Dados: f_venda_total ----------
