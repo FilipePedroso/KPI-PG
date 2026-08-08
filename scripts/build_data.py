@@ -315,6 +315,61 @@ def read_sc():
     return {k: {m: round(v) for m, v in b.items()} for k, b in acc.items()}
 
 
+def read_sc_clientes():
+    """
+    Lê data/Dados_SC.xlsx e devolve, por rv|uf, os CNPJs positivados de cada
+    indicador de ranking, além do nome (razão social) de cada CNPJ.
+      -> ({rv|uf: {hfs|rfar|alw|pmp: set(cnpj)}}, {cnpj: nome})
+    """
+    path = os.path.join(DATA_DIR, SC_FILE)
+    if not os.path.exists(path):
+        return {}, {}
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    acc, nomes = {}, {}
+
+    def key(rv, uf):
+        rv, uf = rv_key(rv), s(uf)
+        if not uf:
+            return None
+        if not rv or not rv.isdigit():
+            rv = "0"
+        return rv + "|" + uf
+
+    def scan(sheet, tipos):
+        if sheet not in wb.sheetnames:
+            return
+        rows, hdr, idx = header_map(wb[sheet])
+        c_rv = col(idx, "RV", "Rv", "cd_vendedor")
+        c_uf = col(idx, "ds_uf")
+        c_tp = col(idx, "TIPO")
+        c_cnpj = col(idx, "CNPJ")
+        c_nome = col(idx, "RAZÃO SOCIAL")
+        hits = [i for i, h in enumerate(hdr)
+                if s(h).strip().lower().startswith("positiva")]
+        c_pos = hits[0] if hits else None
+        for r in rows:
+            if not r:
+                continue
+            k = key(r[c_rv], r[c_uf])
+            cnpj = rv_key(r[c_cnpj]) if c_cnpj is not None else ""
+            if not k or not cnpj:
+                continue
+            if c_pos is not None and n(r[c_pos]) <= 0:
+                continue
+            metric = tipos.get(s(r[c_tp]).upper() if c_tp is not None else "")
+            if not metric:
+                continue
+            acc.setdefault(k, {}).setdefault(metric, set()).add(cnpj)
+            if c_nome is not None and cnpj not in nomes:
+                nomes[cnpj] = s(r[c_nome])
+
+    scan("Pos Relação", {"HFS": "hfs", "FARMA": "rfar"})
+    scan("Marcas Relação", {"ALWAYS NOTURNO": "alw", "PAMPERS": "pmp"})
+    return acc, nomes
+
+
+
+
 
 
 def build(dados_path, estrutura_path):
