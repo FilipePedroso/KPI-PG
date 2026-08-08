@@ -2173,11 +2173,7 @@
       const actions = card.querySelector('.card-actions');
       if (actions) {
         actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
-        const btn = actions.querySelector('.btn-action');
-        if (btn) btn.addEventListener('click', (e)=>{
-          e.stopPropagation();
-          openTeamView(card, actions);
-        });
+        bindActionButtons(card, actions);
       }
 
       // measure natural height and animate back
