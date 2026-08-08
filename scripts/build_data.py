@@ -30,6 +30,12 @@ ALWAYS_EANS = {
     "7506339394535", "7506339325249",
 }
 
+# Bitmask dos indicadores usados na visão "Clientes" (cards de Positivação)
+CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp"]
+CB = {m: 1 << i for i, m in enumerate(CLIENT_METRICS)}
+FARMA_CHANNELS = {"DRUG/PHARMACY", "PERFUMERIES"}
+
+
 
 def asset_base_url():
     """Retorna a URL base do projeto para resolver assets relativos."""
@@ -309,6 +315,61 @@ def read_sc():
     return {k: {m: round(v) for m, v in b.items()} for k, b in acc.items()}
 
 
+def read_sc_clientes():
+    """
+    Lê data/Dados_SC.xlsx e devolve, por rv|uf, os CNPJs positivados de cada
+    indicador de ranking, além do nome (razão social) de cada CNPJ.
+      -> ({rv|uf: {hfs|rfar|alw|pmp: set(cnpj)}}, {cnpj: nome})
+    """
+    path = os.path.join(DATA_DIR, SC_FILE)
+    if not os.path.exists(path):
+        return {}, {}
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    acc, nomes = {}, {}
+
+    def key(rv, uf):
+        rv, uf = rv_key(rv), s(uf)
+        if not uf:
+            return None
+        if not rv or not rv.isdigit():
+            rv = "0"
+        return rv + "|" + uf
+
+    def scan(sheet, tipos):
+        if sheet not in wb.sheetnames:
+            return
+        rows, hdr, idx = header_map(wb[sheet])
+        c_rv = col(idx, "RV", "Rv", "cd_vendedor")
+        c_uf = col(idx, "ds_uf")
+        c_tp = col(idx, "TIPO")
+        c_cnpj = col(idx, "CNPJ")
+        c_nome = col(idx, "RAZÃO SOCIAL")
+        hits = [i for i, h in enumerate(hdr)
+                if s(h).strip().lower().startswith("positiva")]
+        c_pos = hits[0] if hits else None
+        for r in rows:
+            if not r:
+                continue
+            k = key(r[c_rv], r[c_uf])
+            cnpj = rv_key(r[c_cnpj]) if c_cnpj is not None else ""
+            if not k or not cnpj:
+                continue
+            if c_pos is not None and n(r[c_pos]) <= 0:
+                continue
+            metric = tipos.get(s(r[c_tp]).upper() if c_tp is not None else "")
+            if not metric:
+                continue
+            acc.setdefault(k, {}).setdefault(metric, set()).add(cnpj)
+            if c_nome is not None and cnpj not in nomes:
+                nomes[cnpj] = s(r[c_nome])
+
+    scan("Pos Relação", {"HFS": "hfs", "FARMA": "rfar"})
+    scan("Marcas Relação", {"ALWAYS NOTURNO": "alw", "PAMPERS": "pmp"})
+    return acc, nomes
+
+
+
+
 
 
 def build(dados_path, estrutura_path):
@@ -390,16 +451,19 @@ def build(dados_path, estrutura_path):
         b["e_pp"] += n(r[e_pp]) if e_pp is not None else 0.0
     metas = list(magg.values())
 
-    # ---------- Estrutura: d_clientes_braveo (potencial) ----------
+    # ---------- Estrutura: d_clientes_braveo (potencial + base de clientes) ----------
     # Contagem distinta de CNPJ por rv|uf, aplicando as mesmas regras de
     # negócio (Canal Ranking / Plataforma) de cada card de ranking.
     potencial = {}
+    clientes_base = {}   # {rv|uf: {cnpj: [nome, elig_bitmask]}}
     if "d_clientes_braveo" in wbe.sheetnames:
         ws = wbe["d_clientes_braveo"]
         rows, header, idx = header_map(ws)
         c_rv = col(idx, "cd_vendedor")
         c_uf = col(idx, "ds_uf")
         c_cnpj = col(idx, "nr_cnpj_cpf")
+        c_nome = col(idx, "nm_pessoa")
+        c_chan = col(idx, "Store Channel")
         c_can = col(idx, "Canal Ranking")
         c_plat = col(idx, "Plataforma")
         psets = {}
@@ -413,6 +477,7 @@ def build(dados_path, estrutura_path):
                 continue
             canal = s(r[c_can]) if c_can is not None else ""
             plat = s(r[c_plat]) if c_plat is not None else ""
+            chan = s(r[c_chan]).upper() if c_chan is not None else ""
             k = rv + "|" + uf
             b = psets.setdefault(k, {"hfs": set(), "far": set(),
                                      "alw": set(), "pmp": set(), "ecp": set()})
@@ -427,12 +492,31 @@ def build(dados_path, estrutura_path):
                 b["pmp"].add(cnpj)
             if plat == "Escolha Certa":
                 b["ecp"].add(cnpj)
+
+            # base de clientes (para a visão "Clientes" dos cards)
+            elig = CB["tot"]
+            elig |= CB["far"] if chan in FARMA_CHANNELS else CB["ali"]
+            if canal == "HFS" and plat_ok:
+                elig |= CB["hfs"]
+            if canal in ("Farma Indep", "Farma Rede") and plat_ok:
+                elig |= CB["rfar"]
+            if canal in ("HFS", "Farma Indep") and plat == "Escolha Certa":
+                elig |= CB["alw"]
+            if canal in ("HFS", "Farma Indep") and plat_ok:
+                elig |= CB["pmp"]
+            cb = clientes_base.setdefault(k, {})
+            cur = cb.get(cnpj)
+            if cur is None:
+                cb[cnpj] = [s(r[c_nome]) if c_nome is not None else "", elig]
+            else:
+                cur[1] |= elig
         for k, b in psets.items():
             rv, uf = k.split("|", 1)
             potencial[k] = {"rv": rv, "uf": uf,
                             "hfs": len(b["hfs"]), "far": len(b["far"]),
                             "alw": len(b["alw"]), "pmp": len(b["pmp"]),
                             "ecp": len(b["ecp"])}
+
 
 
     # ---------- Dados: f_venda_total ----------
@@ -667,6 +751,66 @@ def build(dados_path, estrutura_path):
         print(f"[build_data] Dados_SC: UFs {sorted(sc_ufs)}, "
               f"{len(sc)} combinações rv|uf sobrescritas", file=sys.stderr)
 
+    # ---------- Base de clientes por indicador (visão "Clientes") ----------
+    # pos[k][metric] = set(cnpj positivados)
+    pos = {}
+    for k, cm in cnpj_sums.items():
+        b = pos.setdefault(k, {})
+        for cnpj, cs in cm.items():
+            if cs["t"] > 0:
+                b.setdefault("tot", set()).add(cnpj)
+            if cs["a"] > 0:
+                b.setdefault("ali", set()).add(cnpj)
+            if cs["f"] > 0:
+                b.setdefault("far", set()).add(cnpj)
+    rank_alias = {"hfs": "hfs", "far": "rfar", "alw": "alw", "pmp": "pmp"}
+    for k, mm in rank_sums.items():
+        b = pos.setdefault(k, {})
+        for metric, cm in mm.items():
+            alias = rank_alias.get(metric)
+            if not alias:
+                continue
+            minv = 10.0 if metric == "pmp" else 0.0
+            for cnpj, cs in cm.items():
+                if cs["t"] > 0 and cs["vt"] >= minv:
+                    b.setdefault(alias, set()).add(cnpj)
+
+    # SC: os indicadores de ranking vêm do Dados_SC.xlsx (CNPJ a CNPJ)
+    sc_cli, sc_nomes = read_sc_clientes()
+    if sc:
+        for k in list(pos):
+            if k.split("|", 1)[1] in sc_ufs:
+                for alias in ("hfs", "rfar", "alw", "pmp"):
+                    pos[k].pop(alias, None)
+        for k, mm in sc_cli.items():
+            b = pos.setdefault(k, {})
+            for alias, cnpjs in mm.items():
+                b[alias] = set(cnpjs)
+
+    clientes = {}
+    for k in set(clientes_base) | set(pos):
+        base = dict(clientes_base.get(k, {}))
+        pk = pos.get(k, {})
+        for alias, cnpjs in pk.items():
+            for cnpj in cnpjs:
+                if cnpj not in base:
+                    # positivado fora da base de clientes -> entra marcado
+                    base[cnpj] = [sc_nomes.get(cnpj, ""), 0]
+        out = []
+        for cnpj, (nome, elig) in base.items():
+            posmask = 0
+            for alias, bit in CB.items():
+                if cnpj in pk.get(alias, ()):
+                    posmask |= bit
+            if not (elig | posmask):
+                continue
+            out.append([cnpj, nome, elig, posmask])
+        if out:
+            out.sort(key=lambda x: x[1])
+            clientes[k] = out
+    print(f"[build_data] clientes: {sum(len(v) for v in clientes.values())} "
+          f"linhas em {len(clientes)} combinações rv|uf", file=sys.stderr)
+
     br = timezone(timedelta(hours=-3))
 
     return {
@@ -677,7 +821,9 @@ def build(dados_path, estrutura_path):
         "metas": metas,
         "potencial": list(potencial.values()),
         "ec": ec,
+        "_clientes": {"metrics": CLIENT_METRICS, "clientes": clientes},
     }
+
 
 
 
@@ -797,7 +943,11 @@ def main():
     data = build(dados, estrutura)
     orfaos = build_orfaos(data)
     completar_estrutura(data, orfaos)
+    clientes = data.pop("_clientes", None)
     write_all("data.json", data)
+    if clientes:
+        write_all("clientes.json", clientes)
+
     write_csv("sem-estrutura.csv",
               [[i["rv"], i["uf"], "-", i.get("cdSv", ""), i.get("cdCv", ""), i["origem"],
                 f"{i.get('vl_financeiro', 0.0):.2f}".replace(".", ","),
