@@ -2195,6 +2195,237 @@
       teamState = null;
     }
 
+    // ── Clientes view (cards de Positivação / Positivação Ranking) ──
+    const CLIENT_METRIC = {
+      'card-pos-total': 'tot', 'card-pos-ali': 'ali', 'card-pos-far': 'far',
+      'card-rank-hfs': 'hfs', 'card-rank-far': 'rfar',
+      'card-rank-alw': 'alw', 'card-rank-pmp': 'pmp',
+    };
+    const CLI_ROW_H = 46;
+    let clientesPromise = null, clientesData = null;
+
+    function loadClientes(){
+      if (!clientesPromise) {
+        clientesPromise = fetch('./clientes.json')
+          .then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+          .then(j => { clientesData = j; return j; })
+          .catch(err => { clientesPromise = null; throw err; });
+      }
+      return clientesPromise;
+    }
+
+    function bindActionButtons(card, actions){
+      actions.querySelectorAll('.btn-action').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (btn.dataset.act === 'cli') openClientsView(card, actions);
+          else openTeamView(card, actions);
+        });
+      });
+    }
+
+    function buildClientRows(cardId){
+      const api = window.dashboardAPI;
+      const mkey = CLIENT_METRIC[cardId];
+      if (!api || !clientesData || !mkey) return [];
+      const bit = 1 << clientesData.metrics.indexOf(mkey);
+      if (!bit) return [];
+      const keys = new Map(); // ck -> {rvName, uf}
+      api.rvEntries.forEach(r => {
+        if (!api.passes(r)) return;
+        keys.set(api.ck(r.rv, r.uf), r);
+      });
+      const rows = [];
+      keys.forEach((ent, k) => {
+        const list = clientesData.clientes[k];
+        if (!list) return;
+        for (let i = 0; i < list.length; i++) {
+          const c = list[i];
+          const elig = !!(c[2] & bit), pos = !!(c[3] & bit);
+          if (!elig && !pos) continue;
+          rows.push({
+            cnpj: c[0], nome: c[1] || '(sem nome)',
+            vend: ent.rvName || ent.rv, uf: ent.uf,
+            pos, fora: !elig,
+          });
+        }
+      });
+      rows.sort((a, b) => (b.pos - a.pos) || a.nome.localeCompare(b.nome, 'pt-BR'));
+      return rows;
+    }
+
+    function renderClientsList(state){
+      const scroll = state.scroll, rowsBox = state.rowsBox, spacer = state.spacer;
+      const q = (state.query || '').trim().toLowerCase();
+      const rows = q
+        ? state.rows.filter(r => r.nome.toLowerCase().indexOf(q) >= 0 || r.cnpj.indexOf(q) >= 0)
+        : state.rows;
+      state.view = rows;
+      const posN = rows.reduce((a, r) => a + (r.pos ? 1 : 0), 0);
+      state.countEl.textContent = posN.toLocaleString('pt-BR') + ' / ' + rows.length.toLocaleString('pt-BR');
+      spacer.style.height = (rows.length * CLI_ROW_H) + 'px';
+      if (!rows.length) {
+        rowsBox.innerHTML = '<div class="cli-empty">' +
+          (state.rows.length ? 'Nenhum cliente encontrado.' : 'Sem clientes para os filtros atuais.') + '</div>';
+        rowsBox.style.transform = '';
+        return;
+      }
+      paintClients(state);
+    }
+
+    function paintClients(state){
+      const rows = state.view || [];
+      const scroll = state.scroll;
+      const h = scroll.clientHeight || 360;
+      const start = Math.max(0, Math.floor(scroll.scrollTop / CLI_ROW_H) - 5);
+      const end = Math.min(rows.length, start + Math.ceil(h / CLI_ROW_H) + 10);
+      let html = '';
+      for (let i = start; i < end; i++) {
+        const r = rows[i];
+        html +=
+          '<div class="cli-row">' +
+            '<div class="cli-main">' +
+              '<div class="cli-name">' + escHtml(r.nome) +
+                (r.fora ? '<span class="cli-tag">fora da base</span>' : '') + '</div>' +
+              '<div class="cli-sub">' + escHtml(r.cnpj) + ' · ' + escHtml(r.vend) + ' · ' + escHtml(r.uf) + '</div>' +
+            '</div>' +
+            '<div class="cli-flag ' + (r.pos ? 'yes' : 'no') + '">' + (r.pos ? '✓' : '✕') + '</div>' +
+          '</div>';
+      }
+      state.rowsBox.innerHTML = html;
+      state.rowsBox.style.transform = 'translateY(' + (start * CLI_ROW_H) + 'px)';
+    }
+
+    function escHtml(s){
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function exportClientsCSV(){
+      const st = teamState && teamState.cli;
+      if (!st || !st.view || !st.view.length) return;
+      const esc = (v) => { const s = String(v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const lines = [['CNPJ', 'Cliente', 'Vendedor', 'Distribuidor', 'Positivação', 'Observação'].join(';')];
+      st.view.forEach(r => lines.push([r.cnpj, r.nome, r.vend, r.uf, r.pos ? 'Sim' : 'Não', r.fora ? 'Fora da base' : ''].map(esc).join(';')));
+      const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = slugify(st.title) + '-clientes-' + new Date().toISOString().slice(0,10) + '.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportClientsPDF(){
+      const st = teamState && teamState.cli;
+      if (!st || !st.view || !st.view.length) return;
+      const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (!jsPDFCtor) { alert('Falha ao carregar gerador de PDF'); return; }
+      const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      doc.setFontSize(14); doc.setTextColor(15, 23, 42);
+      doc.text(st.title + ' — Clientes', 40, 40);
+      doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 40, 56);
+      doc.autoTable({
+        head: [['CNPJ', 'Cliente', 'Vendedor', 'UF', 'Positivação']],
+        body: st.view.map(r => [r.cnpj, r.nome + (r.fora ? ' (fora da base)' : ''), r.vend, r.uf, r.pos ? 'Sim' : 'Não']),
+        startY: 72,
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [0, 61, 165], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [241, 245, 249] },
+        columnStyles: { 4: { halign: 'center' } },
+      });
+      doc.save(slugify(st.title) + '-clientes-' + new Date().toISOString().slice(0,10) + '.pdf');
+    }
+
+    function openClientsView(card, actions){
+      if (!window.dashboardAPI || !CLIENT_METRIC[card.id]) return;
+      const startH = card.getBoundingClientRect().height;
+      const originalHTML = card.innerHTML;
+      const title = ((getMetric(card.id) || {}).title) || 'Indicador';
+      teamState = { card, originalHTML, cardId: card.id, mode: 'cli', cli: { title, rows: [], view: [], query: '' } };
+
+      card.innerHTML = '';
+      const newActions = document.createElement('div');
+      newActions.className = 'card-actions';
+      newActions.innerHTML =
+        '<div class="export-menu" id="team-export">' +
+          '<button type="button" class="btn-icon" aria-label="Extrair" title="Extrair">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+              '<polyline points="7 10 12 15 17 10"/>' +
+              '<line x1="12" y1="15" x2="12" y2="3"/>' +
+            '</svg>' +
+          '</button>' +
+          '<div class="export-menu-pop">' +
+            '<div class="em-item" data-fmt="csv">CSV</div>' +
+            '<div class="em-item" data-fmt="pdf">PDF</div>' +
+          '</div>' +
+        '</div>' +
+        '<button type="button" class="btn-close" id="team-back" aria-label="Voltar">&times;</button>';
+      card.appendChild(newActions);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'team-view-wrap';
+      wrap.innerHTML =
+        '<div class="team-view-header"><div class="team-view-title">' + escHtml(title) + ' — Clientes</div></div>' +
+        '<div class="cli-toolbar">' +
+          '<input type="text" class="cli-search" placeholder="Buscar cliente ou CNPJ...">' +
+          '<span class="cli-count">…</span>' +
+        '</div>' +
+        '<div class="cli-scroll"><div class="cli-spacer"></div><div class="cli-rows"></div></div>';
+      card.appendChild(wrap);
+      card.classList.add('team-view');
+
+      const st = teamState.cli;
+      st.scroll = wrap.querySelector('.cli-scroll');
+      st.spacer = wrap.querySelector('.cli-spacer');
+      st.rowsBox = wrap.querySelector('.cli-rows');
+      st.countEl = wrap.querySelector('.cli-count');
+      const search = wrap.querySelector('.cli-search');
+      st.rowsBox.innerHTML = '<div class="cli-empty">Carregando clientes…</div>';
+
+      st.scroll.addEventListener('scroll', () => { if (st.view && st.view.length) paintClients(st); });
+      search.addEventListener('input', () => { st.query = search.value; st.scroll.scrollTop = 0; renderClientsList(st); });
+
+      loadClientes().then(() => {
+        if (!teamState || teamState.cli !== st) return;
+        st.rows = buildClientRows(card.id);
+        renderClientsList(st);
+      }).catch(() => {
+        if (!teamState || teamState.cli !== st) return;
+        st.rowsBox.innerHTML = '<div class="cli-empty">Não foi possível carregar a base de clientes.</div>';
+      });
+
+      document.addEventListener('click', closeTeamDD);
+      newActions.querySelector('#team-back').addEventListener('click', (e) => { e.stopPropagation(); closeTeamView(); });
+      const exportMenu = newActions.querySelector('#team-export');
+      exportMenu.querySelector('.btn-icon').addEventListener('click', (e) => { e.stopPropagation(); exportMenu.classList.toggle('open'); });
+      exportMenu.querySelectorAll('.em-item').forEach(it => {
+        it.addEventListener('click', (e) => {
+          e.stopPropagation();
+          exportMenu.classList.remove('open');
+          if (it.dataset.fmt === 'csv') exportClientsCSV(); else exportClientsPDF();
+        });
+      });
+
+      // Smooth height expand
+      card.style.overflow = 'hidden';
+      card.style.transition = 'none';
+      card.style.height = 'auto';
+      const targetH = card.getBoundingClientRect().height;
+      card.style.height = startH + 'px';
+      requestAnimationFrame(() => {
+        card.style.transition = 'height 0.32s cubic-bezier(0.4,0,0.2,1), transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+        card.style.height = targetH + 'px';
+        card.style.top = '50%';
+        card.style.transform = 'translateY(-50%)';
+      });
+      setTimeout(() => {
+        if (teamState && teamState.card === card) { card.style.height = ''; card.style.overflow = ''; }
+      }, 360);
+    }
+
   })();
 
 </script>
