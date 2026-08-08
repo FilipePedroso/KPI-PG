@@ -537,6 +537,7 @@ def build(dados_path, estrutura_path):
     v_can = col(idx, "Canal")
     v_fat = col(idx, "vl_faturamento")
     v_cnpj = col(idx, "nr_cnpj_cpf")
+    v_pessoa = col(idx, "nm_pessoa")
     v_ger = col(idx, "cd_gerente")
     v_sup = col(idx, "cd_vendedor_superior")
     v_crank = col(idx, "Canal Ranking")
@@ -547,6 +548,7 @@ def build(dados_path, estrutura_path):
 
     vagg = {}
     cnpj_sums = {}
+    fato_nomes = {}   # {cnpj: nm_pessoa} - fallback de nome p/ clientes fora da base
     rank_sums = {}
     total_rows = fat_rows = 0
 
@@ -603,6 +605,10 @@ def build(dados_path, estrutura_path):
                 b["vf_ali"] += val
         cnpj = s(r[v_cnpj]) if v_cnpj is not None else ""
         if cnpj:
+            if v_pessoa is not None and cnpj not in fato_nomes:
+                nm = s(r[v_pessoa])
+                if nm:
+                    fato_nomes[cnpj] = nm
             cs = cnpj_sums.setdefault(k, {}).setdefault(
                 cnpj, {"t": 0.0, "a": 0.0, "f": 0.0, "tf": 0.0, "af": 0.0, "ff": 0.0})
             cs["t"] += val
@@ -795,9 +801,11 @@ def build(dados_path, estrutura_path):
             for cnpj in cnpjs:
                 if cnpj not in base:
                     # positivado fora da base de clientes -> entra marcado
-                    base[cnpj] = [sc_nomes.get(cnpj, ""), 0]
+                    base[cnpj] = [sc_nomes.get(cnpj) or fato_nomes.get(cnpj, ""), 0]
         out = []
         for cnpj, (nome, elig) in base.items():
+            if not nome:
+                nome = fato_nomes.get(cnpj, "")
             posmask = 0
             for alias, bit in CB.items():
                 if cnpj in pk.get(alias, ()):

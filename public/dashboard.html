@@ -2244,7 +2244,7 @@
           const elig = !!(c[2] & bit), pos = !!(c[3] & bit);
           if (!elig && !pos) continue;
           rows.push({
-            cnpj: c[0], nome: c[1] || '(sem nome)',
+            cnpj: c[0], nome: c[1] || (!(c[2] & bit) ? 'Cliente Novo' : '(sem nome)'),
             vend: ent.rvName || ent.rv, uf: ent.uf,
             pos, fora: !elig,
           });
