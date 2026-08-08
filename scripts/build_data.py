@@ -751,6 +751,66 @@ def build(dados_path, estrutura_path):
         print(f"[build_data] Dados_SC: UFs {sorted(sc_ufs)}, "
               f"{len(sc)} combinações rv|uf sobrescritas", file=sys.stderr)
 
+    # ---------- Base de clientes por indicador (visão "Clientes") ----------
+    # pos[k][metric] = set(cnpj positivados)
+    pos = {}
+    for k, cm in cnpj_sums.items():
+        b = pos.setdefault(k, {})
+        for cnpj, cs in cm.items():
+            if cs["t"] > 0:
+                b.setdefault("tot", set()).add(cnpj)
+            if cs["a"] > 0:
+                b.setdefault("ali", set()).add(cnpj)
+            if cs["f"] > 0:
+                b.setdefault("far", set()).add(cnpj)
+    rank_alias = {"hfs": "hfs", "far": "rfar", "alw": "alw", "pmp": "pmp"}
+    for k, mm in rank_sums.items():
+        b = pos.setdefault(k, {})
+        for metric, cm in mm.items():
+            alias = rank_alias.get(metric)
+            if not alias:
+                continue
+            minv = 10.0 if metric == "pmp" else 0.0
+            for cnpj, cs in cm.items():
+                if cs["t"] > 0 and cs["vt"] >= minv:
+                    b.setdefault(alias, set()).add(cnpj)
+
+    # SC: os indicadores de ranking vêm do Dados_SC.xlsx (CNPJ a CNPJ)
+    sc_cli, sc_nomes = read_sc_clientes()
+    if sc:
+        for k in list(pos):
+            if k.split("|", 1)[1] in sc_ufs:
+                for alias in ("hfs", "rfar", "alw", "pmp"):
+                    pos[k].pop(alias, None)
+        for k, mm in sc_cli.items():
+            b = pos.setdefault(k, {})
+            for alias, cnpjs in mm.items():
+                b[alias] = set(cnpjs)
+
+    clientes = {}
+    for k in set(clientes_base) | set(pos):
+        base = dict(clientes_base.get(k, {}))
+        pk = pos.get(k, {})
+        for alias, cnpjs in pk.items():
+            for cnpj in cnpjs:
+                if cnpj not in base:
+                    # positivado fora da base de clientes -> entra marcado
+                    base[cnpj] = [sc_nomes.get(cnpj, ""), 0]
+        out = []
+        for cnpj, (nome, elig) in base.items():
+            posmask = 0
+            for alias, bit in CB.items():
+                if cnpj in pk.get(alias, ()):
+                    posmask |= bit
+            if not (elig | posmask):
+                continue
+            out.append([cnpj, nome, elig, posmask])
+        if out:
+            out.sort(key=lambda x: x[1])
+            clientes[k] = out
+    print(f"[build_data] clientes: {sum(len(v) for v in clientes.values())} "
+          f"linhas em {len(clientes)} combinações rv|uf", file=sys.stderr)
+
     br = timezone(timedelta(hours=-3))
 
     return {
@@ -761,7 +821,9 @@ def build(dados_path, estrutura_path):
         "metas": metas,
         "potencial": list(potencial.values()),
         "ec": ec,
+        "_clientes": {"metrics": CLIENT_METRICS, "clientes": clientes},
     }
+
 
 
 
