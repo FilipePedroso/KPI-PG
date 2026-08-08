@@ -943,7 +943,11 @@ def main():
     data = build(dados, estrutura)
     orfaos = build_orfaos(data)
     completar_estrutura(data, orfaos)
+    clientes = data.pop("_clientes", None)
     write_all("data.json", data)
+    if clientes:
+        write_all("clientes.json", clientes)
+
     write_csv("sem-estrutura.csv",
               [[i["rv"], i["uf"], "-", i.get("cdSv", ""), i.get("cdCv", ""), i["origem"],
                 f"{i.get('vl_financeiro', 0.0):.2f}".replace(".", ","),
