@@ -1758,20 +1758,19 @@
       const actions = document.createElement('div');
       actions.className = 'card-actions';
       const hasTeam = !!((window.dashboardAPI || {}).metrics || {})[card.id];
+      const hasCli  = !!CLIENT_METRIC[card.id];
       actions.innerHTML =
         (hasTeam ?
-        '<button type="button" class="btn-action">' +
+        '<button type="button" class="btn-action" data-act="team">' +
           '<span class="list-icon"><span></span><span></span><span></span></span>' +
           'Equipe' +
         '</button>' : '') +
+        (hasCli ?
+        '<button type="button" class="btn-action" data-act="cli">Clientes</button>' : '') +
         '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
       card.appendChild(actions);
       actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
-      const teamBtn = actions.querySelector('.btn-action');
-      if (teamBtn) teamBtn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        openTeamView(card, actions);
-      });
+      bindActionButtons(card, actions);
 
       const last = card.getBoundingClientRect();
       const dx = first.left - last.left;
