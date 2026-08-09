@@ -819,6 +819,8 @@ def build(dados_path, estrutura_path):
                     # positivado fora da base de clientes -> entra marcado
                     base[cnpj] = [sc_nomes.get(cnpj) or fato_nomes.get(cnpj, ""), 0]
         out = []
+        vsrc = cnpj_sums.get(k, {})
+        rsrc = rank_sums.get(k, {}).get("pmp", {})
         for cnpj, (nome, elig) in base.items():
             if not nome:
                 nome = fato_nomes.get(cnpj, "")
@@ -828,7 +830,11 @@ def build(dados_path, estrutura_path):
                     posmask |= bit
             if not (elig | posmask):
                 continue
-            out.append([cnpj, nome, elig, posmask])
+            cs = vsrc.get(cnpj)
+            vals = [round(cs["t"], 2), round(cs["a"], 2), round(cs["f"], 2),
+                    round(cs["ec"], 2), round(cs["sp"], 2)] if cs else [0, 0, 0, 0, 0]
+            vol = rsrc.get(cnpj, {}).get("vt", 0.0)
+            out.append([cnpj, nome, elig, posmask, vals, round(vol, 1)])
         if out:
             out.sort(key=lambda x: x[1])
             clientes[k] = out
