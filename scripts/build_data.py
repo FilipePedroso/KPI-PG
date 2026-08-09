@@ -30,9 +30,12 @@ ALWAYS_EANS = {
     "7506339394535", "7506339325249",
 }
 
-# Bitmask dos indicadores usados na visão "Clientes" (cards de Positivação)
-CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp"]
+# Bitmask dos indicadores usados na visão "Clientes"
+# (cards de Positivação, Ranking e Faturamento)
+CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp", "fec", "fsp"]
 CB = {m: 1 << i for i, m in enumerate(CLIENT_METRICS)}
+# Métricas com valor financeiro por cliente (ordem do array de valores)
+CLIENT_VALUES = ["tot", "ali", "far", "fec", "fsp"]
 FARMA_CHANNELS = {"DRUG/PHARMACY", "PERFUMERIES"}
 
 
