@@ -1098,6 +1098,10 @@
     }
     .cli-flag.yes { background: #16A34A; }
     .cli-flag.no  { background: #E2E8F0; color: #94A3B8; }
+    .cli-nums { flex: 0 0 auto; text-align: right; line-height: 1.25; }
+    .cli-val { font-size: 11px; font-weight: 700; color: #0F172A; font-feature-settings: 'tnum'; white-space: nowrap; }
+    .cli-vol { font-size: 10px; font-weight: 700; color: #475569; font-feature-settings: 'tnum'; white-space: nowrap; }
+    .cli-vol.low { color: #B45309; }
     .cli-empty { text-align: center; color: #94A3B8; padding: 24px; font-size: 12px; }
 
     /* ── Resumo / Ranking P&G + Faturamento ── */
@@ -2200,6 +2204,16 @@
       'card-pos-total': 'tot', 'card-pos-ali': 'ali', 'card-pos-far': 'far',
       'card-rank-hfs': 'hfs', 'card-rank-far': 'rfar',
       'card-rank-alw': 'alw', 'card-rank-pmp': 'pmp',
+      'card-fat-total': 'tot', 'card-fat-ali': 'ali', 'card-fat-far': 'far',
+      'card-fat-ec': 'fec', 'card-fat-sp': 'fsp',
+    };
+    // valor financeiro por cliente exibido em cada indicador
+    const CLIENT_VALUE_METRIC = {
+      'card-pos-total': 'tot', 'card-pos-ali': 'ali', 'card-pos-far': 'far',
+      'card-fat-total': 'tot', 'card-fat-ali': 'ali', 'card-fat-far': 'far',
+      'card-fat-ec': 'fec', 'card-fat-sp': 'fsp',
+      'card-rank-hfs': 'tot', 'card-rank-far': 'tot',
+      'card-rank-alw': 'tot', 'card-rank-pmp': 'tot',
     };
     const CLI_ROW_H = 46;
     let clientesPromise = null, clientesData = null;
@@ -2230,6 +2244,9 @@
       if (!api || !clientesData || !mkey) return [];
       const bit = 1 << clientesData.metrics.indexOf(mkey);
       if (!bit) return [];
+      const valList = clientesData.values || [];
+      const vIdx = valList.indexOf(CLIENT_VALUE_METRIC[cardId] || '');
+      const showVol = cardId === 'card-rank-pmp';
       const keys = new Map(); // ck -> {rvName, uf}
       api.rvEntries.forEach(r => {
         if (!api.passes(r)) return;
@@ -2243,15 +2260,26 @@
           const c = list[i];
           const elig = !!(c[2] & bit), pos = !!(c[3] & bit);
           if (!elig && !pos) continue;
+          const vals = c[4] || [];
           rows.push({
             cnpj: c[0], nome: c[1] || (!(c[2] & bit) ? 'Cliente Novo' : '(sem nome)'),
             vend: ent.rvName || ent.rv, uf: ent.uf,
             pos, fora: !elig && !c[1],
+            val: vIdx >= 0 ? (vals[vIdx] || 0) : null,
+            vol: showVol ? (c[5] || 0) : null,
           });
         }
       });
-      rows.sort((a, b) => (b.pos - a.pos) || a.nome.localeCompare(b.nome, 'pt-BR'));
+      rows.sort((a, b) => (b.pos - a.pos) || ((b.val || 0) - (a.val || 0))
+        || a.nome.localeCompare(b.nome, 'pt-BR'));
       return rows;
+    }
+
+    function fmtBRL(v){
+      return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function fmtVol(v){
+      return Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' cx';
     }
 
     function renderClientsList(state){
@@ -2262,7 +2290,10 @@
         : state.rows;
       state.view = rows;
       const posN = rows.reduce((a, r) => a + (r.pos ? 1 : 0), 0);
-      state.countEl.textContent = posN.toLocaleString('pt-BR') + ' / ' + rows.length.toLocaleString('pt-BR');
+      const hasVal = rows.some(r => r.val !== null && r.val !== undefined);
+      const totVal = hasVal ? rows.reduce((a, r) => a + (r.val || 0), 0) : 0;
+      state.countEl.textContent = posN.toLocaleString('pt-BR') + ' / ' + rows.length.toLocaleString('pt-BR')
+        + (hasVal ? ' · ' + fmtBRL(totVal) : '');
       spacer.style.height = (rows.length * CLI_ROW_H) + 'px';
       if (!rows.length) {
         rowsBox.innerHTML = '<div class="cli-empty">' +
@@ -2282,6 +2313,11 @@
       let html = '';
       for (let i = start; i < end; i++) {
         const r = rows[i];
+        const nums =
+          (r.vol !== null && r.vol !== undefined
+            ? '<div class="cli-vol' + (r.vol > 0 && r.vol < 10 ? ' low' : '') + '">' + fmtVol(r.vol) + '</div>' : '') +
+          (r.val !== null && r.val !== undefined
+            ? '<div class="cli-val">' + fmtBRL(r.val) + '</div>' : '');
         html +=
           '<div class="cli-row">' +
             '<div class="cli-main">' +
@@ -2289,6 +2325,7 @@
                 (r.fora ? '<span class="cli-tag">fora da base</span>' : '') + '</div>' +
               '<div class="cli-sub">' + escHtml(r.cnpj) + ' · ' + escHtml(r.vend) + ' · ' + escHtml(r.uf) + '</div>' +
             '</div>' +
+            (nums ? '<div class="cli-nums">' + nums + '</div>' : '') +
             '<div class="cli-flag ' + (r.pos ? 'yes' : 'no') + '">' + (r.pos ? '✓' : '✕') + '</div>' +
           '</div>';
       }
@@ -2305,8 +2342,20 @@
       const st = teamState && teamState.cli;
       if (!st || !st.view || !st.view.length) return;
       const esc = (v) => { const s = String(v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const lines = [['CNPJ', 'Cliente', 'Vendedor', 'Distribuidor', 'Positivação', 'Observação'].join(';')];
-      st.view.forEach(r => lines.push([r.cnpj, r.nome, r.vend, r.uf, r.pos ? 'Sim' : 'Não', r.fora ? 'Fora da base' : ''].map(esc).join(';')));
+      const hasVol = st.view.some(r => r.vol !== null && r.vol !== undefined);
+      const hasVal = st.view.some(r => r.val !== null && r.val !== undefined);
+      const head = ['CNPJ', 'Cliente', 'Vendedor', 'Distribuidor'];
+      if (hasVal) head.push('Valor Vendido');
+      if (hasVol) head.push('Volume (cx)');
+      head.push('Positivação', 'Observação');
+      const lines = [head.join(';')];
+      st.view.forEach(r => {
+        const row = [r.cnpj, r.nome, r.vend, r.uf];
+        if (hasVal) row.push(String(Number(r.val || 0).toFixed(2)).replace('.', ','));
+        if (hasVol) row.push(String(Number(r.vol || 0)).replace('.', ','));
+        row.push(r.pos ? 'Sim' : 'Não', r.fora ? 'Fora da base' : '');
+        lines.push(row.map(esc).join(';'));
+      });
       const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2326,14 +2375,30 @@
       doc.text(st.title + ' — Clientes', 40, 40);
       doc.setFontSize(9); doc.setTextColor(100, 116, 139);
       doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 40, 56);
+      const hasVol = st.view.some(r => r.vol !== null && r.vol !== undefined);
+      const hasVal = st.view.some(r => r.val !== null && r.val !== undefined);
+      const head = ['CNPJ', 'Cliente', 'Vendedor', 'UF'];
+      if (hasVal) head.push('Valor Vendido');
+      if (hasVol) head.push('Volume (cx)');
+      head.push('Positivação');
+      const colStyles = {};
+      colStyles[head.length - 1] = { halign: 'center' };
+      if (hasVal) colStyles[4] = { halign: 'right' };
+      if (hasVol) colStyles[hasVal ? 5 : 4] = { halign: 'right' };
       doc.autoTable({
-        head: [['CNPJ', 'Cliente', 'Vendedor', 'UF', 'Positivação']],
-        body: st.view.map(r => [r.cnpj, r.nome + (r.fora ? ' (fora da base)' : ''), r.vend, r.uf, r.pos ? 'Sim' : 'Não']),
+        head: [head],
+        body: st.view.map(r => {
+          const row = [r.cnpj, r.nome + (r.fora ? ' (fora da base)' : ''), r.vend, r.uf];
+          if (hasVal) row.push(fmtBRL(r.val));
+          if (hasVol) row.push(fmtVol(r.vol));
+          row.push(r.pos ? 'Sim' : 'Não');
+          return row;
+        }),
         startY: 72,
         styles: { fontSize: 8, cellPadding: 4 },
         headStyles: { fillColor: [0, 61, 165], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [241, 245, 249] },
-        columnStyles: { 4: { halign: 'center' } },
+        columnStyles: colStyles,
       });
       doc.save(slugify(st.title) + '-clientes-' + new Date().toISOString().slice(0,10) + '.pdf');
     }
