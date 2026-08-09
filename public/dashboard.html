@@ -2335,8 +2335,20 @@
       const st = teamState && teamState.cli;
       if (!st || !st.view || !st.view.length) return;
       const esc = (v) => { const s = String(v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const lines = [['CNPJ', 'Cliente', 'Vendedor', 'Distribuidor', 'Positivação', 'Observação'].join(';')];
-      st.view.forEach(r => lines.push([r.cnpj, r.nome, r.vend, r.uf, r.pos ? 'Sim' : 'Não', r.fora ? 'Fora da base' : ''].map(esc).join(';')));
+      const hasVol = st.view.some(r => r.vol !== null && r.vol !== undefined);
+      const hasVal = st.view.some(r => r.val !== null && r.val !== undefined);
+      const head = ['CNPJ', 'Cliente', 'Vendedor', 'Distribuidor'];
+      if (hasVal) head.push('Valor Vendido');
+      if (hasVol) head.push('Volume (cx)');
+      head.push('Positivação', 'Observação');
+      const lines = [head.join(';')];
+      st.view.forEach(r => {
+        const row = [r.cnpj, r.nome, r.vend, r.uf];
+        if (hasVal) row.push(String(Number(r.val || 0).toFixed(2)).replace('.', ','));
+        if (hasVol) row.push(String(Number(r.vol || 0)).replace('.', ','));
+        row.push(r.pos ? 'Sim' : 'Não', r.fora ? 'Fora da base' : '');
+        lines.push(row.map(esc).join(';'));
+      });
       const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
