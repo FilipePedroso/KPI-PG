@@ -30,9 +30,12 @@ ALWAYS_EANS = {
     "7506339394535", "7506339325249",
 }
 
-# Bitmask dos indicadores usados na visão "Clientes" (cards de Positivação)
-CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp"]
+# Bitmask dos indicadores usados na visão "Clientes"
+# (cards de Positivação, Ranking e Faturamento)
+CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp", "fec", "fsp"]
 CB = {m: 1 << i for i, m in enumerate(CLIENT_METRICS)}
+# Métricas com valor financeiro por cliente (ordem do array de valores)
+CLIENT_VALUES = ["tot", "ali", "far", "fec", "fsp"]
 FARMA_CHANNELS = {"DRUG/PHARMACY", "PERFUMERIES"}
 
 
@@ -504,6 +507,10 @@ def build(dados_path, estrutura_path):
                 elig |= CB["alw"]
             if canal in ("HFS", "Farma Indep") and plat_ok:
                 elig |= CB["pmp"]
+            if plat == "Escolha Certa":
+                elig |= CB["fec"]
+            elif plat == "Store Platform":
+                elig |= CB["fsp"]
             cb = clientes_base.setdefault(k, {})
             cur = cb.get(cnpj)
             if cur is None:
@@ -610,9 +617,14 @@ def build(dados_path, estrutura_path):
                 if nm:
                     fato_nomes[cnpj] = nm
             cs = cnpj_sums.setdefault(k, {}).setdefault(
-                cnpj, {"t": 0.0, "a": 0.0, "f": 0.0, "tf": 0.0, "af": 0.0, "ff": 0.0})
+                cnpj, {"t": 0.0, "a": 0.0, "f": 0.0, "tf": 0.0, "af": 0.0,
+                       "ff": 0.0, "ec": 0.0, "sp": 0.0})
             cs["t"] += val
             cs["f" if is_far else "a"] += val
+            if plat == "Escolha Certa":
+                cs["ec"] += val
+            elif plat == "Store Platform":
+                cs["sp"] += val
             if is_fat:
                 cs["tf"] += val
                 cs["ff" if is_far else "af"] += val
@@ -769,6 +781,10 @@ def build(dados_path, estrutura_path):
                 b.setdefault("ali", set()).add(cnpj)
             if cs["f"] > 0:
                 b.setdefault("far", set()).add(cnpj)
+            if cs["ec"] > 0:
+                b.setdefault("fec", set()).add(cnpj)
+            if cs["sp"] > 0:
+                b.setdefault("fsp", set()).add(cnpj)
     rank_alias = {"hfs": "hfs", "far": "rfar", "alw": "alw", "pmp": "pmp"}
     for k, mm in rank_sums.items():
         b = pos.setdefault(k, {})
@@ -803,6 +819,8 @@ def build(dados_path, estrutura_path):
                     # positivado fora da base de clientes -> entra marcado
                     base[cnpj] = [sc_nomes.get(cnpj) or fato_nomes.get(cnpj, ""), 0]
         out = []
+        vsrc = cnpj_sums.get(k, {})
+        rsrc = rank_sums.get(k, {}).get("pmp", {})
         for cnpj, (nome, elig) in base.items():
             if not nome:
                 nome = fato_nomes.get(cnpj, "")
@@ -812,7 +830,11 @@ def build(dados_path, estrutura_path):
                     posmask |= bit
             if not (elig | posmask):
                 continue
-            out.append([cnpj, nome, elig, posmask])
+            cs = vsrc.get(cnpj)
+            vals = [round(cs["t"], 2), round(cs["a"], 2), round(cs["f"], 2),
+                    round(cs["ec"], 2), round(cs["sp"], 2)] if cs else [0, 0, 0, 0, 0]
+            vol = rsrc.get(cnpj, {}).get("vt", 0.0)
+            out.append([cnpj, nome, elig, posmask, vals, round(vol, 1)])
         if out:
             out.sort(key=lambda x: x[1])
             clientes[k] = out
@@ -829,7 +851,8 @@ def build(dados_path, estrutura_path):
         "metas": metas,
         "potencial": list(potencial.values()),
         "ec": ec,
-        "_clientes": {"metrics": CLIENT_METRICS, "clientes": clientes},
+        "_clientes": {"metrics": CLIENT_METRICS, "values": CLIENT_VALUES,
+                      "clientes": clientes},
     }
 
 
