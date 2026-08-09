@@ -2313,7 +2313,7 @@
         const r = rows[i];
         const nums =
           (r.vol !== null && r.vol !== undefined
-            ? '<div class="cli-vol' + (r.vol > 0 && r.vol < 10 ? ' low' : '') + '">' + fmtVol(r.vol) + '</div>' : '') +
+            ? '<div class="cli-vol' + (r.vol > 0 && r.vol < 10 ? ' low' : '') + '">' + (r.vol > 0 || !r.pos ? fmtVol(r.vol) : '—') + '</div>' : '') +
           (r.val !== null && r.val !== undefined
             ? '<div class="cli-val">' + fmtBRL(r.val) + '</div>' : '');
         html +=
