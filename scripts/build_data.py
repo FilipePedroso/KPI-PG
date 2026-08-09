@@ -851,7 +851,8 @@ def build(dados_path, estrutura_path):
         "metas": metas,
         "potencial": list(potencial.values()),
         "ec": ec,
-        "_clientes": {"metrics": CLIENT_METRICS, "clientes": clientes},
+        "_clientes": {"metrics": CLIENT_METRICS, "values": CLIENT_VALUES,
+                      "clientes": clientes},
     }
 
 
