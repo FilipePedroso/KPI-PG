@@ -781,6 +781,10 @@ def build(dados_path, estrutura_path):
                 b.setdefault("ali", set()).add(cnpj)
             if cs["f"] > 0:
                 b.setdefault("far", set()).add(cnpj)
+            if cs["ec"] > 0:
+                b.setdefault("fec", set()).add(cnpj)
+            if cs["sp"] > 0:
+                b.setdefault("fsp", set()).add(cnpj)
     rank_alias = {"hfs": "hfs", "far": "rfar", "alw": "alw", "pmp": "pmp"}
     for k, mm in rank_sums.items():
         b = pos.setdefault(k, {})
