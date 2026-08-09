@@ -507,6 +507,10 @@ def build(dados_path, estrutura_path):
                 elig |= CB["alw"]
             if canal in ("HFS", "Farma Indep") and plat_ok:
                 elig |= CB["pmp"]
+            if plat == "Escolha Certa":
+                elig |= CB["fec"]
+            elif plat == "Store Platform":
+                elig |= CB["fsp"]
             cb = clientes_base.setdefault(k, {})
             cur = cb.get(cnpj)
             if cur is None:
