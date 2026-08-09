@@ -2306,6 +2306,11 @@
       let html = '';
       for (let i = start; i < end; i++) {
         const r = rows[i];
+        const nums =
+          (r.vol !== null && r.vol !== undefined
+            ? '<div class="cli-vol' + (r.vol > 0 && r.vol < 10 ? ' low' : '') + '">' + fmtVol(r.vol) + '</div>' : '') +
+          (r.val !== null && r.val !== undefined
+            ? '<div class="cli-val">' + fmtBRL(r.val) + '</div>' : '');
         html +=
           '<div class="cli-row">' +
             '<div class="cli-main">' +
@@ -2313,6 +2318,7 @@
                 (r.fora ? '<span class="cli-tag">fora da base</span>' : '') + '</div>' +
               '<div class="cli-sub">' + escHtml(r.cnpj) + ' · ' + escHtml(r.vend) + ' · ' + escHtml(r.uf) + '</div>' +
             '</div>' +
+            (nums ? '<div class="cli-nums">' + nums + '</div>' : '') +
             '<div class="cli-flag ' + (r.pos ? 'yes' : 'no') + '">' + (r.pos ? '✓' : '✕') + '</div>' +
           '</div>';
       }
