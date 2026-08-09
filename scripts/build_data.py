@@ -613,9 +613,14 @@ def build(dados_path, estrutura_path):
                 if nm:
                     fato_nomes[cnpj] = nm
             cs = cnpj_sums.setdefault(k, {}).setdefault(
-                cnpj, {"t": 0.0, "a": 0.0, "f": 0.0, "tf": 0.0, "af": 0.0, "ff": 0.0})
+                cnpj, {"t": 0.0, "a": 0.0, "f": 0.0, "tf": 0.0, "af": 0.0,
+                       "ff": 0.0, "ec": 0.0, "sp": 0.0})
             cs["t"] += val
             cs["f" if is_far else "a"] += val
+            if plat == "Escolha Certa":
+                cs["ec"] += val
+            elif plat == "Store Platform":
+                cs["sp"] += val
             if is_fat:
                 cs["tf"] += val
                 cs["ff" if is_far else "af"] += val
