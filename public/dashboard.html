@@ -2290,7 +2290,10 @@
         : state.rows;
       state.view = rows;
       const posN = rows.reduce((a, r) => a + (r.pos ? 1 : 0), 0);
-      state.countEl.textContent = posN.toLocaleString('pt-BR') + ' / ' + rows.length.toLocaleString('pt-BR');
+      const hasVal = rows.some(r => r.val !== null && r.val !== undefined);
+      const totVal = hasVal ? rows.reduce((a, r) => a + (r.val || 0), 0) : 0;
+      state.countEl.textContent = posN.toLocaleString('pt-BR') + ' / ' + rows.length.toLocaleString('pt-BR')
+        + (hasVal ? ' · ' + fmtBRL(totVal) : '');
       spacer.style.height = (rows.length * CLI_ROW_H) + 'px';
       if (!rows.length) {
         rowsBox.innerHTML = '<div class="cli-empty">' +
