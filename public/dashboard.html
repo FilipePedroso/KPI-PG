@@ -2246,7 +2246,7 @@
           rows.push({
             cnpj: c[0], nome: c[1] || (!(c[2] & bit) ? 'Cliente Novo' : '(sem nome)'),
             vend: ent.rvName || ent.rv, uf: ent.uf,
-            pos, fora: !elig,
+            pos, fora: !elig && !c[1],
           });
         }
       });
