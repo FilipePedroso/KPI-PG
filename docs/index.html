@@ -2277,7 +2277,7 @@
       return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     function fmtVol(v){
-      return Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' cx';
+      return Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' un';
     }
 
     function renderClientsList(state){
@@ -2344,7 +2344,7 @@
       const hasVal = st.view.some(r => r.val !== null && r.val !== undefined);
       const head = ['CNPJ', 'Cliente', 'Vendedor', 'Distribuidor'];
       if (hasVal) head.push('Valor Vendido');
-      if (hasVol) head.push('Volume (cx)');
+      if (hasVol) head.push('Volume (un)');
       head.push('Positivação', 'Observação');
       const lines = [head.join(';')];
       st.view.forEach(r => {
@@ -2377,7 +2377,7 @@
       const hasVal = st.view.some(r => r.val !== null && r.val !== undefined);
       const head = ['CNPJ', 'Cliente', 'Vendedor', 'UF'];
       if (hasVal) head.push('Valor Vendido');
-      if (hasVol) head.push('Volume (cx)');
+      if (hasVol) head.push('Volume (un)');
       head.push('Positivação');
       const colStyles = {};
       colStyles[head.length - 1] = { halign: 'center' };
