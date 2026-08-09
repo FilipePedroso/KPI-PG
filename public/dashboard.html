@@ -2368,14 +2368,30 @@
       doc.text(st.title + ' — Clientes', 40, 40);
       doc.setFontSize(9); doc.setTextColor(100, 116, 139);
       doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 40, 56);
+      const hasVol = st.view.some(r => r.vol !== null && r.vol !== undefined);
+      const hasVal = st.view.some(r => r.val !== null && r.val !== undefined);
+      const head = ['CNPJ', 'Cliente', 'Vendedor', 'UF'];
+      if (hasVal) head.push('Valor Vendido');
+      if (hasVol) head.push('Volume (cx)');
+      head.push('Positivação');
+      const colStyles = {};
+      colStyles[head.length - 1] = { halign: 'center' };
+      if (hasVal) colStyles[4] = { halign: 'right' };
+      if (hasVol) colStyles[hasVal ? 5 : 4] = { halign: 'right' };
       doc.autoTable({
-        head: [['CNPJ', 'Cliente', 'Vendedor', 'UF', 'Positivação']],
-        body: st.view.map(r => [r.cnpj, r.nome + (r.fora ? ' (fora da base)' : ''), r.vend, r.uf, r.pos ? 'Sim' : 'Não']),
+        head: [head],
+        body: st.view.map(r => {
+          const row = [r.cnpj, r.nome + (r.fora ? ' (fora da base)' : ''), r.vend, r.uf];
+          if (hasVal) row.push(fmtBRL(r.val));
+          if (hasVol) row.push(fmtVol(r.vol));
+          row.push(r.pos ? 'Sim' : 'Não');
+          return row;
+        }),
         startY: 72,
         styles: { fontSize: 8, cellPadding: 4 },
         headStyles: { fillColor: [0, 61, 165], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [241, 245, 249] },
-        columnStyles: { 4: { halign: 'center' } },
+        columnStyles: colStyles,
       });
       doc.save(slugify(st.title) + '-clientes-' + new Date().toISOString().slice(0,10) + '.pdf');
     }
