@@ -2382,7 +2382,7 @@
       st.view.forEach(r => {
         const row = [r.cnpj, r.nome, r.vend, r.uf];
         if (hasVal) row.push(String(Number(r.val || 0).toFixed(2)).replace('.', ','));
-        if (hasVol) row.push(String(Number(r.vol || 0)).replace('.', ','));
+        if (hasVol) row.push(r.noVol ? '—' : String(Number(r.vol || 0)).replace('.', ','));
         row.push(r.pos ? 'Sim' : 'Não', r.fora ? 'Fora da base' : '');
         lines.push(row.map(esc).join(';'));
       });
@@ -2420,7 +2420,7 @@
         body: st.view.map(r => {
           const row = [r.cnpj, r.nome + (r.fora ? ' (fora da base)' : ''), r.vend, r.uf];
           if (hasVal) row.push(fmtBRL(r.val));
-          if (hasVol) row.push(fmtVol(r.vol));
+          if (hasVol) row.push(r.noVol ? '—' : fmtVol(r.vol));
           row.push(r.pos ? 'Sim' : 'Não');
           return row;
         }),
