@@ -2294,6 +2294,7 @@
             pos, fora: !elig && !c[1],
             val: vIdx >= 0 ? (vals[vIdx] || 0) : null,
             vol: showVol ? (c[5] || 0) : null,
+            noVol: showVol && String(ent.uf).toUpperCase() === 'SC',
           });
         }
       });
@@ -2340,9 +2341,11 @@
       let html = '';
       for (let i = start; i < end; i++) {
         const r = rows[i];
-        const nums =
-          (r.vol !== null && r.vol !== undefined
-            ? '<div class="cli-vol' + (r.vol > 0 && r.vol < 10 ? ' low' : '') + '">' + (r.vol > 0 || !r.pos ? fmtVol(r.vol) : '—') + '</div>' : '') +
+        const volHtml = r.vol !== null && r.vol !== undefined
+          ? '<div class="cli-vol' + (r.noVol ? '' : (r.vol > 0 && r.vol < 10 ? ' low' : '')) + '">'
+            + (r.noVol ? '—' : (r.vol > 0 || !r.pos ? fmtVol(r.vol) : '—')) + '</div>'
+          : '';
+        const nums = volHtml +
           (r.val !== null && r.val !== undefined
             ? '<div class="cli-val">' + fmtBRL(r.val) + '</div>' : '');
         html +=
@@ -2379,7 +2382,7 @@
       st.view.forEach(r => {
         const row = [r.cnpj, r.nome, r.vend, r.uf];
         if (hasVal) row.push(String(Number(r.val || 0).toFixed(2)).replace('.', ','));
-        if (hasVol) row.push(String(Number(r.vol || 0)).replace('.', ','));
+        if (hasVol) row.push(r.noVol ? '—' : String(Number(r.vol || 0)).replace('.', ','));
         row.push(r.pos ? 'Sim' : 'Não', r.fora ? 'Fora da base' : '');
         lines.push(row.map(esc).join(';'));
       });
@@ -2417,7 +2420,7 @@
         body: st.view.map(r => {
           const row = [r.cnpj, r.nome + (r.fora ? ' (fora da base)' : ''), r.vend, r.uf];
           if (hasVal) row.push(fmtBRL(r.val));
-          if (hasVol) row.push(fmtVol(r.vol));
+          if (hasVol) row.push(r.noVol ? '—' : fmtVol(r.vol));
           row.push(r.pos ? 'Sim' : 'Não');
           return row;
         }),
