@@ -1763,9 +1763,16 @@
       if (expandedCard) collapseCard();
 
       const first = card.getBoundingClientRect();
+      const computed = getComputedStyle(card);
       placeholder = document.createElement('div');
       placeholder.style.width  = first.width  + 'px';
       placeholder.style.height = first.height + 'px';
+      placeholder.style.marginTop = computed.marginTop;
+      placeholder.style.marginBottom = computed.marginBottom;
+      placeholder.style.marginLeft = computed.marginLeft;
+      placeholder.style.marginRight = computed.marginRight;
+      placeholder.style.boxSizing = 'border-box';
+      placeholder.style.flexShrink = '0';
       card.after(placeholder);
 
       const targetW = window.innerWidth <= 768 ? window.innerWidth - 24 : Math.min(first.width * 2, 470);
@@ -1800,11 +1807,16 @@
 
       card.style.transition = 'none';
       card.style.transformOrigin = 'top left';
+      card.style.willChange = 'transform';
+      card.style.backfaceVisibility = 'hidden';
       card.style.transform = `translateY(-50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
       requestAnimationFrame(() => {
-        card.style.transition = 'transform 0.32s cubic-bezier(0.4,0,0.2,1), box-shadow 0.32s ease';
+        card.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease, border-radius 0.45s ease';
         card.style.transform = 'translateY(-50%)';
       });
+      setTimeout(() => {
+        if (actions && actions.parentNode) actions.classList.add('show');
+      }, 120);
 
       backdrop.classList.add('show');
       expandedCard = card;
