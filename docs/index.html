@@ -832,9 +832,11 @@
       max-width: calc(100vw - 24px);
       max-height: 90vh;
       overflow-y: auto;
+      will-change: transform;
+      backface-visibility: hidden;
     }
     .card-backdrop {
-      display: none;
+      display: block;
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, 0.45);
@@ -842,9 +844,11 @@
       -webkit-backdrop-filter: blur(3px);
       z-index: 1100;
       opacity: 0;
-      transition: opacity 0.25s ease;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
     }
-    .card-backdrop.show { display: block; opacity: 1; }
+    .card-backdrop.show { visibility: visible; opacity: 1; pointer-events: auto; }
     .card-actions {
       position: absolute;
       top: 12px;
@@ -852,7 +856,11 @@
       display: flex;
       gap: 8px;
       z-index: 2;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
     }
+    .card-actions.show { opacity: 1; transform: translateY(0); }
     .card-actions .btn-action {
       display: inline-flex;
       align-items: center;
@@ -1717,7 +1725,10 @@
         teamState = null;
       }
       const actions = card.querySelector('.card-actions');
-      if (actions) actions.remove();
+      if (actions) {
+        actions.classList.remove('show');
+        actions.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      }
 
       const first = card.getBoundingClientRect();
       card.classList.remove('expanded');
@@ -1732,12 +1743,17 @@
 
       card.style.transition = 'none';
       card.style.transformOrigin = 'top left';
+      card.style.willChange = 'transform';
+      card.style.backfaceVisibility = 'hidden';
       card.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
       requestAnimationFrame(() => {
-        card.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+        card.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-radius 0.4s ease';
         card.style.transform = '';
       });
-      setTimeout(() => { card.style.cssText = ''; }, 320);
+      setTimeout(() => {
+        card.style.cssText = '';
+        if (actions && actions.parentNode) actions.remove();
+      }, 420);
 
       backdrop.classList.remove('show');
       expandedCard = null;
@@ -1747,9 +1763,16 @@
       if (expandedCard) collapseCard();
 
       const first = card.getBoundingClientRect();
+      const computed = getComputedStyle(card);
       placeholder = document.createElement('div');
       placeholder.style.width  = first.width  + 'px';
       placeholder.style.height = first.height + 'px';
+      placeholder.style.marginTop = computed.marginTop;
+      placeholder.style.marginBottom = computed.marginBottom;
+      placeholder.style.marginLeft = computed.marginLeft;
+      placeholder.style.marginRight = computed.marginRight;
+      placeholder.style.boxSizing = 'border-box';
+      placeholder.style.flexShrink = '0';
       card.after(placeholder);
 
       const targetW = window.innerWidth <= 768 ? window.innerWidth - 24 : Math.min(first.width * 2, 470);
@@ -1784,11 +1807,16 @@
 
       card.style.transition = 'none';
       card.style.transformOrigin = 'top left';
+      card.style.willChange = 'transform';
+      card.style.backfaceVisibility = 'hidden';
       card.style.transform = `translateY(-50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
       requestAnimationFrame(() => {
-        card.style.transition = 'transform 0.32s cubic-bezier(0.4,0,0.2,1), box-shadow 0.32s ease';
+        card.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease, border-radius 0.45s ease';
         card.style.transform = 'translateY(-50%)';
       });
+      setTimeout(() => {
+        if (actions && actions.parentNode) actions.classList.add('show');
+      }, 120);
 
       backdrop.classList.add('show');
       expandedCard = card;
@@ -2067,6 +2095,7 @@
         '</div>' +
         '<button type="button" class="btn-close" id="team-back" aria-label="Voltar">&times;</button>';
       card.appendChild(newActions);
+      setTimeout(() => newActions.classList.add('show'), 50);
 
       const wrap = document.createElement('div');
       wrap.className = 'team-view-wrap';
@@ -2176,6 +2205,7 @@
       // rebind actions on restored content
       const actions = card.querySelector('.card-actions');
       if (actions) {
+        actions.classList.add('show');
         actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
         bindActionButtons(card, actions);
       }
@@ -2426,6 +2456,7 @@
         '</div>' +
         '<button type="button" class="btn-close" id="team-back" aria-label="Voltar">&times;</button>';
       card.appendChild(newActions);
+      setTimeout(() => newActions.classList.add('show'), 50);
 
       const wrap = document.createElement('div');
       wrap.className = 'team-view-wrap';
