@@ -2250,7 +2250,7 @@
     // ── Média diária view ──
     // dias do mês do último deploy (definido em window.MEDIA_DIAS ao carregar data.json)
     function mediaDias(){ return Number(window.MEDIA_DIAS) || 30; }
-    function fmtMediaReal(v){ const n = Number(v); return Math.abs(n % 1) < 0.000001 ? Math.round(n).toLocaleString('pt-BR') : n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function fmtMediaReal(v){ const n = Number(v); if (n < 1) return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); return Math.round(n).toLocaleString('pt-BR'); }
     function fmtMediaMeta(v){ return Math.ceil(v).toLocaleString('pt-BR'); }
 
     function metricTotals(cardId){
