@@ -2294,6 +2294,7 @@
             pos, fora: !elig && !c[1],
             val: vIdx >= 0 ? (vals[vIdx] || 0) : null,
             vol: showVol ? (c[5] || 0) : null,
+            noVol: showVol && String(ent.uf).toUpperCase() === 'SC',
           });
         }
       });
