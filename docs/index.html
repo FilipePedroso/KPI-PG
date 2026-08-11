@@ -1725,7 +1725,10 @@
         teamState = null;
       }
       const actions = card.querySelector('.card-actions');
-      if (actions) actions.remove();
+      if (actions) {
+        actions.classList.remove('show');
+        actions.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      }
 
       const first = card.getBoundingClientRect();
       card.classList.remove('expanded');
@@ -1740,12 +1743,17 @@
 
       card.style.transition = 'none';
       card.style.transformOrigin = 'top left';
+      card.style.willChange = 'transform';
+      card.style.backfaceVisibility = 'hidden';
       card.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
       requestAnimationFrame(() => {
-        card.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+        card.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-radius 0.4s ease';
         card.style.transform = '';
       });
-      setTimeout(() => { card.style.cssText = ''; }, 320);
+      setTimeout(() => {
+        card.style.cssText = '';
+        if (actions && actions.parentNode) actions.remove();
+      }, 420);
 
       backdrop.classList.remove('show');
       expandedCard = null;
