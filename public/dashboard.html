@@ -1807,7 +1807,7 @@
         '</button>' : '') +
         (hasCli ?
         '<button type="button" class="btn-action" data-act="cli">Clientes</button>' : '') +
-        (card.id === 'card-pos-total' ?
+        (MEDIA_CARDS.has(card.id) ?
         '<button type="button" class="btn-action" data-act="media">Média</button>' : '') +
         '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
       card.appendChild(actions);
@@ -2369,6 +2369,7 @@
 
     // ── Clientes view (cards de Positivação / Positivação Ranking) ──
     const CLIENT_METRIC = {
+      'card-ec-pos': 'ecp',
       'card-pos-total': 'tot', 'card-pos-ali': 'ali', 'card-pos-far': 'far',
       'card-rank-hfs': 'hfs', 'card-rank-far': 'rfar',
       'card-rank-alw': 'alw', 'card-rank-pmp': 'pmp',
