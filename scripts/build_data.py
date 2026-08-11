@@ -32,7 +32,8 @@ ALWAYS_EANS = {
 
 # Bitmask dos indicadores usados na visão "Clientes"
 # (cards de Positivação, Ranking e Faturamento)
-CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp", "fec", "fsp"]
+CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp", "fec", "fsp",
+                  "ecp"]
 CB = {m: 1 << i for i, m in enumerate(CLIENT_METRICS)}
 # Métricas com valor financeiro por cliente (ordem do array de valores)
 CLIENT_VALUES = ["tot", "ali", "far", "fec", "fsp"]
@@ -508,7 +509,7 @@ def build(dados_path, estrutura_path):
             if canal in ("HFS", "Farma Indep") and plat_ok:
                 elig |= CB["pmp"]
             if plat == "Escolha Certa":
-                elig |= CB["fec"]
+                elig |= CB["fec"] | CB["ecp"]
             elif plat == "Store Platform":
                 elig |= CB["fsp"]
             cb = clientes_base.setdefault(k, {})
@@ -785,7 +786,8 @@ def build(dados_path, estrutura_path):
                 b.setdefault("fec", set()).add(cnpj)
             if cs["sp"] > 0:
                 b.setdefault("fsp", set()).add(cnpj)
-    rank_alias = {"hfs": "hfs", "far": "rfar", "alw": "alw", "pmp": "pmp"}
+    rank_alias = {"hfs": "hfs", "far": "rfar", "alw": "alw", "pmp": "pmp",
+                  "ecp": "ecp"}
     for k, mm in rank_sums.items():
         b = pos.setdefault(k, {})
         for metric, cm in mm.items():
