@@ -1904,10 +1904,11 @@
       const metaMap = sumBy(metric.meta);
 
       const rows = [];
+      const divi = (teamState && teamState.mediaMode) ? MEDIA_DIAS : 1;
       groupMap.forEach((_, name) => {
-        const real = realMap.get(name) || 0;
-        const fat  = fatMap.get(name) || 0;
-        const meta = metaMap.get(name) || 0;
+        const real = (realMap.get(name) || 0) / divi;
+        const fat  = (fatMap.get(name) || 0) / divi;
+        const meta = (metaMap.get(name) || 0) / divi;
         const gap = Math.max(0, meta - real);
         const pct = meta > 0 ? real / meta : 0;
         const pctFat = meta > 0 ? fat / meta : 0;
@@ -2070,11 +2071,11 @@
       }, 360);
     }
 
-    function openTeamView(card, actions){
+    function openTeamView(card, actions, opts){
       if (!window.dashboardAPI || !getMetric(card.id)) return;
-
+      opts = opts || {};
       const startH = card.getBoundingClientRect().height;
-      const originalHTML = card.innerHTML;
+      const originalHTML = opts.originalHTML != null ? opts.originalHTML : card.innerHTML;
       // capture bar color from existing progress-fill so bars match the card theme
       let barColor = '#003DA5';
       const pf = card.querySelector('.progress-fill');
@@ -2082,7 +2083,7 @@
         const c = getComputedStyle(pf).backgroundColor;
         if (c && c !== 'rgba(0, 0, 0, 0)') barColor = c;
       }
-      teamState = { card, originalHTML, field: 'cv', cardId: card.id };
+      teamState = { card, originalHTML, field: 'cv', cardId: card.id, mediaMode: !!opts.mediaMode };
 
       // Build team view
       card.innerHTML = '';
@@ -2116,7 +2117,7 @@
       wrap.className = 'team-view-wrap';
       wrap.innerHTML =
         '<div class="team-view-header">' +
-          '<div class="team-view-title">' + ((getMetric(card.id) || {}).title || 'Indicador') + ' por Equipe</div>' +
+          '<div class="team-view-title">' + ((getMetric(card.id) || {}).title || 'Indicador') + (opts.mediaMode ? ' — Média diária por Equipe' : ' por Equipe') + '</div>' +
           '<span class="team-view-legend">' +
             '<span class="lg-item"><i class="lg-dot lg-fat" style="background:' + barColor + ';"></i>Faturado</span>' +
             '<span class="lg-item"><i class="lg-dot lg-nfat"></i>Não Fat.</span>' +
@@ -2282,7 +2283,9 @@
       card.innerHTML = '';
       const newActions = document.createElement('div');
       newActions.className = 'card-actions';
-      newActions.innerHTML = '<button type="button" class="btn-close" id="media-back" aria-label="Voltar">&times;</button>';
+      newActions.innerHTML =
+        '<button type="button" class="btn-action" id="media-team">Equipe</button>' +
+        '<button type="button" class="btn-close" id="media-back" aria-label="Voltar">&times;</button>';
       card.appendChild(newActions);
       setTimeout(() => newActions.classList.add('show'), 50);
 
@@ -2308,6 +2311,13 @@
       newActions.querySelector('#media-back').addEventListener('click', (e) => {
         e.stopPropagation();
         closeMediaView();
+      });
+      newActions.querySelector('#media-team').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const baseHTML = teamState ? teamState.originalHTML : originalHTML;
+        card.classList.remove('media-view');
+        teamState = null;
+        openTeamView(card, newActions, { mediaMode: true, originalHTML: baseHTML });
       });
 
       // animação de altura
