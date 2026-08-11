@@ -1721,6 +1721,11 @@
   (function(){
     const backdrop = document.createElement('div');
     backdrop.className = 'card-backdrop';
+    const MEDIA_CARDS = new Set([
+      'card-pos-total', 'card-pos-ali', 'card-pos-far',
+      'card-rank-hfs', 'card-rank-far', 'card-rank-alw', 'card-rank-pmp',
+      'card-ec-pos',
+    ]);
     document.body.appendChild(backdrop);
 
     let expandedCard = null;
