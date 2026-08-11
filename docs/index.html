@@ -1401,7 +1401,7 @@
     <div class="cards-row cards-row-4" id="section-positivacao-ranking">
 
       <div class="kpi-card fat-total" id="card-rank-hfs">
-        <div class="info-icon" data-tooltip-id="tip-hfs">i</div>
+        
         <div class="card-title">Positivação HFS</div>
         <div class="kpi-value" data-bind="valor">—</div>
         <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
@@ -1419,7 +1419,7 @@
       </div>
 
       <div class="kpi-card fat-farma" id="card-rank-far">
-        <div class="info-icon" data-tooltip-id="tip-farma">i</div>
+        
         <div class="card-title">Positivação Farma</div>
         <div class="kpi-value" data-bind="valor">—</div>
         <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
@@ -1437,7 +1437,7 @@
       </div>
 
       <div class="kpi-card fat-ponderada" id="card-rank-alw">
-        <div class="info-icon" data-tooltip-id="tip-always">i</div>
+        
         <div class="card-title">Positivação Always Noturno</div>
         <div class="kpi-value" data-bind="valor">—</div>
         <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
@@ -1455,7 +1455,7 @@
       </div>
 
       <div class="kpi-card fat-numerica" id="card-rank-pmp">
-        <div class="info-icon">i</div>
+        
         <div class="card-title">Positivação Pampers</div>
         <div class="kpi-value" data-bind="valor">—</div>
         <div class="kpi-meta">Meta: <span data-bind="meta">— PDVs</span></div>
@@ -1583,35 +1583,6 @@
 <!-- TOOLTIP TEMPLATES -->
 <div id="floating-tooltip"></div>
 
-<template id="tip-hfs">
-  <div class="tip-title">Clusters Válidos</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR 3G</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR GG</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR G</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR M</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR P</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR PP</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR 3P</div>
-  <div class="tip-title">Plataformas Válidas</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> Escolha Certa</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> Store Platform</div>
-  <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
-</template>
-
-<template id="tip-farma">
-  <div class="tip-title">Clusters Válidos</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE 3G</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE GG</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE G</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE M</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE P</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE PP</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> FARMA INDEP / REDE 3P</div>
-  <div class="tip-title">Plataformas Válidas</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> Escolha Certa</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> Store Platform</div>
-  <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
-</template>
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
@@ -3307,21 +3278,6 @@
 })();
 </script>
 
-<template id="tip-always">
-  <div class="tip-title">Clusters Válidos</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP 3G</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP GG</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP G</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP M</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP P</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP PP</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> ALIMENTAR INDEP / FARMA INDEP 3P</div>
-  <div class="tip-row"><span class="tip-no">✕</span> Farma Rede</div>
-  <div class="tip-title">Plataformas Válidas</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> Escolha Certa</div>
-  <div class="tip-row"><span class="tip-ok">✓</span> Store Platform</div>
-  <div class="tip-row"><span class="tip-no">✕</span> Sem Plataforma</div>
-</template>
 
 </body>
 </html>
