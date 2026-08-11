@@ -2341,9 +2341,11 @@
       let html = '';
       for (let i = start; i < end; i++) {
         const r = rows[i];
-        const nums =
-          (r.vol !== null && r.vol !== undefined
-            ? '<div class="cli-vol' + (r.vol > 0 && r.vol < 10 ? ' low' : '') + '">' + (r.vol > 0 || !r.pos ? fmtVol(r.vol) : '—') + '</div>' : '') +
+        const volHtml = r.vol !== null && r.vol !== undefined
+          ? '<div class="cli-vol' + (r.noVol ? '' : (r.vol > 0 && r.vol < 10 ? ' low' : '')) + '">'
+            + (r.noVol ? '—' : (r.vol > 0 || !r.pos ? fmtVol(r.vol) : '—')) + '</div>'
+          : '';
+        const nums = volHtml +
           (r.val !== null && r.val !== undefined
             ? '<div class="cli-val">' + fmtBRL(r.val) + '</div>' : '');
         html +=
