@@ -1904,7 +1904,7 @@
       const metaMap = sumBy(metric.meta);
 
       const rows = [];
-      const divi = (teamState && teamState.mediaMode) ? MEDIA_DIAS : 1;
+      const divi = (teamState && teamState.mediaMode) ? mediaDias() : 1;
       groupMap.forEach((_, name) => {
         const real = (realMap.get(name) || 0) / divi;
         const fat  = (fatMap.get(name) || 0) / divi;
@@ -2246,7 +2246,8 @@
     }
 
     // ── Média diária view ──
-    let MEDIA_DIAS = 30; // dias do mês do último deploy (definido ao carregar data.json)
+    // dias do mês do último deploy (definido em window.MEDIA_DIAS ao carregar data.json)
+    function mediaDias(){ return Number(window.MEDIA_DIAS) || 30; }
 
     function metricTotals(cardId){
       const api = window.dashboardAPI;
@@ -2273,8 +2274,8 @@
       const originalHTML = card.innerHTML;
       teamState = { card, originalHTML, cardId: card.id, media: true };
 
-      const mediaReal = totals.real / MEDIA_DIAS;
-      const mediaMeta = totals.meta / MEDIA_DIAS;
+      const mediaReal = totals.real / mediaDias();
+      const mediaMeta = totals.meta / mediaDias();
       const gap = mediaMeta - mediaReal;
       const pct = mediaMeta > 0 ? mediaReal / mediaMeta : 0;
       const fmtI = (v)=> Math.round(v).toLocaleString('pt-BR');
@@ -2299,7 +2300,7 @@
         '<div class="mv-bar-head"><span class="mv-bar-label">Atingimento</span>' +
           '<span class="mv-pct">' + (pct * 100).toFixed(1).replace('.', ',') + '%</span></div>' +
         '<div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>' +
-        '<div class="mv-foot">Período: ' + MEDIA_DIAS + ' dias</div>';
+        '<div class="mv-foot">Período: ' + mediaDias() + ' dias</div>';
       card.appendChild(wrap);
       card.classList.add('media-view');
 
@@ -2673,7 +2674,7 @@
   if (data.generated_at) {
     try {
       const d = new Date(data.generated_at);
-      MEDIA_DIAS = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      window.MEDIA_DIAS = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
       const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       const txt = `Atualizado em ${String(d.getDate()).padStart(2,'0')} ${meses[d.getMonth()]} ${d.getFullYear()} às ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       const el = document.getElementById('last-update');
