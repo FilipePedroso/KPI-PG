@@ -3195,7 +3195,7 @@
     groupMap.forEach((_, name) => {
       const real = realMap.get(name) || 0;
       const meta = metaMap.get(name) || 0;
-      if (!real && !meta) return;
+      if (field !== 'cv' && !real && !meta) return;
       rows.push({ name, real, meta, gap: Math.max(0, meta - real), pct: meta > 0 ? real / meta : 0 });
     });
     return rows.sort((a,b) => b.pct - a.pct);
