@@ -3159,10 +3159,15 @@
 
   function resumoTeamRows(def, field){
     const groupMap = new Map();
+    const hasRealName = (n) => {
+      const s = String(n || '').replace(/^\s*\d+\s*/, '').replace(/[\-\u2013\u2014_\s.]/g, '');
+      return s.length > 0;
+    };
     rvEntries.forEach(r => {
       if (!passes(r)) return;
       const name = field === 'rv' ? r.rvName : r[field];
       if (!name || !String(name).trim()) return;
+      if (field === 'cv' && !hasRealName(name)) return;
       if (!groupMap.has(name)) groupMap.set(name, new Set());
       groupMap.get(name).add(ck(r.rv, r.uf));
     });
