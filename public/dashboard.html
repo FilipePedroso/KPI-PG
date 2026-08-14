@@ -3292,14 +3292,17 @@
     const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
     const DUR = 900;
     if (!wrap || !scoreEl) return;
+    resumoRerender.rk = () => renderResumo(sums, metaSums, ecSums);
+    const level = resumoLevel.rk;
     const defs = [
-      { name: 'Positivação HFS',             real: sums.r_hfs, meta: metaSums.r_hfs, color: '#003DA5' },
-      { name: 'Positivação Farma',           real: sums.r_far, meta: metaSums.r_far, color: '#D97706' },
-      { name: 'Positivação Always Noturno',  real: sums.r_alw, meta: metaSums.r_alw, color: '#7C3AED' },
-      { name: 'Positivação Pampers',         real: sums.r_pmp, meta: metaSums.r_pmp, color: '#0EA5E9' },
-      { name: 'Positivação Chaves ≥ 2',      real: ecSums.ch2, meta: metaSums.e_ch2, color: '#059669' },
-      { name: 'Platinum Points',             real: ecSums.pp,  meta: metaSums.e_pp,  color: '#7C3AED' },
+      { name: 'Positivação HFS',             real: sums.r_hfs, meta: metaSums.r_hfs, color: '#003DA5', realSpec:{src:'vendas',field:'r_hfs'}, metaSpec:{src:'metas',field:'r_hfs'} },
+      { name: 'Positivação Farma',           real: sums.r_far, meta: metaSums.r_far, color: '#D97706', realSpec:{src:'vendas',field:'r_far'}, metaSpec:{src:'metas',field:'r_far'} },
+      { name: 'Positivação Always Noturno',  real: sums.r_alw, meta: metaSums.r_alw, color: '#7C3AED', realSpec:{src:'vendas',field:'r_alw'}, metaSpec:{src:'metas',field:'r_alw'} },
+      { name: 'Positivação Pampers',         real: sums.r_pmp, meta: metaSums.r_pmp, color: '#0EA5E9', realSpec:{src:'vendas',field:'r_pmp'}, metaSpec:{src:'metas',field:'r_pmp'} },
+      { name: 'Positivação Chaves ≥ 2',      real: ecSums.ch2, meta: metaSums.e_ch2, color: '#059669', realSpec:{src:'ecOniz',field:'ch2'},  metaSpec:{src:'metas',field:'e_ch2'} },
+      { name: 'Platinum Points',             real: ecSums.pp,  meta: metaSums.e_pp,  color: '#7C3AED', realSpec:{src:'ecOniz',field:'pp'},   metaSpec:{src:'metas',field:'e_pp'} },
     ];
+
     const rows = defs
       .filter(d => Math.round(d.meta || 0) > 0)
       .map(d => Object.assign({}, d, {
