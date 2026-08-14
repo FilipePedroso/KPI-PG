@@ -1227,6 +1227,14 @@
     .resumo-card.snapshotting .rk-sub-list { max-height: none !important; overflow: visible !important; }
     .resumo-card.snapshotting .rk-snap,
     .resumo-card.snapshotting .rk-filter-pop { display: none !important; }
+    .resumo-card.snapshotting .rk-sub-item,
+    .resumo-card.snapshotting .rk-item,
+    .resumo-card.snapshotting .rk-sub,
+    .resumo-card.snapshotting .rk-sub-in,
+    .resumo-card.snapshotting * {
+      animation: none !important; transition: none !important;
+      opacity: 1 !important; transform: none !important; filter: none !important;
+    }
 
     .rk-caret {
       display: inline-flex; align-items: center; justify-content: center;
@@ -3212,7 +3220,6 @@
     groupMap.forEach((_, name) => {
       const real = realMap.get(name) || 0;
       const meta = metaMap.get(name) || 0;
-      if (field !== 'cv' && !real && !meta) return;
       rows.push({ name, real, meta, gap: Math.max(0, meta - real), pct: meta > 0 ? real / meta : 0 });
     });
     return rows.sort((a,b) => b.pct - a.pct);
