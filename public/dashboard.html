@@ -3190,15 +3190,9 @@
     };
     rvEntries.forEach(r => {
       if (!passes(r)) return;
-      let name = field === 'rv' ? r.rvName : r[field];
-      if (field === 'cv') {
-        // Gerente: mantém apenas quem está de fato na estrutura (com nome)
-        if (!name || !String(name).trim() || !hasRealName(name)) return;
-      } else if (!name || !String(name).trim()) {
-        // Vendedor/Supervisor sem nome na estrutura: mantém no detalhe
-        // para que a soma das linhas bata com o total do card.
-        name = field === 'rv' ? (r.rv + ' - Sem nome') : ('Sem supervisor');
-      }
+      const name = field === 'rv' ? r.rvName : r[field];
+      if (!name || !String(name).trim()) return;
+      if (field === 'cv' && !hasRealName(name)) return;
       if (!groupMap.has(name)) groupMap.set(name, new Set());
       groupMap.get(name).add(ck(r.rv, r.uf));
     });
@@ -3208,24 +3202,14 @@
       keyNames.get(k).push(name);
     }));
     const srcs = { vendas, metas, potencial, ecOniz };
-    const noFilters = !['uf','cv','sv','rv'].some(k => filters[k].size);
-    const OUT_NAME = 'Fora da estrutura';
-    let hasOut = false;
     function sumBy(spec){
       const out = new Map();
       if (!spec) return out;
       (srcs[spec.src] || []).forEach(x => {
         const names = keyNames.get(ck(x.rv, x.uf));
+        if (!names) return;
         const v = x[spec.field] || 0;
         if (!v) return;
-        if (!names) {
-          // Chaves de venda/meta sem correspondência na estrutura: só entram
-          // no total quando não há filtro ativo — então também aparecem aqui.
-          if (!noFilters || field === 'cv') return;
-          hasOut = true;
-          out.set(OUT_NAME, (out.get(OUT_NAME) || 0) + v);
-          return;
-        }
         names.forEach(n => out.set(n, (out.get(n) || 0) + v));
       });
       return out;
@@ -3238,11 +3222,6 @@
       const meta = metaMap.get(name) || 0;
       rows.push({ name, real, meta, gap: Math.max(0, meta - real), pct: meta > 0 ? real / meta : 0 });
     });
-    if (hasOut) {
-      const real = realMap.get(OUT_NAME) || 0;
-      const meta = metaMap.get(OUT_NAME) || 0;
-      rows.push({ name: OUT_NAME, real, meta, gap: Math.max(0, meta - real), pct: meta > 0 ? real / meta : 0 });
-    }
     return rows.sort((a,b) => b.pct - a.pct);
   }
 
