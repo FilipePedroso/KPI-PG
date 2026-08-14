@@ -1213,6 +1213,21 @@
     .rkf-item:hover { background: #F1F5F9; }
     .rkf-item.selected { background: #EEF2FF; color: #003DA5; }
 
+    /* ── Resumo: botão de captura (print para clipboard) ── */
+    .rk-snap {
+      position: absolute; top: 10px; left: 10px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 8px; border: 1px solid #E2E8F0; border-radius: 8px;
+      background: #F8FAFC; cursor: pointer; user-select: none;
+      font-size: 10.5px; font-weight: 700; color: #475569; z-index: 5;
+    }
+    .rk-snap:hover { background: #F1F5F9; }
+    .rk-snap i { font-size: 13px; line-height: 1; }
+    .rk-snap.done { background: #ECFDF5; border-color: #A7F3D0; color: #059669; }
+    .resumo-card.snapshotting .rk-sub-list { max-height: none !important; overflow: visible !important; }
+    .resumo-card.snapshotting .rk-snap,
+    .resumo-card.snapshotting .rk-filter-pop { display: none !important; }
+
     .rk-caret {
       display: inline-flex; align-items: center; justify-content: center;
       width: 16px; height: 16px; margin-right: 5px; cursor: pointer;
@@ -1621,6 +1636,7 @@
     <div class="cards-row resumo-row" id="section-resumo">
       <div class="resumo-card" id="card-resumo-ranking">
         <div class="resumo-head">
+          <div class="rk-snap" title="Copiar print do card"><i class="ti ti-camera"></i><span>Print</span></div>
           <div class="rk-filter" data-scope="rk"><span class="rkf-label">Total</span><span class="rkf-arrow">▾</span>
             <div class="rk-filter-pop">
               <div class="rkf-item selected" data-level="total">Total</div>
@@ -1647,6 +1663,7 @@
       </div>
       <div class="resumo-card" id="card-resumo-faturamento">
         <div class="resumo-head">
+          <div class="rk-snap" title="Copiar print do card"><i class="ti ti-camera"></i><span>Print</span></div>
           <div class="rk-filter" data-scope="fat"><span class="rkf-label">Total</span><span class="rkf-arrow">▾</span>
             <div class="rk-filter-pop">
               <div class="rkf-item selected" data-level="total">Total</div>
@@ -3525,5 +3542,47 @@
 </script>
 
 
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+  // Print do card de Resumo -> clipboard
+  (function(){
+    document.querySelectorAll('.resumo-card .rk-snap').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.resumo-card');
+        if (!card || !window.html2canvas) return;
+        const label = btn.querySelector('span');
+        const prev = label.textContent;
+        label.textContent = 'Gerando...';
+        card.classList.add('snapshotting');
+        try {
+          const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: document.documentElement.scrollWidth });
+          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+          let ok = false;
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            ok = true;
+          } catch(err) { ok = false; }
+          if (!ok) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'resumo.png';
+            a.click();
+            setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+          }
+          btn.classList.add('done');
+          label.textContent = ok ? 'Copiado!' : 'Baixado!';
+        } catch(err) {
+          label.textContent = 'Erro';
+        } finally {
+          card.classList.remove('snapshotting');
+          setTimeout(()=>{ btn.classList.remove('done'); label.textContent = prev; }, 1800);
+        }
+      });
+    });
+  })();
+</script>
 </body>
+
 </html>
