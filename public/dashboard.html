@@ -1223,11 +1223,19 @@
     .rk-item-name-wrap { display: flex; align-items: center; min-width: 0; }
 
     .rk-sub {
-      display: none; margin-top: 8px; padding: 8px 9px;
-      background: #F8FAFC; border: 1px solid #EDF1F7; border-radius: 8px;
+      display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: 0;
+      transition: grid-template-rows .34s cubic-bezier(.4,0,.2,1), opacity .26s ease, margin-top .34s cubic-bezier(.4,0,.2,1);
     }
-    .rk-item.open .rk-sub { display: block; }
+    .rk-item.open .rk-sub { grid-template-rows: 1fr; opacity: 1; margin-top: 8px; }
+    .rk-sub-in { overflow: hidden; min-height: 0; }
+    .rk-sub-box {
+      padding: 8px 9px; background: #F8FAFC;
+      border: 1px solid #EDF1F7; border-radius: 8px;
+    }
     .rk-sub-list { display: flex; flex-direction: column; gap: 9px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+    .rk-sub-item { opacity: 0; transform: translateY(4px); animation: rkSubIn .28s ease forwards; }
+    @keyframes rkSubIn { to { opacity: 1; transform: none; } }
+
     .rk-sub-list::-webkit-scrollbar { width: 6px; }
     .rk-sub-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
     .rk-sub-item .rk-sub-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
