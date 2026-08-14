@@ -1192,6 +1192,62 @@
     .rk-total .rk-track { height: 9px; }
     .rk-empty { text-align: center; color: #94A3B8; padding: 14px; font-size: 11px; }
 
+    /* ── Resumo: filtro de nível + expansão por equipe ── */
+    .resumo-head { position: relative; }
+    .rk-filter {
+      position: absolute; top: 10px; right: 10px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 8px; border: 1px solid #E2E8F0; border-radius: 8px;
+      background: #F8FAFC; cursor: pointer; user-select: none;
+      font-size: 10.5px; font-weight: 700; color: #475569; z-index: 5;
+    }
+    .rk-filter:hover { background: #F1F5F9; }
+    .rk-filter .rkf-arrow { font-size: 9px; color: #94A3B8; }
+    .rk-filter-pop {
+      position: absolute; top: calc(100% + 5px); right: 0; min-width: 128px;
+      background: #fff; border: 1px solid #E2E8F0; border-radius: 8px;
+      box-shadow: 0 8px 22px rgba(15,23,51,0.12); padding: 4px; display: none; text-align: left;
+    }
+    .rk-filter.open .rk-filter-pop { display: block; }
+    .rkf-item { padding: 6px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 600; color: #334155; }
+    .rkf-item:hover { background: #F1F5F9; }
+    .rkf-item.selected { background: #EEF2FF; color: #003DA5; }
+
+    .rk-caret {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; margin-right: 5px; cursor: pointer;
+      color: #94A3B8; transition: transform 0.2s ease; flex: 0 0 auto;
+    }
+    .rk-caret svg { width: 9px; height: 9px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .rk-item.open .rk-caret { transform: rotate(180deg); color: #003DA5; }
+    .rk-item-name-wrap { display: flex; align-items: center; min-width: 0; }
+
+    .rk-sub {
+      display: none; margin-top: 8px; padding: 8px 9px;
+      background: #F8FAFC; border: 1px solid #EDF1F7; border-radius: 8px;
+    }
+    .rk-item.open .rk-sub { display: block; }
+    .rk-sub-list { display: flex; flex-direction: column; gap: 9px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+    .rk-sub-list::-webkit-scrollbar { width: 6px; }
+    .rk-sub-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
+    .rk-sub-item .rk-sub-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .rk-sub-name { font-size: 10.5px; font-weight: 700; color: #33415A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rk-sub-pct { font-size: 10.5px; font-weight: 700; color: #1a1a2e; font-feature-settings: 'tnum'; }
+    .rk-sub-meta { display: flex; flex-wrap: wrap; gap: 1px 9px; font-size: 9.5px; color: #7B879B; margin: 1px 0 4px; }
+    .rk-sub-meta b { font-weight: 700; color: #33415A; font-feature-settings: 'tnum'; }
+    .rk-sub-meta .gap-val { color: #DC2626; }
+    .rk-sub-track { position: relative; height: 5px; border-radius: 999px; background: #E4E9F1; overflow: hidden; }
+    .rk-sub-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; }
+    .rk-sub-pager { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+    .rk-pg-btn {
+      border: 1px solid #E2E8F0; background: #fff; border-radius: 6px;
+      width: 22px; height: 20px; font-size: 11px; color: #475569; cursor: pointer; line-height: 1;
+    }
+    .rk-pg-btn:disabled { opacity: 0.4; cursor: default; }
+    .rk-pg-info { font-size: 10px; font-weight: 700; color: #7B879B; font-feature-settings: 'tnum'; }
+    .rk-sub-empty { text-align: center; font-size: 10.5px; color: #94A3B8; padding: 8px; }
+
+
     @media (max-width: 900px) {
       .resumo-row { flex-direction: column; }
       .resumo-card { width: 100%; flex: 1 1 auto; }
@@ -1557,7 +1613,16 @@
     <div class="cards-row resumo-row" id="section-resumo">
       <div class="resumo-card" id="card-resumo-ranking">
         <div class="resumo-head">
+          <div class="rk-filter" data-scope="rk"><span class="rkf-label">Total</span><span class="rkf-arrow">▾</span>
+            <div class="rk-filter-pop">
+              <div class="rkf-item selected" data-level="total">Total</div>
+              <div class="rkf-item" data-level="cv">Gerente</div>
+              <div class="rkf-item" data-level="sv">Supervisor</div>
+              <div class="rkf-item" data-level="rv">Vendedor</div>
+            </div>
+          </div>
           <div class="resumo-card-title">Ranking P&amp;G</div>
+
           <div class="resumo-stats">
             <div class="resumo-stat">
               <div class="rk-score-label">Ranking Score</div>
@@ -1574,7 +1639,16 @@
       </div>
       <div class="resumo-card" id="card-resumo-faturamento">
         <div class="resumo-head">
+          <div class="rk-filter" data-scope="fat"><span class="rkf-label">Total</span><span class="rkf-arrow">▾</span>
+            <div class="rk-filter-pop">
+              <div class="rkf-item selected" data-level="total">Total</div>
+              <div class="rkf-item" data-level="cv">Gerente</div>
+              <div class="rkf-item" data-level="sv">Supervisor</div>
+              <div class="rkf-item" data-level="rv">Vendedor</div>
+            </div>
+          </div>
           <div class="resumo-card-title">Faturamento</div>
+
           <div class="resumo-stats">
             <div class="resumo-stat">
               <div class="rk-score-label">Total</div>
@@ -3069,6 +3143,139 @@
     renderFaturamento(sums, metaSums);
   }
 
+  /* ── Resumo: nível de equipe (Total / Gerente / Supervisor / Vendedor) ── */
+  const RESUMO_LEVEL_LABEL = { total:'Total', cv:'Gerente', sv:'Supervisor', rv:'Vendedor' };
+  const resumoLevel = { rk: 'total', fat: 'total' };
+  const RESUMO_PAGE = 8;
+  const resumoRerender = { rk: null, fat: null };
+
+  function resumoTeamRows(def, field){
+    const groupMap = new Map();
+    rvEntries.forEach(r => {
+      if (!passes(r)) return;
+      const name = field === 'rv' ? r.rvName : r[field];
+      if (!name || !String(name).trim()) return;
+      if (!groupMap.has(name)) groupMap.set(name, new Set());
+      groupMap.get(name).add(ck(r.rv, r.uf));
+    });
+    const keyNames = new Map();
+    groupMap.forEach((keys, name) => keys.forEach(k => {
+      if (!keyNames.has(k)) keyNames.set(k, []);
+      keyNames.get(k).push(name);
+    }));
+    const srcs = { vendas, metas, potencial, ecOniz };
+    function sumBy(spec){
+      const out = new Map();
+      if (!spec) return out;
+      (srcs[spec.src] || []).forEach(x => {
+        const names = keyNames.get(ck(x.rv, x.uf));
+        if (!names) return;
+        const v = x[spec.field] || 0;
+        if (!v) return;
+        names.forEach(n => out.set(n, (out.get(n) || 0) + v));
+      });
+      return out;
+    }
+    const realMap = sumBy(def.realSpec);
+    const metaMap = sumBy(def.metaSpec);
+    const rows = [];
+    groupMap.forEach((_, name) => {
+      const real = realMap.get(name) || 0;
+      const meta = metaMap.get(name) || 0;
+      if (!real && !meta) return;
+      rows.push({ name, real, meta, gap: Math.max(0, meta - real), pct: meta > 0 ? real / meta : 0 });
+    });
+    return rows.sort((a,b) => b.pct - a.pct);
+  }
+
+  function drawResumoSub(sub, rows, color, fmt, page){
+    if (!rows.length) { sub.innerHTML = '<div class="rk-sub-empty">Sem dados</div>'; return; }
+    const paged = sub.dataset.paged === '1';
+    const totalPages = paged ? Math.max(1, Math.ceil(rows.length / RESUMO_PAGE)) : 1;
+    const p = Math.min(Math.max(0, page), totalPages - 1);
+    const slice = paged ? rows.slice(p * RESUMO_PAGE, (p + 1) * RESUMO_PAGE) : rows;
+    let html = '<div class="rk-sub-list">' + slice.map(r => {
+      const w = Math.min(100, Math.max(0, r.pct * 100)).toFixed(1);
+      return '<div class="rk-sub-item">' +
+        '<div class="rk-sub-head"><div class="rk-sub-name">' + r.name + '</div>' +
+        '<div class="rk-sub-pct">' + fmtPct(r.pct) + '</div></div>' +
+        '<div class="rk-sub-meta">' +
+          '<span>Meta: <b>' + fmt(r.meta) + '</b></span>' +
+          '<span>Gap: <b class="gap-val">' + fmt(r.gap) + '</b></span>' +
+          '<span>Realizado: <b>' + fmt(r.real) + '</b></span>' +
+        '</div>' +
+        '<div class="rk-sub-track"><div class="rk-sub-fill" style="width:' + w + '%;background:' + color + ';"></div></div>' +
+      '</div>';
+    }).join('') + '</div>';
+    if (paged && totalPages > 1) {
+      html += '<div class="rk-sub-pager">' +
+        '<button type="button" class="rk-pg-btn" data-dir="-1"' + (p === 0 ? ' disabled' : '') + '>‹</button>' +
+        '<span class="rk-pg-info">' + (p+1) + ' / ' + totalPages + '</span>' +
+        '<button type="button" class="rk-pg-btn" data-dir="1"' + (p === totalPages-1 ? ' disabled' : '') + '>›</button>' +
+      '</div>';
+    }
+    sub.innerHTML = html;
+    sub.querySelectorAll('.rk-pg-btn').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      drawResumoSub(sub, rows, color, fmt, p + parseInt(b.dataset.dir, 10));
+    }));
+  }
+
+  function attachResumoExpanders(wrap, defs, level, fmt){
+    if (level === 'total') return;
+    wrap.querySelectorAll('.rk-item[data-idx]').forEach(item => {
+      const def = defs[parseInt(item.dataset.idx, 10)];
+      if (!def) return;
+      const caret = item.querySelector('.rk-caret');
+      const sub = item.querySelector('.rk-sub');
+      if (!caret || !sub) return;
+      sub.dataset.paged = (level === 'cv') ? '0' : '1';
+      const toggle = (e) => {
+        e.stopPropagation();
+        const open = item.classList.toggle('open');
+        if (open && sub.dataset.loaded !== '1') {
+          sub.dataset.loaded = '1';
+          drawResumoSub(sub, resumoTeamRows(def, level), def.color, fmt, 0);
+        }
+      };
+      caret.addEventListener('click', toggle);
+      const nameEl = item.querySelector('.rk-item-name');
+      if (nameEl) { nameEl.style.cursor = 'pointer'; nameEl.addEventListener('click', toggle); }
+    });
+  }
+
+  function resumoItemHead(name, pct, idx, level){
+    const caret = level === 'total' ? '' :
+      '<span class="rk-caret"><svg viewBox="0 0 12 12"><polyline points="2,4 6,8 10,4"/></svg></span>';
+    return '<div class="rk-item-head">' +
+      '<div class="rk-item-name-wrap">' + caret + '<div class="rk-item-name">' + name + '</div></div>' +
+      '<div class="rk-item-pct" data-pct="' + pct + '">' + fmtPct(0) + '</div>' +
+    '</div>';
+  }
+
+  document.querySelectorAll('.rk-filter[data-scope]').forEach(f => {
+    const scope = f.dataset.scope;
+    f.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.rk-filter.open').forEach(o => { if (o !== f) o.classList.remove('open'); });
+      f.classList.toggle('open');
+    });
+    f.querySelectorAll('.rkf-item').forEach(it => {
+      it.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resumoLevel[scope] = it.dataset.level;
+        f.querySelector('.rkf-label').textContent = RESUMO_LEVEL_LABEL[it.dataset.level];
+        f.querySelectorAll('.rkf-item').forEach(x => x.classList.toggle('selected', x === it));
+        f.classList.remove('open');
+        if (resumoRerender[scope]) resumoRerender[scope]();
+      });
+    });
+  });
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.rk-filter.open').forEach(o => o.classList.remove('open'));
+  });
+
+
   function setIndicators(id, hit, total){
     const el = document.getElementById(id);
     if (!el) return;
@@ -3085,14 +3292,17 @@
     const fmtInt = (v)=> Math.round(v).toLocaleString('pt-BR');
     const DUR = 900;
     if (!wrap || !scoreEl) return;
+    resumoRerender.rk = () => renderResumo(sums, metaSums, ecSums);
+    const level = resumoLevel.rk;
     const defs = [
-      { name: 'Positivação HFS',             real: sums.r_hfs, meta: metaSums.r_hfs, color: '#003DA5' },
-      { name: 'Positivação Farma',           real: sums.r_far, meta: metaSums.r_far, color: '#D97706' },
-      { name: 'Positivação Always Noturno',  real: sums.r_alw, meta: metaSums.r_alw, color: '#7C3AED' },
-      { name: 'Positivação Pampers',         real: sums.r_pmp, meta: metaSums.r_pmp, color: '#0EA5E9' },
-      { name: 'Positivação Chaves ≥ 2',      real: ecSums.ch2, meta: metaSums.e_ch2, color: '#059669' },
-      { name: 'Platinum Points',             real: ecSums.pp,  meta: metaSums.e_pp,  color: '#7C3AED' },
+      { name: 'Positivação HFS',             real: sums.r_hfs, meta: metaSums.r_hfs, color: '#003DA5', realSpec:{src:'vendas',field:'r_hfs'}, metaSpec:{src:'metas',field:'r_hfs'} },
+      { name: 'Positivação Farma',           real: sums.r_far, meta: metaSums.r_far, color: '#D97706', realSpec:{src:'vendas',field:'r_far'}, metaSpec:{src:'metas',field:'r_far'} },
+      { name: 'Positivação Always Noturno',  real: sums.r_alw, meta: metaSums.r_alw, color: '#7C3AED', realSpec:{src:'vendas',field:'r_alw'}, metaSpec:{src:'metas',field:'r_alw'} },
+      { name: 'Positivação Pampers',         real: sums.r_pmp, meta: metaSums.r_pmp, color: '#0EA5E9', realSpec:{src:'vendas',field:'r_pmp'}, metaSpec:{src:'metas',field:'r_pmp'} },
+      { name: 'Positivação Chaves ≥ 2',      real: ecSums.ch2, meta: metaSums.e_ch2, color: '#059669', realSpec:{src:'ecOniz',field:'ch2'},  metaSpec:{src:'metas',field:'e_ch2'} },
+      { name: 'Platinum Points',             real: ecSums.pp,  meta: metaSums.e_pp,  color: '#7C3AED', realSpec:{src:'ecOniz',field:'pp'},   metaSpec:{src:'metas',field:'e_pp'} },
     ];
+
     const rows = defs
       .filter(d => Math.round(d.meta || 0) > 0)
       .map(d => Object.assign({}, d, {
@@ -3126,21 +3336,21 @@
 
     html += rows.map((r, idx) => {
       const w = Math.min(100, Math.max(0, r.pct*100)).toFixed(1);
-      return '<div class="rk-item">' +
-        '<div class="rk-item-head">' +
-          '<div class="rk-item-name">' + r.name + '</div>' +
-          '<div class="rk-item-pct" data-pct="' + r.pct + '">' + fmtPct(0) + '</div>' +
-        '</div>' +
+      return '<div class="rk-item" data-idx="' + idx + '">' +
+        resumoItemHead(r.name, r.pct, idx, level) +
         '<div class="rk-item-meta">' +
           '<span>Meta: <b class="rk-meta-value" data-val="' + r.meta + '">' + fmtInt(0) + '</b></span>' +
           '<span>Gap: <b class="rk-meta-value gap-val" data-val="' + r.gap + '">' + fmtInt(0) + '</b></span>' +
           '<span>Realizado: <b class="rk-meta-value" data-val="' + r.real + '">' + fmtInt(0) + '</b></span>' +
         '</div>' +
         bar(r.pct, r.color, w) +
+        (level === 'total' ? '' : '<div class="rk-sub"></div>') +
       '</div>';
     }).join('');
 
     wrap.innerHTML = html;
+    attachResumoExpanders(wrap, rows, level, fmtInt);
+
     scoreEl.textContent = fmtPct(0);
     animateCount(scoreEl, 0, avg, DUR, fmtPct);
 
@@ -3166,16 +3376,19 @@
     const scoreEl = document.getElementById('fat-score-value');
     const DUR = 900;
     if (!wrap || !scoreEl) return;
+    resumoRerender.fat = () => renderFaturamento(sums, metaSums);
+    const level = resumoLevel.fat;
 
     const total = {
       name: 'Total', real: sums.v, meta: metaSums.total, color: '#003DA5',
+      realSpec: {src:'vendas',field:'v'}, metaSpec: {src:'metas',field:'total'},
       pct: metaSums.total > 0 ? sums.v / metaSums.total : 0
     };
     const defs = [
-      { name: 'Escolha Certa',  real: sums.ec,  meta: metaSums.ec,  color: '#0EA5E9' },
-      { name: 'Store Platform', real: sums.sp,  meta: metaSums.sp,  color: '#7C3AED' },
-      { name: 'Alimentar',      real: sums.ali, meta: metaSums.ali, color: '#059669' },
-      { name: 'Farma',          real: sums.far, meta: metaSums.far, color: '#D97706' },
+      { name: 'Escolha Certa',  real: sums.ec,  meta: metaSums.ec,  color: '#0EA5E9', realSpec:{src:'vendas',field:'ec'},  metaSpec:{src:'metas',field:'ec'} },
+      { name: 'Store Platform', real: sums.sp,  meta: metaSums.sp,  color: '#7C3AED', realSpec:{src:'vendas',field:'sp'},  metaSpec:{src:'metas',field:'sp'} },
+      { name: 'Alimentar',      real: sums.ali, meta: metaSums.ali, color: '#059669', realSpec:{src:'vendas',field:'ali'}, metaSpec:{src:'metas',field:'ali'} },
+      { name: 'Farma',          real: sums.far, meta: metaSums.far, color: '#D97706', realSpec:{src:'vendas',field:'far'}, metaSpec:{src:'metas',field:'far'} },
     ];
     const rows = defs
       .filter(d => (d.meta || 0) > 0)
@@ -3195,36 +3408,34 @@
       '<div class="rk-track"><div class="rk-fill" data-w="' + w + '" style="background:' + color + ';"></div></div>';
 
     let html =
-      '<div class="rk-item rk-total">' +
-        '<div class="rk-item-head">' +
-          '<div class="rk-item-name">Total</div>' +
-          '<div class="rk-item-pct" data-pct="' + total.pct + '">' + fmtPct(0) + '</div>' +
-        '</div>' +
+      '<div class="rk-item rk-total" data-idx="0">' +
+        resumoItemHead('Total', total.pct, 0, level) +
         '<div class="rk-item-meta">' +
           '<span>Meta: <b class="rk-meta-value" data-val="' + total.meta + '">' + fmtMoney(0) + '</b></span>' +
           '<span>Gap: <b class="rk-meta-value gap-val" data-val="' + Math.max(0, total.meta - total.real) + '">' + fmtMoney(0) + '</b></span>' +
           '<span>Realizado: <b class="rk-meta-value" data-val="' + total.real + '">' + fmtMoney(0) + '</b></span>' +
         '</div>' +
         bar(total.pct, '#003DA5', Math.min(100, Math.max(0, total.pct*100)).toFixed(1)) +
+        (level === 'total' ? '' : '<div class="rk-sub"></div>') +
       '</div>';
 
-    html += rows.map(r => {
+    html += rows.map((r, i) => {
       const w = Math.min(100, Math.max(0, r.pct*100)).toFixed(1);
-      return '<div class="rk-item">' +
-        '<div class="rk-item-head">' +
-          '<div class="rk-item-name">' + r.name + '</div>' +
-          '<div class="rk-item-pct" data-pct="' + r.pct + '">' + fmtPct(0) + '</div>' +
-        '</div>' +
+      return '<div class="rk-item" data-idx="' + (i+1) + '">' +
+        resumoItemHead(r.name, r.pct, i+1, level) +
         '<div class="rk-item-meta">' +
           '<span>Meta: <b class="rk-meta-value" data-val="' + r.meta + '">' + fmtMoney(0) + '</b></span>' +
           '<span>Gap: <b class="rk-meta-value gap-val" data-val="' + r.gap + '">' + fmtMoney(0) + '</b></span>' +
           '<span>Realizado: <b class="rk-meta-value" data-val="' + r.real + '">' + fmtMoney(0) + '</b></span>' +
         '</div>' +
         bar(r.pct, r.color, w) +
+        (level === 'total' ? '' : '<div class="rk-sub"></div>') +
       '</div>';
     }).join('');
 
     wrap.innerHTML = html;
+    attachResumoExpanders(wrap, [total].concat(rows), level, fmtMoney);
+
     scoreEl.textContent = fmtPct(0);
     animateCount(scoreEl, 0, total.pct, DUR, fmtPct);
 
