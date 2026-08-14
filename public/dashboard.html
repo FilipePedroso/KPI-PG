@@ -3190,9 +3190,15 @@
     };
     rvEntries.forEach(r => {
       if (!passes(r)) return;
-      const name = field === 'rv' ? r.rvName : r[field];
-      if (!name || !String(name).trim()) return;
-      if (field === 'cv' && !hasRealName(name)) return;
+      let name = field === 'rv' ? r.rvName : r[field];
+      if (field === 'cv') {
+        // Gerente: mantém apenas quem está de fato na estrutura (com nome)
+        if (!name || !String(name).trim() || !hasRealName(name)) return;
+      } else if (!name || !String(name).trim()) {
+        // Vendedor/Supervisor sem nome na estrutura: mantém no detalhe
+        // para que a soma das linhas bata com o total do card.
+        name = field === 'rv' ? (r.rv + ' - Sem nome') : ('Sem supervisor');
+      }
       if (!groupMap.has(name)) groupMap.set(name, new Set());
       groupMap.get(name).add(ck(r.rv, r.uf));
     });
