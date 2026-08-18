@@ -3557,7 +3557,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-  // Print do card de Resumo -> clipboard
+  // Print do card de Resumo -> clipboard (layout grid 3x3)
   (function(){
     document.querySelectorAll('.resumo-card .rk-snap').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -3567,9 +3567,17 @@
         const label = btn.querySelector('span');
         const prev = label.textContent;
         label.textContent = 'Gerando...';
-        card.classList.add('snapshotting');
+
+        // Clona o card para um container off-screen, evitando flash na tela
+        const clone = card.cloneNode(true);
+        const holder = document.createElement('div');
+        holder.style.cssText = 'position:fixed; left:-9999px; top:0; width:1100px; z-index:-1; overflow:visible;';
+        holder.appendChild(clone);
+        document.body.appendChild(holder);
+        clone.classList.add('snapshotting');
+
         try {
-          const canvas = await html2canvas(card, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: document.documentElement.scrollWidth });
+          const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 1100 });
           const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
           let ok = false;
           try {
@@ -3588,7 +3596,7 @@
         } catch(err) {
           label.textContent = 'Erro';
         } finally {
-          card.classList.remove('snapshotting');
+          holder.remove();
           setTimeout(()=>{ btn.classList.remove('done'); label.textContent = prev; }, 1800);
         }
       });
