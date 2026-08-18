@@ -1273,7 +1273,8 @@
       color: #94A3B8; transition: transform 0.2s ease; flex: 0 0 auto;
     }
     .rk-caret svg { width: 9px; height: 9px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-    .rk-item.open .rk-caret { transform: rotate(180deg); color: #003DA5; }
+    .rk-item.open .rk-caret { color: #003DA5; }
+    .rk-item .rk-caret { transform: none; }
     .rk-item-name-wrap { display: flex; align-items: center; min-width: 0; }
 
     .rk-sub {
@@ -3276,19 +3277,25 @@
       const caret = item.querySelector('.rk-caret');
       const sub = item.querySelector('.rk-sub');
       if (!caret || !sub) return;
-      const toggle = (e) => {
-        e.stopPropagation();
-        if (item.classList.contains('open')) { item.classList.remove('open'); return; }
+      const load = () => {
         if (sub.dataset.loaded !== '1') {
           sub.dataset.loaded = '1';
           drawResumoSub(sub, resumoTeamRows(def, level), def.color, fmt);
         }
+      };
+      const toggle = (e) => {
+        e.stopPropagation();
+        if (item.classList.contains('open')) { item.classList.remove('open'); return; }
+        load();
         requestAnimationFrame(() => item.classList.add('open'));
       };
       caret.addEventListener('click', toggle);
       const nameEl = item.querySelector('.rk-item-name');
 
       if (nameEl) { nameEl.style.cursor = 'pointer'; nameEl.addEventListener('click', toggle); }
+
+      // pré-carrega itens que já nascem abertos (nível diferente de Total)
+      if (item.classList.contains('open')) load();
     });
   }
 
@@ -3384,7 +3391,7 @@
 
     html += rows.map((r, idx) => {
       const w = Math.min(100, Math.max(0, r.pct*100)).toFixed(1);
-      return '<div class="rk-item" data-idx="' + idx + '">' +
+      return '<div class="rk-item' + (level === 'total' ? '' : ' open') + '" data-idx="' + idx + '">' +
         resumoItemHead(r.name, r.pct, idx, level) +
         '<div class="rk-item-meta">' +
           '<span>Meta: <b class="rk-meta-value" data-val="' + r.meta + '">' + fmtInt(0) + '</b></span>' +
@@ -3456,7 +3463,7 @@
       '<div class="rk-track"><div class="rk-fill" data-w="' + w + '" style="background:' + color + ';"></div></div>';
 
     let html =
-      '<div class="rk-item rk-total" data-idx="0">' +
+      '<div class="rk-item rk-total' + (level === 'total' ? '' : ' open') + '" data-idx="0">' +
         resumoItemHead('Total', total.pct, 0, level) +
         '<div class="rk-item-meta">' +
           '<span>Meta: <b class="rk-meta-value" data-val="' + total.meta + '">' + fmtMoney(0) + '</b></span>' +
@@ -3469,7 +3476,7 @@
 
     html += rows.map((r, i) => {
       const w = Math.min(100, Math.max(0, r.pct*100)).toFixed(1);
-      return '<div class="rk-item" data-idx="' + (i+1) + '">' +
+      return '<div class="rk-item' + (level === 'total' ? '' : ' open') + '" data-idx="' + (i+1) + '">' +
         resumoItemHead(r.name, r.pct, i+1, level) +
         '<div class="rk-item-meta">' +
           '<span>Meta: <b class="rk-meta-value" data-val="' + r.meta + '">' + fmtMoney(0) + '</b></span>' +
