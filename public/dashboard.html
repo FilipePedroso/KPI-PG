@@ -3457,7 +3457,7 @@
       '<div class="rk-track"><div class="rk-fill" data-w="' + w + '" style="background:' + color + ';"></div></div>';
 
     let html =
-      '<div class="rk-item rk-total" data-idx="0">' +
+      '<div class="rk-item rk-total' + (level === 'total' ? '' : ' open') + '" data-idx="0">' +
         resumoItemHead('Total', total.pct, 0, level) +
         '<div class="rk-item-meta">' +
           '<span>Meta: <b class="rk-meta-value" data-val="' + total.meta + '">' + fmtMoney(0) + '</b></span>' +
