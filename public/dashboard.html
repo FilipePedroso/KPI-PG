@@ -3277,19 +3277,25 @@
       const caret = item.querySelector('.rk-caret');
       const sub = item.querySelector('.rk-sub');
       if (!caret || !sub) return;
-      const toggle = (e) => {
-        e.stopPropagation();
-        if (item.classList.contains('open')) { item.classList.remove('open'); return; }
+      const load = () => {
         if (sub.dataset.loaded !== '1') {
           sub.dataset.loaded = '1';
           drawResumoSub(sub, resumoTeamRows(def, level), def.color, fmt);
         }
+      };
+      const toggle = (e) => {
+        e.stopPropagation();
+        if (item.classList.contains('open')) { item.classList.remove('open'); return; }
+        load();
         requestAnimationFrame(() => item.classList.add('open'));
       };
       caret.addEventListener('click', toggle);
       const nameEl = item.querySelector('.rk-item-name');
 
       if (nameEl) { nameEl.style.cursor = 'pointer'; nameEl.addEventListener('click', toggle); }
+
+      // pré-carrega itens que já nascem abertos (nível diferente de Total)
+      if (item.classList.contains('open')) load();
     });
   }
 
