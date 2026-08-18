@@ -1236,6 +1236,37 @@
       opacity: 1 !important; transform: none !important; filter: none !important;
     }
 
+    /* ── Resumo: print em grid 3x3 ── */
+    .resumo-card.snapshotting {
+      width: 100% !important;
+      flex: none !important;
+      max-height: none !important;
+      overflow: visible !important;
+      position: static !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    .resumo-card.snapshotting .rk-bars {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 12px;
+      padding: 16px;
+    }
+    .resumo-card.snapshotting .rk-item {
+      border: 1px solid #E6EAF2;
+      border-radius: 10px;
+      padding: 12px;
+      background: #FFFFFF;
+    }
+    .resumo-card.snapshotting .rk-item.rk-total {
+      grid-column: 1 / -1;
+    }
+    .resumo-card.snapshotting .rk-item-name { font-size: 11px; }
+    .resumo-card.snapshotting .rk-item-pct { font-size: 11px; }
+    .resumo-card.snapshotting .rk-item-meta { font-size: 10px; }
+    .resumo-card.snapshotting .rk-sub { margin-top: 8px !important; }
+    .resumo-card.snapshotting .rk-sub-box { background: #F8FAFC; }
+
     .rk-caret {
       display: inline-flex; align-items: center; justify-content: center;
       width: 16px; height: 16px; margin-right: 5px; cursor: pointer;
