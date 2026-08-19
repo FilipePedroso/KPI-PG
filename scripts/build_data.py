@@ -33,7 +33,7 @@ ALWAYS_EANS = {
 # Bitmask dos indicadores usados na visão "Clientes"
 # (cards de Positivação, Ranking e Faturamento)
 CLIENT_METRICS = ["tot", "ali", "far", "hfs", "rfar", "alw", "pmp", "fec", "fsp",
-                  "ecp"]
+                  "ecp", "ch2"]
 CB = {m: 1 << i for i, m in enumerate(CLIENT_METRICS)}
 # Métricas com valor financeiro por cliente (ordem do array de valores)
 CLIENT_VALUES = ["tot", "ali", "far", "fec", "fsp"]
@@ -339,7 +339,7 @@ def read_sc_clientes():
             rv = "0"
         return rv + "|" + uf
 
-    def scan(sheet, tipos):
+    def scan(sheet, tipos=None, fixed_metric=None):
         if sheet not in wb.sheetnames:
             return
         rows, hdr, idx = header_map(wb[sheet])
@@ -360,15 +360,17 @@ def read_sc_clientes():
                 continue
             if c_pos is not None and n(r[c_pos]) <= 0:
                 continue
-            metric = tipos.get(s(r[c_tp]).upper() if c_tp is not None else "")
+            metric = fixed_metric if fixed_metric else \
+                tipos.get(s(r[c_tp]).upper() if c_tp is not None else "")
             if not metric:
                 continue
             acc.setdefault(k, {}).setdefault(metric, set()).add(cnpj)
             if c_nome is not None and cnpj not in nomes:
                 nomes[cnpj] = s(r[c_nome])
 
-    scan("Pos Relação", {"HFS": "hfs", "FARMA": "rfar"})
-    scan("Marcas Relação", {"ALWAYS NOTURNO": "alw", "PAMPERS": "pmp"})
+    scan("Pos Relação", tipos={"HFS": "hfs", "FARMA": "rfar"})
+    scan("Marcas Relação", tipos={"ALWAYS NOTURNO": "alw", "PAMPERS": "pmp"})
+    scan("Escolha Certa", fixed_metric="ch2")
     return acc, nomes
 
 
@@ -509,7 +511,7 @@ def build(dados_path, estrutura_path):
             if canal in ("HFS", "Farma Indep") and plat_ok:
                 elig |= CB["pmp"]
             if plat == "Escolha Certa":
-                elig |= CB["fec"] | CB["ecp"]
+                elig |= CB["fec"] | CB["ecp"] | CB["ch2"]
             elif plat == "Store Platform":
                 elig |= CB["fsp"]
             cb = clientes_base.setdefault(k, {})
@@ -703,6 +705,8 @@ def build(dados_path, estrutura_path):
     # platinum points: contagem distinta de (nr_doc, ds_combo_sku_lista_ativacao)
     #                  com "Platinum Point?" = "Sim"
     ec = []
+    ec_ch2_cli = {}   # {rv|uf: set(cnpj)} - clientes com chaves >= 2 (nr_doc == CNPJ)
+    ec_nomes = {}      # {cnpj: nm_pessoa}
     src_ec = fact_source("f_ec_oniz", wbd)
     if src_ec:
         rows, header, idx = src_ec
@@ -713,6 +717,7 @@ def build(dados_path, estrutura_path):
         o_ch = col(idx, "nr_chave")
         o_combo = col(idx, "ds_combo_sku_lista_ativacao")
         o_pp = col(idx, "Platinum Point?")
+        o_nome = col(idx, "nm_pessoa")
         esets = {}
         for r in rows:
             if not r:
@@ -726,6 +731,10 @@ def build(dados_path, estrutura_path):
             b = esets.setdefault(k, {"ch2": set(), "pp": set()})
             if o_ch is not None and n(r[o_ch]) >= 2:
                 b["ch2"].add(doc)
+                if o_nome is not None and doc not in ec_nomes:
+                    nm = s(r[o_nome])
+                    if nm:
+                        ec_nomes[doc] = nm
             if o_pp is not None and s(r[o_pp]).lower() in ("sim", "s", "yes", "1"):
                 combo = s(r[o_combo]) if o_combo is not None else ""
                 b["pp"].add(doc + "|" + combo)
@@ -733,6 +742,8 @@ def build(dados_path, estrutura_path):
             rv, uf = k.split("|", 1)
             ec.append({"rv": rv, "uf": uf,
                        "ch2": len(b["ch2"]), "pp": len(b["pp"])})
+            if b["ch2"]:
+                ec_ch2_cli[k] = set(b["ch2"])
         print(f"[build_data] f_ec_oniz: chaves>=2 = "
               f"{sum(e['ch2'] for e in ec)}, platinum = "
               f"{sum(e['pp'] for e in ec)}", file=sys.stderr)
@@ -798,13 +809,15 @@ def build(dados_path, estrutura_path):
             for cnpj, cs in cm.items():
                 if cs["t"] > 0 and cs["vt"] >= minv:
                     b.setdefault(alias, set()).add(cnpj)
+    for k, cnpjs in ec_ch2_cli.items():
+        pos.setdefault(k, {})["ch2"] = set(cnpjs)
 
     # SC: os indicadores de ranking vêm do Dados_SC.xlsx (CNPJ a CNPJ)
     sc_cli, sc_nomes = read_sc_clientes()
     if sc:
         for k in list(pos):
             if k.split("|", 1)[1] in sc_ufs:
-                for alias in ("hfs", "rfar", "alw", "pmp"):
+                for alias in ("hfs", "rfar", "alw", "pmp", "ch2"):
                     pos[k].pop(alias, None)
         for k, mm in sc_cli.items():
             b = pos.setdefault(k, {})
@@ -819,13 +832,14 @@ def build(dados_path, estrutura_path):
             for cnpj in cnpjs:
                 if cnpj not in base:
                     # positivado fora da base de clientes -> entra marcado
-                    base[cnpj] = [sc_nomes.get(cnpj) or fato_nomes.get(cnpj, ""), 0]
+                    base[cnpj] = [sc_nomes.get(cnpj) or fato_nomes.get(cnpj)
+                                  or ec_nomes.get(cnpj, ""), 0]
         out = []
         vsrc = cnpj_sums.get(k, {})
         rsrc = rank_sums.get(k, {}).get("pmp", {})
         for cnpj, (nome, elig) in base.items():
             if not nome:
-                nome = fato_nomes.get(cnpj, "")
+                nome = fato_nomes.get(cnpj) or ec_nomes.get(cnpj, "")
             posmask = 0
             for alias, bit in CB.items():
                 if cnpj in pk.get(alias, ()):
