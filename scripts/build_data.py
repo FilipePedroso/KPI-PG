@@ -319,17 +319,26 @@ def read_sc():
     return {k: {m: round(v) for m, v in b.items()} for k, b in acc.items()}
 
 
+def strip_faixa(v):
+    """'faixa3' -> '3' (remove o prefixo textual da coluna FAIXA de SC)."""
+    t = s(v)
+    if t.lower().startswith("faixa"):
+        t = t[len("faixa"):]
+    return t.strip(" -:_")
+
+
 def read_sc_clientes():
     """
     Lê data/Dados_SC.xlsx e devolve, por rv|uf, os CNPJs positivados de cada
-    indicador de ranking, além do nome (razão social) de cada CNPJ.
-      -> ({rv|uf: {hfs|rfar|alw|pmp: set(cnpj)}}, {cnpj: nome})
+    indicador de ranking, além do nome (razão social) e, para Chaves >= 2,
+    a faixa (chave) atingida por CNPJ.
+      -> ({rv|uf: {hfs|rfar|alw|pmp|ch2: set(cnpj)}}, {cnpj: nome}, {cnpj: chave})
     """
     path = os.path.join(DATA_DIR, SC_FILE)
     if not os.path.exists(path):
-        return {}, {}
+        return {}, {}, {}
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
-    acc, nomes = {}, {}
+    acc, nomes, faixas = {}, {}, {}
 
     def key(rv, uf):
         rv, uf = rv_key(rv), s(uf)
@@ -339,7 +348,7 @@ def read_sc_clientes():
             rv = "0"
         return rv + "|" + uf
 
-    def scan(sheet, tipos=None, fixed_metric=None):
+    def scan(sheet, tipos=None, fixed_metric=None, extra_col=None, extra_dict=None):
         if sheet not in wb.sheetnames:
             return
         rows, hdr, idx = header_map(wb[sheet])
@@ -348,6 +357,7 @@ def read_sc_clientes():
         c_tp = col(idx, "TIPO")
         c_cnpj = col(idx, "CNPJ")
         c_nome = col(idx, "RAZÃO SOCIAL")
+        c_extra = col(idx, extra_col) if extra_col else None
         hits = [i for i, h in enumerate(hdr)
                 if s(h).strip().lower().startswith("positiva")]
         c_pos = hits[0] if hits else None
@@ -367,11 +377,13 @@ def read_sc_clientes():
             acc.setdefault(k, {}).setdefault(metric, set()).add(cnpj)
             if c_nome is not None and cnpj not in nomes:
                 nomes[cnpj] = s(r[c_nome])
+            if c_extra is not None and extra_dict is not None and cnpj not in extra_dict:
+                extra_dict[cnpj] = strip_faixa(r[c_extra])
 
     scan("Pos Relação", tipos={"HFS": "hfs", "FARMA": "rfar"})
     scan("Marcas Relação", tipos={"ALWAYS NOTURNO": "alw", "PAMPERS": "pmp"})
-    scan("Escolha Certa", fixed_metric="ch2")
-    return acc, nomes
+    scan("Escolha Certa", fixed_metric="ch2", extra_col="FAIXA", extra_dict=faixas)
+    return acc, nomes, faixas
 
 
 
@@ -707,6 +719,7 @@ def build(dados_path, estrutura_path):
     ec = []
     ec_ch2_cli = {}   # {rv|uf: set(cnpj)} - clientes com chaves >= 2 (nr_doc == CNPJ)
     ec_nomes = {}      # {cnpj: nm_pessoa}
+    ec_chave = {}      # {cnpj: maior nr_chave atingido (>= 2)}
     src_ec = fact_source("f_ec_oniz", wbd)
     if src_ec:
         rows, header, idx = src_ec
@@ -731,6 +744,9 @@ def build(dados_path, estrutura_path):
             b = esets.setdefault(k, {"ch2": set(), "pp": set()})
             if o_ch is not None and n(r[o_ch]) >= 2:
                 b["ch2"].add(doc)
+                chv = int(n(r[o_ch]))
+                if chv > ec_chave.get(doc, 0):
+                    ec_chave[doc] = chv
                 if o_nome is not None and doc not in ec_nomes:
                     nm = s(r[o_nome])
                     if nm:
@@ -813,7 +829,14 @@ def build(dados_path, estrutura_path):
         pos.setdefault(k, {})["ch2"] = set(cnpjs)
 
     # SC: os indicadores de ranking vêm do Dados_SC.xlsx (CNPJ a CNPJ)
-    sc_cli, sc_nomes = read_sc_clientes()
+    sc_cli, sc_nomes, sc_faixa = read_sc_clientes()
+    chave_map = dict(ec_chave)
+    for cnpj, faixa in sc_faixa.items():
+        try:
+            chave_map[cnpj] = int(faixa)
+        except (TypeError, ValueError):
+            if faixa:
+                chave_map[cnpj] = faixa
     if sc:
         for k in list(pos):
             if k.split("|", 1)[1] in sc_ufs:
@@ -850,7 +873,8 @@ def build(dados_path, estrutura_path):
             vals = [round(cs["t"], 2), round(cs["a"], 2), round(cs["f"], 2),
                     round(cs["ec"], 2), round(cs["sp"], 2)] if cs else [0, 0, 0, 0, 0]
             vol = rsrc.get(cnpj, {}).get("vt", 0.0)
-            out.append([cnpj, nome, elig, posmask, vals, round(vol, 1)])
+            chave = chave_map.get(cnpj, 0) if (posmask & CB["ch2"]) else 0
+            out.append([cnpj, nome, elig, posmask, vals, round(vol, 1), chave])
         if out:
             out.sort(key=lambda x: x[1])
             clientes[k] = out
