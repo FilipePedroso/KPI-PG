@@ -719,7 +719,7 @@ def build(dados_path, estrutura_path):
     ec = []
     ec_ch2_cli = {}   # {rv|uf: set(cnpj)} - clientes com chaves >= 2 (nr_doc == CNPJ)
     ec_nomes = {}      # {cnpj: nm_pessoa}
-    ec_chave = {}      # {cnpj: maior nr_chave atingido (>= 2)}
+    ec_chave = {}      # {cnpj: maior nr_chave atingido, mesmo abaixo de 2}
     src_ec = fact_source("f_ec_oniz", wbd)
     if src_ec:
         rows, header, idx = src_ec
@@ -742,11 +742,12 @@ def build(dados_path, estrutura_path):
                 continue
             k = rv + "|" + uf
             b = esets.setdefault(k, {"ch2": set(), "pp": set()})
-            if o_ch is not None and n(r[o_ch]) >= 2:
-                b["ch2"].add(doc)
+            if o_ch is not None:
                 chv = int(n(r[o_ch]))
                 if chv > ec_chave.get(doc, 0):
                     ec_chave[doc] = chv
+                if chv >= 2:
+                    b["ch2"].add(doc)
                 if o_nome is not None and doc not in ec_nomes:
                     nm = s(r[o_nome])
                     if nm:
@@ -873,7 +874,7 @@ def build(dados_path, estrutura_path):
             vals = [round(cs["t"], 2), round(cs["a"], 2), round(cs["f"], 2),
                     round(cs["ec"], 2), round(cs["sp"], 2)] if cs else [0, 0, 0, 0, 0]
             vol = rsrc.get(cnpj, {}).get("vt", 0.0)
-            chave = chave_map.get(cnpj, 0) if (posmask & CB["ch2"]) else 0
+            chave = chave_map.get(cnpj, 0)
             out.append([cnpj, nome, elig, posmask, vals, round(vol, 1), chave])
         if out:
             out.sort(key=lambda x: x[1])
