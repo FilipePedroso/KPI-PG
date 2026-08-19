@@ -390,9 +390,30 @@ def read_sc_clientes():
 
 
 
+def read_competencia(wbe):
+    """
+    Lê a aba 'data' de Estrutura.xlsx: célula única com a data de competência
+    (mês/ano usado como referência para as médias diárias dos cards).
+    """
+    if "data" not in wbe.sheetnames:
+        return None
+    ws = wbe["data"]
+    for row in ws.iter_rows(min_row=1, max_row=5, values_only=True):
+        for cell in row or ():
+            if isinstance(cell, datetime):
+                return cell
+            if cell:
+                try:
+                    return datetime.fromisoformat(s(cell))
+                except ValueError:
+                    continue
+    return None
+
+
 def build(dados_path, estrutura_path):
     # ---------- Estrutura: d_comercial ----------
     wbe = openpyxl.load_workbook(estrutura_path, read_only=True, data_only=True)
+    competencia = read_competencia(wbe)
     ws = wbe["d_comercial"]
     rows, header, idx = header_map(ws)
     i_rv = col(idx, "RV")
@@ -886,6 +907,7 @@ def build(dados_path, estrutura_path):
 
     return {
         "generated_at": datetime.now(br).strftime("%Y-%m-%dT%H:%M:%S-03:00"),
+        "competencia": competencia.strftime("%Y-%m-01T00:00:00-03:00") if competencia else None,
         "source_file": os.path.basename(dados_path) if dados_path else "parquet",
         "comercial": comercial,
         "vendas": vendas,

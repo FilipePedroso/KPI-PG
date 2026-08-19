@@ -53,6 +53,7 @@ O script `build_data.py` mantém compatibilidade com os arquivos de ponteiro `*.
 - **`d_comercial`** — colunas esperadas: `RV`, `ds_uf`, `NOME`, `CONCATENAÇÃO RV + NOME`, `CONCATENAÇÃO SV + NOME`, `CONCATENAÇÃO CV + NOME`, `SV`, `GV`.
 - **`d_metas`** — colunas esperadas: `RV`, `ds_uf`, `TT Positivação`, `OBJ PRODUTIVIDADE HFS`, `OBJ PRODUTIVIDADE FARMA`.
 - **`d_clientes_braveo`** — colunas esperadas: `cd_vendedor`, `ds_uf`, `Potencial` (ou equivalente usado para potencial de positivação).
+- **`data`** — célula única (linha 1) com a data de competência (mês/ano) usada para calcular os dias do mês nas "Médias" dos cards. Sem essa aba, o dashboard cai de volta para o mês da última geração dos dados.
 
 ## Verificando se a atualização funcionou
 
