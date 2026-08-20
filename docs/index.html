@@ -2586,7 +2586,12 @@
         if (chavesPop !== 'loading' || !card.classList.contains('expanded')) return;
 
         const counts = { 1: 0, 2: 0, 3: 0 };
-        buildClientRows('card-ec-ch2').forEach(r => { if (counts[r.chave] !== undefined) counts[r.chave]++; });
+        const seenCnpj = new Set();
+        buildClientRows('card-ec-ch2').forEach(r => {
+          if (seenCnpj.has(r.cnpj)) return; // mesmo CNPJ pode aparecer sob >1 vendedor
+          seenCnpj.add(r.cnpj);
+          if (counts[r.chave] !== undefined) counts[r.chave]++;
+        });
         const total = counts[1] + counts[2] + counts[3];
         const pct = (k) => total > 0 ? Math.round((counts[k] / total) * 100) : 0;
 
