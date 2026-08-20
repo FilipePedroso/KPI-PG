@@ -2569,6 +2569,7 @@
       const el = chavesPop;
       chavesPop = null;
       document.removeEventListener('click', chavesPopOutside, true);
+      if (typeof el === 'string') return; // ainda carregando clientes.json, nada a animar
       el.classList.remove('show');
       setTimeout(() => el.remove(), 300);
     }
@@ -2579,35 +2580,40 @@
 
     function toggleChavesDist(card){
       if (chavesPop) { closeChavesPop(); return; }
+      chavesPop = 'loading'; // trava re-cliques enquanto clientes.json carrega
 
-      const counts = { 1: 0, 2: 0, 3: 0 };
-      buildClientRows('card-ec-ch2').forEach(r => { if (counts[r.chave] !== undefined) counts[r.chave]++; });
-      const total = counts[1] + counts[2] + counts[3];
-      const pct = (k) => total > 0 ? Math.round((counts[k] / total) * 100) : 0;
+      loadClientes().then(() => {
+        if (chavesPop !== 'loading' || !card.classList.contains('expanded')) return;
 
-      const rect = card.getBoundingClientRect();
-      const pop = document.createElement('div');
-      pop.className = 'chaves-dist-pop';
-      pop.style.left = (rect.left + rect.width / 2) + 'px';
-      pop.style.top = rect.top + 'px';
-      pop.style.width = rect.width + 'px';
-      pop.innerHTML =
-        '<div class="cdp-title">Distribuição de Chaves</div>' +
-        '<div class="cdp-strip">' +
-          [1, 2, 3].filter(k => pct(k) > 0).map(k =>
-            '<div class="cdp-seg cdp-k' + k + '" style="width:' + pct(k) + '%">' +
-              pct(k) + '% (' + counts[k].toLocaleString('pt-BR') + ')' +
-            '</div>'
-          ).join('') +
-        '</div>' +
-        '<div class="cdp-legend">' +
-          [1, 2, 3].map(k => '<span><i class="cdp-k' + k + '"></i>Chave ' + k + '</span>').join('') +
-        '</div>';
-      document.body.appendChild(pop);
-      chavesPop = pop;
+        const counts = { 1: 0, 2: 0, 3: 0 };
+        buildClientRows('card-ec-ch2').forEach(r => { if (counts[r.chave] !== undefined) counts[r.chave]++; });
+        const total = counts[1] + counts[2] + counts[3];
+        const pct = (k) => total > 0 ? Math.round((counts[k] / total) * 100) : 0;
 
-      requestAnimationFrame(() => pop.classList.add('show'));
-      document.addEventListener('click', chavesPopOutside, true);
+        const rect = card.getBoundingClientRect();
+        const pop = document.createElement('div');
+        pop.className = 'chaves-dist-pop';
+        pop.style.left = (rect.left + rect.width / 2) + 'px';
+        pop.style.top = rect.top + 'px';
+        pop.style.width = rect.width + 'px';
+        pop.innerHTML =
+          '<div class="cdp-title">Distribuição de Chaves</div>' +
+          '<div class="cdp-strip">' +
+            [1, 2, 3].filter(k => pct(k) > 0).map(k =>
+              '<div class="cdp-seg cdp-k' + k + '" style="width:' + pct(k) + '%">' +
+                pct(k) + '% (' + counts[k].toLocaleString('pt-BR') + ')' +
+              '</div>'
+            ).join('') +
+          '</div>' +
+          '<div class="cdp-legend">' +
+            [1, 2, 3].map(k => '<span><i class="cdp-k' + k + '"></i>Chave ' + k + '</span>').join('') +
+          '</div>';
+        document.body.appendChild(pop);
+        chavesPop = pop;
+
+        requestAnimationFrame(() => pop.classList.add('show'));
+        document.addEventListener('click', chavesPopOutside, true);
+      }).catch(() => { if (chavesPop === 'loading') chavesPop = null; });
     }
 
     function buildClientRows(cardId){
