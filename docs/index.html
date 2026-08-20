@@ -2428,6 +2428,16 @@
     function openMediaView(card, actions){
       const totals = metricTotals(card.id);
       if (!totals) return;
+      // Indicadores de positivação: corrige CNPJ duplicado entre vendedores
+      if (clientesData && MEDIA_CARDS.has(card.id)) {
+        if (card.id === 'card-ec-ch2') {
+          totals.real = dedupedCh2Total();
+        } else {
+          const mkey = CLIENT_METRIC[card.id];
+          const d = mkey ? dedupedPositivacaoCount(mkey) : null;
+          if (d !== null) totals.real = d;
+        }
+      }
       const startH = card.getBoundingClientRect().height;
       const originalHTML = card.innerHTML;
       teamState = { card, originalHTML, cardId: card.id, media: true };
@@ -2590,18 +2600,8 @@
       const bit = 1 << clientesData.metrics.indexOf('ch2');
       if (!bit) return counts;
 
-      const noFilt = !['uf', 'cv', 'sv', 'rv'].some(f => api.filters[f].size);
-      let selectedKeys;
-      if (noFilt) {
-        selectedKeys = Object.keys(clientesData.clientes);
-      } else {
-        const set = new Set();
-        api.rvEntries.forEach(r => { if (api.passes(r)) set.add(api.ck(r.rv, r.uf)); });
-        selectedKeys = Array.from(set);
-      }
-
       const bestChave = new Map();
-      selectedKeys.forEach(k => {
+      selectedClientKeys().forEach(k => {
         const list = clientesData.clientes[k];
         if (!list) return;
         for (let i = 0; i < list.length; i++) {
@@ -2615,6 +2615,48 @@
       });
       bestChave.forEach(chave => { if (counts[chave] !== undefined) counts[chave]++; });
       return counts;
+    }
+
+    // Total de clientes positivados (chave 2 ou 3) distintos, para a seleção
+    // de vendedores/UF atual — usado para corrigir o número do card e da
+    // Média quando um mesmo CNPJ positiva sob mais de um vendedor.
+    function dedupedCh2Total(){
+      const c = computeChaveDist();
+      return c[2] + c[3];
+    }
+
+    // Combinações rv|uf de clientes.json que valem para a seleção atual de
+    // filtros — sem filtro, todas (inclusive as que não existem em
+    // d_comercial); com filtro, só as que passam em api.passes().
+    function selectedClientKeys(){
+      const api = window.dashboardAPI;
+      const noFilt = !['uf', 'cv', 'sv', 'rv'].some(f => api.filters[f].size);
+      if (noFilt) return Object.keys(clientesData.clientes);
+      const set = new Set();
+      api.rvEntries.forEach(r => { if (api.passes(r)) set.add(api.ck(r.rv, r.uf)); });
+      return Array.from(set);
+    }
+
+    // Contagem de CNPJ distintos positivados num indicador (tot/ali/far/hfs/
+    // rfar/alw/pmp/ecp/ch2), respeitando a seleção de filtros atual. Um
+    // mesmo cliente pode positivar sob mais de um vendedor — sem isso, somar
+    // o indicador de vários vendedores infla o total. Retorna null se
+    // clientes.json ainda não carregou.
+    function dedupedPositivacaoCount(metricKey){
+      const api = window.dashboardAPI;
+      if (!api || !clientesData) return null;
+      const idx = clientesData.metrics.indexOf(metricKey);
+      if (idx < 0) return null;
+      const bit = 1 << idx;
+      const posCnpjs = new Set();
+      selectedClientKeys().forEach(k => {
+        const list = clientesData.clientes[k];
+        if (!list) return;
+        for (let i = 0; i < list.length; i++) {
+          if (list[i][3] & bit) posCnpjs.add(list[i][0]);
+        }
+      });
+      return posCnpjs.size;
     }
 
     function toggleChavesDist(card){
@@ -3212,6 +3254,13 @@
       if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
       ecSums.ch2 += x.ch2||0; ecSums.pp += x.pp||0;
     });
+    // Chaves ≥2: um mesmo CNPJ pode positivar sob mais de um vendedor, o que
+    // infla a soma acima quando somamos vários vendedores juntos. Assim que
+    // clientes.json carrega, trocamos pelo total de CNPJ distintos (mesma
+    // lógica do popover "Chaves"); cada vendedor individual continua correto.
+    if (typeof clientesData !== 'undefined' && clientesData) {
+      ecSums.ch2 = dedupedCh2Total();
+    }
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
                       p_total:0, p_ali:0, p_far:0,
@@ -3318,6 +3367,29 @@
     paint('card-fat-sp',    sums.sp,  sums.vf_sp,  metaSums.sp,    2);
     paint('card-fat-ali',   sums.ali, sums.vf_ali, metaSums.ali,   3);
     paint('card-fat-far',   sums.far, sums.vf_far, metaSums.far,   4);
+
+    // Mesma correção do Chaves ≥2 para os demais indicadores de positivação:
+    // um cliente pode positivar sob mais de um vendedor, inflando a soma
+    // quando vários vendedores são somados juntos (sem filtro, ou filtro
+    // por UF/GV/SV que abrange mais de um vendedor).
+    if (typeof clientesData !== 'undefined' && clientesData) {
+      const dTot = dedupedPositivacaoCount('tot');
+      const dAli = dedupedPositivacaoCount('ali');
+      const dFar = dedupedPositivacaoCount('far');
+      const dHfs = dedupedPositivacaoCount('hfs');
+      const dRfar = dedupedPositivacaoCount('rfar');
+      const dAlw = dedupedPositivacaoCount('alw');
+      const dPmp = dedupedPositivacaoCount('pmp');
+      const dEcp = dedupedPositivacaoCount('ecp');
+      if (dTot !== null) sums.p = dTot;
+      if (dAli !== null) sums.p_ali = dAli;
+      if (dFar !== null) sums.p_far = dFar;
+      if (dHfs !== null) sums.r_hfs = dHfs;
+      if (dRfar !== null) sums.r_far = dRfar;
+      if (dAlw !== null) sums.r_alw = dAlw;
+      if (dPmp !== null) sums.r_pmp = dPmp;
+      if (dEcp !== null) sums.r_ecp = dEcp;
+    }
 
     const posOpts = { fmtVal: fmtInt, fmtMeta: fmtPDV };
     paint('card-pos-total', sums.p,     sums.pf,     metaSums.p_total, 0, posOpts);
@@ -3695,6 +3767,13 @@
   };
 
   recompute();
+
+  // Carrega clientes.json em segundo plano (não bloqueia o load inicial) e
+  // recalcula assim que chegar, corrigindo o total de Chaves ≥2 (CNPJ
+  // duplicado entre vendedores) sem esperar o usuário abrir Clientes/Média.
+  if (typeof loadClientes === 'function') {
+    loadClientes().then(recompute).catch(() => {});
+  }
 })();
 </script>
 
