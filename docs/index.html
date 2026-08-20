@@ -3808,18 +3808,23 @@
         const prev = label.textContent;
         label.textContent = 'Gerando...';
 
+        // Grid 3x3 usa largura fixa (precisa de espaço pras 3 colunas); layout normal
+        // segue a mesma largura em que o card está sendo exibido na página.
+        const level = card.querySelector('.rk-filter .rkf-item.selected')?.dataset.level;
+        const isGrid = !!level && level !== 'total';
+        const captureWidth = isGrid ? 1100 : Math.round(card.getBoundingClientRect().width);
+
         // Clona o card para um container off-screen, evitando flash na tela
         const clone = card.cloneNode(true);
         const holder = document.createElement('div');
-        holder.style.cssText = 'position:fixed; left:-9999px; top:0; width:1100px; z-index:-1; overflow:visible;';
+        holder.style.cssText = 'position:fixed; left:-9999px; top:0; width:' + captureWidth + 'px; z-index:-1; overflow:visible;';
         holder.appendChild(clone);
         document.body.appendChild(holder);
         clone.classList.add('snapshotting');
-        const level = card.querySelector('.rk-filter .rkf-item.selected')?.dataset.level;
-        if (level && level !== 'total') clone.classList.add('snapshotting-grid');
+        if (isGrid) clone.classList.add('snapshotting-grid');
 
         try {
-          const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 1100 });
+          const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: captureWidth });
           const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
           let ok = false;
           try {
