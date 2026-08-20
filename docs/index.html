@@ -850,6 +850,32 @@
       transition: opacity 0.4s ease, visibility 0.4s ease;
     }
     .card-backdrop.show { visibility: visible; opacity: 1; pointer-events: auto; }
+    /* ── Popover "Chaves" (distribuição 1/2/3 no card Positivação Chaves ≥2) ── */
+    .chaves-dist-pop {
+      position: fixed;
+      z-index: 1250;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 20px 48px rgba(15,23,42,0.28);
+      padding: 16px 18px 14px;
+      opacity: 0;
+      transform: translate(-50%, -30%) scale(0.88);
+      transition: opacity 0.38s cubic-bezier(0.16,1,0.3,1), transform 0.38s cubic-bezier(0.16,1,0.3,1);
+      pointer-events: none;
+    }
+    .chaves-dist-pop.show {
+      opacity: 1;
+      transform: translate(-50%, calc(-100% - 14px)) scale(1);
+      pointer-events: auto;
+    }
+    .cdp-title { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #64748B; margin-bottom: 10px; }
+    .cdp-strip { display: flex; height: 22px; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+    .cdp-seg { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 10.5px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; }
+    .cdp-k1 { background: #FBDFAF; }
+    .cdp-k2 { background: #F0A93C; }
+    .cdp-k3 { background: #D97706; }
+    .cdp-legend { display: flex; justify-content: space-between; font-size: 10px; color: #94A3B8; font-weight: 600; }
+    .cdp-legend i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
     .card-actions {
       position: absolute;
       top: 12px;
@@ -1854,6 +1880,7 @@
     function collapseCard(){
       if (!expandedCard) return;
       const card = expandedCard;
+      closeChavesPop();
       // If team-view is open, restore original innerHTML first so collapse animates correctly
       if (typeof teamState !== 'undefined' && teamState && teamState.card === card) {
         card.classList.remove('team-view');
@@ -1934,6 +1961,8 @@
         '<button type="button" class="btn-action" data-act="cli">Clientes</button>' : '') +
         (MEDIA_CARDS.has(card.id) ?
         '<button type="button" class="btn-action" data-act="media">Média</button>' : '') +
+        (card.id === 'card-ec-ch2' ?
+        '<button type="button" class="btn-action" data-act="chaves">Chaves</button>' : '') +
         '<button type="button" class="btn-close" aria-label="Fechar">&times;</button>';
       card.appendChild(actions);
       actions.querySelector('.btn-close').addEventListener('click', (e)=>{ e.stopPropagation(); collapseCard(); });
@@ -2523,11 +2552,62 @@
       actions.querySelectorAll('.btn-action').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (btn.dataset.act === 'chaves') { toggleChavesDist(card); return; }
+          closeChavesPop();
           if (btn.dataset.act === 'cli') openClientsView(card, actions);
           else if (btn.dataset.act === 'media') openMediaView(card, actions);
           else openTeamView(card, actions);
         });
       });
+    }
+
+    // ── Popover "Chaves" — distribuição de clientes por chave (1/2/3) ──
+    let chavesPop = null;
+
+    function closeChavesPop(){
+      if (!chavesPop) return;
+      const el = chavesPop;
+      chavesPop = null;
+      document.removeEventListener('click', chavesPopOutside, true);
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 300);
+    }
+
+    function chavesPopOutside(e){
+      if (chavesPop && !chavesPop.contains(e.target) && !e.target.closest('[data-act="chaves"]')) closeChavesPop();
+    }
+
+    function toggleChavesDist(card){
+      if (chavesPop) { closeChavesPop(); return; }
+
+      const counts = { 1: 0, 2: 0, 3: 0 };
+      buildClientRows('card-ec-ch2').forEach(r => { if (counts[r.chave] !== undefined) counts[r.chave]++; });
+      const total = counts[1] + counts[2] + counts[3];
+      const pct = (k) => total > 0 ? Math.round((counts[k] / total) * 100) : 0;
+
+      const rect = card.getBoundingClientRect();
+      const pop = document.createElement('div');
+      pop.className = 'chaves-dist-pop';
+      pop.style.left = (rect.left + rect.width / 2) + 'px';
+      pop.style.top = rect.top + 'px';
+      pop.style.width = rect.width + 'px';
+      pop.innerHTML =
+        '<div class="cdp-title">Distribuição de Chaves</div>' +
+        '<div class="cdp-strip">' +
+          [1, 2, 3].filter(k => pct(k) > 0).map(k =>
+            '<div class="cdp-seg cdp-k' + k + '" style="width:' + pct(k) + '%">' +
+              pct(k) + '% (' + counts[k].toLocaleString('pt-BR') + ')' +
+            '</div>'
+          ).join('') +
+        '</div>' +
+        '<div class="cdp-legend">' +
+          [1, 2, 3].map(k => '<span><i class="cdp-k' + k + '"></i>Chave ' + k + '</span>').join('') +
+        '</div>';
+      document.body.appendChild(pop);
+      chavesPop = pop;
+
+      requestAnimationFrame(() => pop.classList.add('show'));
+      document.addEventListener('click', chavesPopOutside, true);
     }
 
     function buildClientRows(cardId){
