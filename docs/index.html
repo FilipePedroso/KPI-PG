@@ -1263,7 +1263,7 @@
       opacity: 1 !important; transform: none !important; filter: none !important;
     }
 
-    /* ── Resumo: print em grid 3x3 ── */
+    /* ── Resumo: print normalizado (mesmo layout da tela) ── */
     .resumo-card.snapshotting {
       width: 100% !important;
       flex: none !important;
@@ -1273,26 +1273,28 @@
       transform: none !important;
       box-shadow: none !important;
     }
-    .resumo-card.snapshotting .rk-bars {
+
+    /* ── Resumo: print em grid 3x3 (somente quando filtrado por Gerente/Supervisor/Vendedor) ── */
+    .resumo-card.snapshotting-grid .rk-bars {
       display: grid !important;
       grid-template-columns: repeat(3, 1fr) !important;
       gap: 12px;
       padding: 16px;
     }
-    .resumo-card.snapshotting .rk-item {
+    .resumo-card.snapshotting-grid .rk-item {
       border: 1px solid #E6EAF2;
       border-radius: 10px;
       padding: 12px;
       background: #FFFFFF;
     }
-    .resumo-card.snapshotting .rk-item.rk-total {
+    .resumo-card.snapshotting-grid .rk-item.rk-total {
       grid-column: 1 / -1;
     }
-    .resumo-card.snapshotting .rk-item-name { font-size: 11px; }
-    .resumo-card.snapshotting .rk-item-pct { font-size: 11px; }
-    .resumo-card.snapshotting .rk-item-meta { font-size: 10px; }
-    .resumo-card.snapshotting .rk-sub { margin-top: 8px !important; }
-    .resumo-card.snapshotting .rk-sub-box { background: #F8FAFC; }
+    .resumo-card.snapshotting-grid .rk-item-name { font-size: 11px; }
+    .resumo-card.snapshotting-grid .rk-item-pct { font-size: 11px; }
+    .resumo-card.snapshotting-grid .rk-item-meta { font-size: 10px; }
+    .resumo-card.snapshotting-grid .rk-sub { margin-top: 8px !important; }
+    .resumo-card.snapshotting-grid .rk-sub-box { background: #F8FAFC; }
 
     .rk-caret {
       display: inline-flex; align-items: center; justify-content: center;
@@ -3795,7 +3797,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-  // Print do card de Resumo -> clipboard (layout grid 3x3)
+  // Print do card de Resumo -> clipboard (layout normal em "Total"; grid 3x3 quando filtrado por Gerente/Supervisor/Vendedor)
   (function(){
     document.querySelectorAll('.resumo-card .rk-snap').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -3813,6 +3815,8 @@
         holder.appendChild(clone);
         document.body.appendChild(holder);
         clone.classList.add('snapshotting');
+        const level = card.querySelector('.rk-filter .rkf-item.selected')?.dataset.level;
+        if (level && level !== 'total') clone.classList.add('snapshotting-grid');
 
         try {
           const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 1100 });
