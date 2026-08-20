@@ -1296,6 +1296,10 @@
       gap: 12px;
       padding: 16px;
     }
+    /* Faturamento tem menos indicadores (Total + 4) — grid 2x2 em vez de 3x3 */
+    #card-resumo-faturamento.snapshotting-grid .rk-bars {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
     .resumo-card.snapshotting-grid .rk-item {
       border: 1px solid #E6EAF2;
       border-radius: 10px;
