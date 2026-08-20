@@ -1251,6 +1251,20 @@
     .rk-snap:hover { background: #F1F5F9; }
     .rk-snap i { font-size: 13px; line-height: 1; }
     .rk-snap.done { background: #ECFDF5; border-color: #A7F3D0; color: #059669; }
+
+    /* ── Resumo: tag do filtro global de Distribuidor ativo ── */
+    .rk-tags {
+      position: absolute; top: 36px; left: 10px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+      z-index: 5;
+    }
+    .rk-tag {
+      display: inline-flex; align-items: center;
+      max-width: 100%; padding: 3px 8px; border-radius: 999px;
+      background: #EEF2FF; color: #003DA5;
+      font-size: 9.5px; font-weight: 700; letter-spacing: 0.2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .resumo-card.snapshotting .rk-sub-list { max-height: none !important; overflow: visible !important; }
     .resumo-card.snapshotting .rk-snap,
     .resumo-card.snapshotting .rk-filter-pop { display: none !important; }
@@ -1699,6 +1713,7 @@
       <div class="resumo-card" id="card-resumo-ranking">
         <div class="resumo-head">
           <div class="rk-snap" title="Copiar print do card"><i class="ti ti-camera"></i><span>Print</span></div>
+          <div class="rk-tags"></div>
           <div class="rk-filter" data-scope="rk"><span class="rkf-label">Total</span><span class="rkf-arrow">▾</span>
             <div class="rk-filter-pop">
               <div class="rkf-item selected" data-level="total">Total</div>
@@ -1726,6 +1741,7 @@
       <div class="resumo-card" id="card-resumo-faturamento">
         <div class="resumo-head">
           <div class="rk-snap" title="Copiar print do card"><i class="ti ti-camera"></i><span>Print</span></div>
+          <div class="rk-tags"></div>
           <div class="rk-filter" data-scope="fat"><span class="rkf-label">Total</span><span class="rkf-arrow">▾</span>
             <div class="rk-filter-pop">
               <div class="rkf-item selected" data-level="total">Total</div>
@@ -3423,6 +3439,7 @@
 
     renderResumo(sums, metaSums, ecSums);
     renderFaturamento(sums, metaSums);
+    renderResumoFilterTags();
   }
 
   /* ── Resumo: nível de equipe (Total / Gerente / Supervisor / Vendedor) ── */
@@ -3550,6 +3567,21 @@
       });
     });
   });
+
+  // Tags nos cards de Resumo: refletem o filtro global de Distribuidor ativo,
+  // independente do dropdown Total/Gerente/... de cada card, que só controla
+  // o nível de detalhamento exibido.
+  const RESUMO_FILTER_LABEL = { uf: 'Distribuidor' };
+  function renderResumoFilterTags(){
+    const html = ['uf']
+      .filter(k => filters[k].size > 0)
+      .map(k => {
+        const vals = [...filters[k]];
+        const text = vals.length === 1 ? vals[0] : vals.length + ' selecionados';
+        return '<span class="rk-tag">' + RESUMO_FILTER_LABEL[k] + ': ' + text + '</span>';
+      }).join('');
+    document.querySelectorAll('.rk-tags').forEach(el => { el.innerHTML = html; });
+  }
   document.addEventListener('click', () => {
     document.querySelectorAll('.rk-filter.open').forEach(o => o.classList.remove('open'));
   });
