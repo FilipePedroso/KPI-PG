@@ -2578,6 +2578,45 @@
       if (chavesPop && !chavesPop.contains(e.target) && !e.target.closest('[data-act="chaves"]')) closeChavesPop();
     }
 
+    // Distribuição de clientes por chave (1/2/3), deduplicada por CNPJ (um
+    // cliente pode estar sob mais de um vendedor) e usando o valor mais alto
+    // de chave já atingido. Sem filtro ativo, soma TODAS as combinações
+    // rv|uf de clientes.json — inclusive as que não existem em d_comercial —
+    // igual ao que o card grande já faz (ver `noFilters` em recompute()).
+    function computeChaveDist(){
+      const api = window.dashboardAPI;
+      const counts = { 1: 0, 2: 0, 3: 0 };
+      if (!api || !clientesData) return counts;
+      const bit = 1 << clientesData.metrics.indexOf('ch2');
+      if (!bit) return counts;
+
+      const noFilt = !['uf', 'cv', 'sv', 'rv'].some(f => api.filters[f].size);
+      let selectedKeys;
+      if (noFilt) {
+        selectedKeys = Object.keys(clientesData.clientes);
+      } else {
+        const set = new Set();
+        api.rvEntries.forEach(r => { if (api.passes(r)) set.add(api.ck(r.rv, r.uf)); });
+        selectedKeys = Array.from(set);
+      }
+
+      const bestChave = new Map();
+      selectedKeys.forEach(k => {
+        const list = clientesData.clientes[k];
+        if (!list) return;
+        for (let i = 0; i < list.length; i++) {
+          const c = list[i];
+          const elig = !!(c[2] & bit), pos = !!(c[3] & bit);
+          if (!elig && !pos) continue;
+          const chave = c[6] || 0;
+          const cur = bestChave.get(c[0]);
+          if (cur === undefined || chave > cur) bestChave.set(c[0], chave);
+        }
+      });
+      bestChave.forEach(chave => { if (counts[chave] !== undefined) counts[chave]++; });
+      return counts;
+    }
+
     function toggleChavesDist(card){
       if (chavesPop) { closeChavesPop(); return; }
       chavesPop = 'loading'; // trava re-cliques enquanto clientes.json carrega
@@ -2585,13 +2624,7 @@
       loadClientes().then(() => {
         if (chavesPop !== 'loading' || !card.classList.contains('expanded')) return;
 
-        const counts = { 1: 0, 2: 0, 3: 0 };
-        const seenCnpj = new Set();
-        buildClientRows('card-ec-ch2').forEach(r => {
-          if (seenCnpj.has(r.cnpj)) return; // mesmo CNPJ pode aparecer sob >1 vendedor
-          seenCnpj.add(r.cnpj);
-          if (counts[r.chave] !== undefined) counts[r.chave]++;
-        });
+        const counts = computeChaveDist();
         const total = counts[1] + counts[2] + counts[3];
         const pct = (k) => total > 0 ? Math.round((counts[k] / total) * 100) : 0;
 
@@ -3657,7 +3690,7 @@
   };
 
   window.dashboardAPI = {
-    rvEntries, vendas, metas, passes, ck, fmtMoney, metrics,
+    rvEntries, vendas, metas, passes, ck, fmtMoney, metrics, filters,
     sources: { vendas, metas, potencial, ecOniz },
   };
 

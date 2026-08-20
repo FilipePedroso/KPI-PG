@@ -331,8 +331,10 @@ def read_sc_clientes():
     """
     Lê data/Dados_SC.xlsx e devolve, por rv|uf, os CNPJs positivados de cada
     indicador de ranking, além do nome (razão social) e, para Chaves >= 2,
-    a faixa (chave) atingida por CNPJ.
-      -> ({rv|uf: {hfs|rfar|alw|pmp|ch2: set(cnpj)}}, {cnpj: nome}, {cnpj: chave})
+    a faixa (chave) atingida por CNPJ em cada vendedor (um mesmo CNPJ pode
+    aparecer sob mais de um vendedor ao longo do tempo).
+      -> ({rv|uf: {hfs|rfar|alw|pmp|ch2: set(cnpj)}}, {cnpj: nome},
+          {rv|uf: {cnpj: chave}})
     """
     path = os.path.join(DATA_DIR, SC_FILE)
     if not os.path.exists(path):
@@ -377,8 +379,10 @@ def read_sc_clientes():
             acc.setdefault(k, {}).setdefault(metric, set()).add(cnpj)
             if c_nome is not None and cnpj not in nomes:
                 nomes[cnpj] = s(r[c_nome])
-            if c_extra is not None and extra_dict is not None and cnpj not in extra_dict:
-                extra_dict[cnpj] = strip_faixa(r[c_extra])
+            if c_extra is not None and extra_dict is not None:
+                kdict = extra_dict.setdefault(k, {})
+                if cnpj not in kdict:
+                    kdict[cnpj] = strip_faixa(r[c_extra])
 
     scan("Pos Relação", tipos={"HFS": "hfs", "FARMA": "rfar"})
     scan("Marcas Relação", tipos={"ALWAYS NOTURNO": "alw", "PAMPERS": "pmp"})
@@ -738,9 +742,9 @@ def build(dados_path, estrutura_path):
     # platinum points: contagem distinta de (nr_doc, ds_combo_sku_lista_ativacao)
     #                  com "Platinum Point?" = "Sim"
     ec = []
-    ec_ch2_cli = {}   # {rv|uf: set(cnpj)} - clientes com chaves >= 2 (nr_doc == CNPJ)
-    ec_nomes = {}      # {cnpj: nm_pessoa}
-    ec_chave = {}      # {cnpj: maior nr_chave atingido, mesmo abaixo de 2}
+    ec_ch2_cli = {}     # {rv|uf: set(cnpj)} - clientes com chaves >= 2 (nr_doc == CNPJ)
+    ec_nomes = {}       # {cnpj: nm_pessoa}
+    ec_chave_by_key = {}  # {rv|uf: {cnpj: maior nr_chave atingido NAQUELE vendedor}}
     src_ec = fact_source("f_ec_oniz", wbd)
     if src_ec:
         rows, header, idx = src_ec
@@ -765,8 +769,9 @@ def build(dados_path, estrutura_path):
             b = esets.setdefault(k, {"ch2": set(), "pp": set()})
             if o_ch is not None:
                 chv = int(n(r[o_ch]))
-                if chv > ec_chave.get(doc, 0):
-                    ec_chave[doc] = chv
+                kchave = ec_chave_by_key.setdefault(k, {})
+                if chv > kchave.get(doc, 0):
+                    kchave[doc] = chv
                 if chv >= 2:
                     b["ch2"].add(doc)
                 if o_nome is not None and doc not in ec_nomes:
@@ -852,13 +857,6 @@ def build(dados_path, estrutura_path):
 
     # SC: os indicadores de ranking vêm do Dados_SC.xlsx (CNPJ a CNPJ)
     sc_cli, sc_nomes, sc_faixa = read_sc_clientes()
-    chave_map = dict(ec_chave)
-    for cnpj, faixa in sc_faixa.items():
-        try:
-            chave_map[cnpj] = int(faixa)
-        except (TypeError, ValueError):
-            if faixa:
-                chave_map[cnpj] = faixa
     if sc:
         for k in list(pos):
             if k.split("|", 1)[1] in sc_ufs:
@@ -895,7 +893,14 @@ def build(dados_path, estrutura_path):
             vals = [round(cs["t"], 2), round(cs["a"], 2), round(cs["f"], 2),
                     round(cs["ec"], 2), round(cs["sp"], 2)] if cs else [0, 0, 0, 0, 0]
             vol = rsrc.get(cnpj, {}).get("vt", 0.0)
-            chave = chave_map.get(cnpj, 0)
+            raw_faixa = sc_faixa.get(k, {}).get(cnpj)
+            if raw_faixa:
+                try:
+                    chave = int(raw_faixa)
+                except ValueError:
+                    chave = 0
+            else:
+                chave = ec_chave_by_key.get(k, {}).get(cnpj, 0)
             out.append([cnpj, nome, elig, posmask, vals, round(vol, 1), chave])
         if out:
             out.sort(key=lambda x: x[1])
