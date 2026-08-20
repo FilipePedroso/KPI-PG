@@ -2659,6 +2659,17 @@
       return posCnpjs.size;
     }
 
+    // Ponte explícita para o outro bloco <script> (onde fica recompute()):
+    // este bloco roda inteiro dentro de uma IIFE, então funções como
+    // loadClientes/dedupedCh2Total não existem fora dela — sem essa ponte
+    // via window, o outro <script> não enxerga nada disso.
+    window.__ch2Helpers = {
+      loadClientes,
+      dedupedCh2Total,
+      dedupedPositivacaoCount,
+      hasClientesData: () => !!clientesData,
+    };
+
     function toggleChavesDist(card){
       if (chavesPop) { closeChavesPop(); return; }
       chavesPop = 'loading'; // trava re-cliques enquanto clientes.json carrega
@@ -3258,8 +3269,8 @@
     // infla a soma acima quando somamos vários vendedores juntos. Assim que
     // clientes.json carrega, trocamos pelo total de CNPJ distintos (mesma
     // lógica do popover "Chaves"); cada vendedor individual continua correto.
-    if (typeof clientesData !== 'undefined' && clientesData) {
-      ecSums.ch2 = dedupedCh2Total();
+    if (window.__ch2Helpers && window.__ch2Helpers.hasClientesData()) {
+      ecSums.ch2 = window.__ch2Helpers.dedupedCh2Total();
     }
 
     const metaSums = {total:0, ec:0, sp:0, ali:0, far:0,
@@ -3372,15 +3383,16 @@
     // um cliente pode positivar sob mais de um vendedor, inflando a soma
     // quando vários vendedores são somados juntos (sem filtro, ou filtro
     // por UF/GV/SV que abrange mais de um vendedor).
-    if (typeof clientesData !== 'undefined' && clientesData) {
-      const dTot = dedupedPositivacaoCount('tot');
-      const dAli = dedupedPositivacaoCount('ali');
-      const dFar = dedupedPositivacaoCount('far');
-      const dHfs = dedupedPositivacaoCount('hfs');
-      const dRfar = dedupedPositivacaoCount('rfar');
-      const dAlw = dedupedPositivacaoCount('alw');
-      const dPmp = dedupedPositivacaoCount('pmp');
-      const dEcp = dedupedPositivacaoCount('ecp');
+    if (window.__ch2Helpers && window.__ch2Helpers.hasClientesData()) {
+      const dpc = window.__ch2Helpers.dedupedPositivacaoCount;
+      const dTot = dpc('tot');
+      const dAli = dpc('ali');
+      const dFar = dpc('far');
+      const dHfs = dpc('hfs');
+      const dRfar = dpc('rfar');
+      const dAlw = dpc('alw');
+      const dPmp = dpc('pmp');
+      const dEcp = dpc('ecp');
       if (dTot !== null) sums.p = dTot;
       if (dAli !== null) sums.p_ali = dAli;
       if (dFar !== null) sums.p_far = dFar;
@@ -3769,10 +3781,12 @@
   recompute();
 
   // Carrega clientes.json em segundo plano (não bloqueia o load inicial) e
-  // recalcula assim que chegar, corrigindo o total de Chaves ≥2 (CNPJ
+  // recalcula assim que chegar, corrigindo os totais de positivação (CNPJ
   // duplicado entre vendedores) sem esperar o usuário abrir Clientes/Média.
-  if (typeof loadClientes === 'function') {
-    loadClientes().then(recompute).catch(() => {});
+  // loadClientes vive dentro da IIFE do outro <script> — só é alcançável
+  // via window.__ch2Helpers (ver comentário lá).
+  if (window.__ch2Helpers) {
+    window.__ch2Helpers.loadClientes().then(recompute).catch(() => {});
   }
 })();
 </script>
