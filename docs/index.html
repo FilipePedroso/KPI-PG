@@ -625,6 +625,47 @@
       letter-spacing: -0.5px;
     }
 
+    .card-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .card-title-row .card-title { margin-bottom: 0; }
+
+    .seg-toggle {
+      display: none;
+      flex-shrink: 0;
+      gap: 2px;
+      padding: 2px;
+      width: fit-content;
+      background: #F1F5F9;
+      border-radius: 7px;
+    }
+    .kpi-card.expanded .seg-toggle { display: inline-flex; }
+    .seg-toggle .seg-btn {
+      border: none;
+      background: transparent;
+      color: #94A3B8;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .seg-toggle .seg-btn:hover { color: #475569; }
+    .seg-toggle .seg-btn.active {
+      background: #fff;
+      color: #0F172A;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+    }
+    .kpi-card.sub-filtered .kpi-meta,
+    .kpi-card.sub-filtered .bar-header,
+    .kpi-card.sub-filtered .progress-track { display: none; }
+
     .kpi-meta {
       font-size: 10.5px;
       color: #94A3B8;
@@ -1465,7 +1506,13 @@
       </div>
 
       <div class="kpi-card fat-numerica" id="card-fat-ec">
-        <div class="card-title">Escolha Certa</div>
+        <div class="card-title-row">
+          <div class="card-title">Escolha Certa</div>
+          <div class="seg-toggle">
+            <button type="button" class="seg-btn" data-sub="ali">Alimentar</button>
+            <button type="button" class="seg-btn" data-sub="far">Farma</button>
+          </div>
+        </div>
         <div class="kpi-value" data-bind="valor">R$ —</div>
         <div class="kpi-meta">Meta: <span data-bind="meta">R$ —</span></div>
         <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">R$ —</span></div>
@@ -1477,7 +1524,13 @@
       </div>
 
       <div class="kpi-card fat-ponderada" id="card-fat-sp">
-        <div class="card-title">Store Platform</div>
+        <div class="card-title-row">
+          <div class="card-title">Store Platform</div>
+          <div class="seg-toggle">
+            <button type="button" class="seg-btn" data-sub="ali">Alimentar</button>
+            <button type="button" class="seg-btn" data-sub="far">Farma</button>
+          </div>
+        </div>
         <div class="kpi-value" data-bind="valor">R$ —</div>
         <div class="kpi-meta">Meta: <span data-bind="meta">R$ —</span></div>
         <div class="kpi-meta" style="margin-bottom:10px;">Gap: <span data-bind="gap" style="color:#DC2626;font-weight:700;">R$ —</span></div>
@@ -1895,6 +1948,12 @@
       'card-rank-hfs', 'card-rank-far', 'card-rank-alw', 'card-rank-pmp',
       'card-ec-pos', 'card-ec-ch2',
     ]);
+    // Cards de Faturamento onde o botão Alimentar/Farma filtra o valor
+    // exibido para o recorte daquele segmento (ver ec_ali/ec_far/sp_ali/sp_far
+    // em data.json, gerados por build_data.py). Estado fica em
+    // card.dataset.subFilter — lido pelo outro bloco <script> em recompute(),
+    // já que os dois blocos não compartilham escopo (ver ponte __ch2Helpers).
+    const SUBFILTER_CARDS = new Set(['card-fat-ec', 'card-fat-sp']);
     document.body.appendChild(backdrop);
 
     let expandedCard = null;
@@ -1916,6 +1975,14 @@
       if (actions) {
         actions.classList.remove('show');
         actions.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      }
+
+      // Volta o card ao valor total (não ao recorte Alimentar/Farma) antes de fechar
+      if (SUBFILTER_CARDS.has(card.id) && card.dataset.subFilter) {
+        delete card.dataset.subFilter;
+        card.classList.remove('sub-filtered');
+        card.querySelectorAll('.seg-toggle .seg-btn').forEach(b => b.classList.remove('active'));
+        if (window.dashboardAPI && window.dashboardAPI.recompute) window.dashboardAPI.recompute();
       }
 
       const first = card.getBoundingClientRect();
@@ -2589,10 +2656,43 @@
           closeChavesPop();
           if (btn.dataset.act === 'cli') openClientsView(card, actions);
           else if (btn.dataset.act === 'media') openMediaView(card, actions);
-          else openTeamView(card, actions);
+          else if (btn.dataset.act === 'team') openTeamView(card, actions);
         });
       });
     }
+
+    // Toggle Alimentar/Farma nos cards de Faturamento Escolha Certa / Store
+    // Platform (ver SUBFILTER_CARDS). Botões são estáticos no HTML (.seg-toggle),
+    // não recriados a cada expand, então o bind é feito uma única vez aqui.
+    // Clicar no botão já ativo volta ao total.
+    document.querySelectorAll('.seg-toggle .seg-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.kpi-card');
+        if (!card) return;
+        const sub = btn.dataset.sub;
+        card.dataset.subFilter = card.dataset.subFilter === sub ? '' : sub;
+        if (!card.dataset.subFilter) delete card.dataset.subFilter;
+        card.querySelectorAll('.seg-toggle .seg-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.sub === card.dataset.subFilter);
+        });
+        const startH = card.getBoundingClientRect().height;
+        if (window.dashboardAPI && window.dashboardAPI.recompute) window.dashboardAPI.recompute();
+        // Trocar o recorte esconde/mostra Meta/Gap/Atingimento, o que muda a
+        // altura do card — anima a transição (mesma técnica do team-view /
+        // média, ver closeMediaView).
+        card.style.transition = 'none';
+        card.style.height = 'auto';
+        card.style.overflow = 'hidden';
+        const targetH = card.getBoundingClientRect().height;
+        card.style.height = startH + 'px';
+        requestAnimationFrame(() => {
+          card.style.transition = 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+          card.style.height = targetH + 'px';
+        });
+        setTimeout(() => { card.style.height = ''; card.style.overflow = ''; card.style.transition = ''; }, 380);
+      });
+    });
 
     // ── Popover "Chaves" — distribuição de clientes por chave (1/2/3) ──
     let chavesPop = null;
@@ -3243,7 +3343,9 @@
 
 
     const sums = {v:0, ec:0, sp:0, ali:0, far:0,
+                  ec_ali:0, ec_far:0, sp_ali:0, sp_far:0,
                   vf:0, vf_ec:0, vf_sp:0, vf_ali:0, vf_far:0,
+                  vf_ec_ali:0, vf_ec_far:0, vf_sp_ali:0, vf_sp_far:0,
                   p:0, p_ali:0, p_far:0,
                   pf:0, pf_ali:0, pf_far:0,
                   r_hfs:0, r_far:0, r_alw:0, r_pmp:0, r_ecp:0,
@@ -3252,12 +3354,18 @@
       if (!noFilters && !eligibleKeys.has(ck(x.rv, x.uf))) return;
       sums.v += x.v||0; sums.ec += x.ec||0; sums.sp += x.sp||0;
       sums.ali += x.ali||0; sums.far += x.far||0;
+      sums.ec_ali += x.ec_ali||0; sums.ec_far += x.ec_far||0;
+      sums.sp_ali += x.sp_ali||0; sums.sp_far += x.sp_far||0;
       // faturado (vl_faturamento = 1) — optional fields, default 0
       sums.vf     += x.vf     || 0;
       sums.vf_ec  += x.vf_ec  || 0;
       sums.vf_sp  += x.vf_sp  || 0;
       sums.vf_ali += x.vf_ali || 0;
       sums.vf_far += x.vf_far || 0;
+      sums.vf_ec_ali += x.vf_ec_ali || 0;
+      sums.vf_ec_far += x.vf_ec_far || 0;
+      sums.vf_sp_ali += x.vf_sp_ali || 0;
+      sums.vf_sp_far += x.vf_sp_far || 0;
       // positivação: CNPJs únicos com vl_financeiro > 0 (total)
       // e sub-subset positivação faturada (pf*)
       sums.p     += x.p     || 0;
@@ -3396,11 +3504,43 @@
         if (potMk) potMk.style.left = Math.min(100, Math.max(0, mkPos*100)).toFixed(1) + '%';
       }
     }
+
+    // Recorte Alimentar/Farma dentro dos cards Escolha Certa / Store Platform
+    // (botão adicionado no outro <script>, estado em card.dataset.subFilter).
+    // Não existe meta cadastrada para esse cruzamento, então só o valor é
+    // substituído — meta/gap/barra ficam escondidos via classe .sub-filtered.
+    const SUBFILTER_FIELDS = {
+      'card-fat-ec': { ali: 'ec_ali', far: 'ec_far' },
+      'card-fat-sp': { ali: 'sp_ali', far: 'sp_far' },
+    };
+    function applySubFilter(cardId, sums){
+      const card = document.getElementById(cardId);
+      if (!card) return;
+      const sub = card.dataset.subFilter;
+      const field = sub && SUBFILTER_FIELDS[cardId] && SUBFILTER_FIELDS[cardId][sub];
+      card.querySelectorAll('.seg-toggle .seg-btn').forEach(b => {
+        b.classList.toggle('active', !!field && b.dataset.sub === sub);
+      });
+      if (!field) { card.classList.remove('sub-filtered'); return; }
+      card.classList.add('sub-filtered');
+      const valorEl = card.querySelector('[data-bind=valor]');
+      if (valorEl) valorEl.textContent = fmtMoney(sums[field] || 0);
+    }
+
     paint('card-fat-total', sums.v,   sums.vf,     metaSums.total, 0);
-    paint('card-fat-ec',    sums.ec,  sums.vf_ec,  metaSums.ec,    1);
-    paint('card-fat-sp',    sums.sp,  sums.vf_sp,  metaSums.sp,    2);
+    // Enquanto o recorte Alimentar/Farma estiver ativo, o paint() normal é
+    // pulado: sua animação de contagem (setTimeout + rAF) sobrescreveria o
+    // valor filtrado de volta para o total pouco depois de applySubFilter
+    // rodar. Meta/Gap/Atingimento ficam escondidos nesse modo (.sub-filtered),
+    // então não faz diferença deixá-los sem atualizar até o toggle desligar.
+    const ecFiltered = document.getElementById('card-fat-ec').dataset.subFilter;
+    const spFiltered = document.getElementById('card-fat-sp').dataset.subFilter;
+    if (!ecFiltered) paint('card-fat-ec', sums.ec, sums.vf_ec, metaSums.ec, 1);
+    if (!spFiltered) paint('card-fat-sp', sums.sp, sums.vf_sp, metaSums.sp, 2);
     paint('card-fat-ali',   sums.ali, sums.vf_ali, metaSums.ali,   3);
     paint('card-fat-far',   sums.far, sums.vf_far, metaSums.far,   4);
+    applySubFilter('card-fat-ec', sums);
+    applySubFilter('card-fat-sp', sums);
 
     // Mesma correção do Chaves ≥2 para os demais indicadores de positivação:
     // um cliente pode positivar sob mais de um vendedor, inflando a soma
@@ -3815,6 +3955,7 @@
   window.dashboardAPI = {
     rvEntries, vendas, metas, passes, ck, fmtMoney, metrics, filters,
     sources: { vendas, metas, potencial, ecOniz },
+    recompute,
   };
 
   recompute();

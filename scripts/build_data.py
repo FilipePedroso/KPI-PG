@@ -623,7 +623,9 @@ def build(dados_path, estrutura_path):
         b = vagg.setdefault(k, {
             "rv": rv, "uf": uf,
             "v": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
+            "ec_ali": 0.0, "ec_far": 0.0, "sp_ali": 0.0, "sp_far": 0.0,
             "vf": 0.0, "vf_ec": 0.0, "vf_sp": 0.0, "vf_ali": 0.0, "vf_far": 0.0,
+            "vf_ec_ali": 0.0, "vf_ec_far": 0.0, "vf_sp_ali": 0.0, "vf_sp_far": 0.0,
             "p": 0, "p_ali": 0, "p_far": 0,
             "pf": 0, "pf_ali": 0, "pf_far": 0,
         })
@@ -634,8 +636,10 @@ def build(dados_path, estrutura_path):
         b["v"] += val
         if plat == "Escolha Certa":
             b["ec"] += val
+            b["ec_far" if is_far else "ec_ali"] += val
         elif plat == "Store Platform":
             b["sp"] += val
+            b["sp_far" if is_far else "sp_ali"] += val
         if is_far:
             b["far"] += val
         else:
@@ -644,8 +648,10 @@ def build(dados_path, estrutura_path):
             b["vf"] += val
             if plat == "Escolha Certa":
                 b["vf_ec"] += val
+                b["vf_ec_far" if is_far else "vf_ec_ali"] += val
             elif plat == "Store Platform":
                 b["vf_sp"] += val
+                b["vf_sp_far" if is_far else "vf_sp_ali"] += val
             if is_far:
                 b["vf_far"] += val
             else:
@@ -806,8 +812,11 @@ def build(dados_path, estrutura_path):
             if b is None:
                 b = {"rv": rv, "uf": uf,
                      "v": 0.0, "ec": 0.0, "sp": 0.0, "ali": 0.0, "far": 0.0,
+                     "ec_ali": 0.0, "ec_far": 0.0, "sp_ali": 0.0, "sp_far": 0.0,
                      "vf": 0.0, "vf_ec": 0.0, "vf_sp": 0.0, "vf_ali": 0.0,
-                     "vf_far": 0.0, "p": 0, "p_ali": 0, "p_far": 0,
+                     "vf_far": 0.0, "vf_ec_ali": 0.0, "vf_ec_far": 0.0,
+                     "vf_sp_ali": 0.0, "vf_sp_far": 0.0,
+                     "p": 0, "p_ali": 0, "p_far": 0,
                      "pf": 0, "pf_ali": 0, "pf_far": 0}
                 vendas.append(b)
                 vmap[k] = b
